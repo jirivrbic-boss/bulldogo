@@ -1303,7 +1303,9 @@ async function addService(serviceData) {
                 console.log('📍 Cesta k souboru:', fileName);
                 const previewRef = ref(storage, fileName);
                 console.log('📤 Začínám nahrávání...');
-                const previewSnapshot = await uploadBytes(previewRef, serviceData.previewImage);
+                const previewSnapshot = await uploadBytes(previewRef, serviceData.previewImage, {
+                    contentType: serviceData.previewImage.type || 'image/jpeg'
+                });
                 console.log('✅ Upload úspěšný, získávám URL...');
                 const previewUrl = await getDownloadURL(previewSnapshot.ref);
                 uploadedImages.push({
@@ -1339,7 +1341,9 @@ async function addService(serviceData) {
                 for (let i = 0; i < serviceData.additionalImages.length; i++) {
                     const image = serviceData.additionalImages[i];
                     const imageRef = ref(storage, `services/${authCurrentUser.uid}/${Date.now()}_${i}.jpg`);
-                    const imageSnapshot = await uploadBytes(imageRef, image);
+                    const imageSnapshot = await uploadBytes(imageRef, image, {
+                        contentType: image.type || 'image/jpeg'
+                    });
                     const imageUrl = await getDownloadURL(imageSnapshot.ref);
                     uploadedImages.push({
                         url: imageUrl,
