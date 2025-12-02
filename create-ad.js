@@ -61,6 +61,40 @@
             update();
         }
 
+        // Živý náhled karty vpravo
+        const titleEl = document.getElementById('serviceTitle');
+        const catEl = document.getElementById('serviceCategory');
+        const locEl = document.getElementById('serviceLocation');
+        const imgPreview = document.getElementById('previewCardImage');
+        const titlePreview = document.getElementById('previewCardTitle');
+        const metaCat = document.getElementById('previewCardCategory');
+        const metaLoc = document.getElementById('previewCardLocation');
+        const pricePreview = document.getElementById('previewCardPrice');
+
+        function updatePreview() {
+            titlePreview.textContent = (titleEl?.value || 'Název inzerátu').trim() || 'Název inzerátu';
+            metaCat.textContent = catEl?.options?.[catEl.selectedIndex || 0]?.text || 'Kategorie';
+            metaLoc.textContent = locEl?.options?.[locEl.selectedIndex || 0]?.text || 'Kraj';
+            // cenu vypočítáme stejně jako při submitu
+            pricePreview.textContent = computePriceText();
+        }
+        titleEl?.addEventListener('input', updatePreview);
+        catEl?.addEventListener('change', updatePreview);
+        locEl?.addEventListener('change', updatePreview);
+        updatePreview();
+
+        // Náhled obrázku v pravé kartě
+        const previewImageInput = document.getElementById('previewImage');
+        if (previewImageInput && imgPreview) {
+            previewImageInput.addEventListener('change', function(e) {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => { imgPreview.src = ev.target.result; };
+                reader.readAsDataURL(file);
+            });
+        }
+
         // Přepínání cen
         const priceInputs = document.getElementById('priceInputs');
         const unitSel = document.querySelector('.price-unit-selection');
@@ -88,6 +122,7 @@
                     pf.required = true; pt.required = true;
                     updatePlaceholders();
                 }
+                updatePreview();
             }
         }
         function updatePlaceholders() {
@@ -97,8 +132,14 @@
             if (p) p.placeholder = `Cena (např. 500 ${cur}/${unitText})`;
             if (pf) pf.placeholder = `Od (např. 300 ${cur}/${unitText})`;
             if (pt) pt.placeholder = `Do (např. 800 ${cur}/${unitText})`;
+            updatePreview();
         }
         document.querySelectorAll('input[name=\"priceUnit\"]').forEach(r => r.addEventListener('change', updatePlaceholders));
+        ;['input','change'].forEach(evt=>{
+            p?.addEventListener(evt, updatePreview);
+            pf?.addEventListener(evt, updatePreview);
+            pt?.addEventListener(evt, updatePreview);
+        });
 
         // Náhledy obrázků – použít existující helper, když je k dispozici
         if (typeof window.setupImagePreviews === 'function') {
@@ -111,19 +152,7 @@
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 // Poskládat cenu jako text podle výběru
-                const priceType = document.querySelector('input[name=\"priceType\"]:checked')?.value || 'negotiable';
-                const unit = (document.querySelector('input[name=\"priceUnit\"]:checked')?.value || 'hour');
-                const unitText = unit === 'hour' ? 'hod' : 'práci';
-                const cur = 'Kč';
-                let priceText = 'dohodou';
-                if (priceType === 'fixed') {
-                    const val = (document.getElementById('servicePrice')?.value || '').trim();
-                    if (val) priceText = `${val} ${cur}/${unitText}`;
-                } else if (priceType === 'range') {
-                    const from = (document.getElementById('servicePriceFrom')?.value || '').trim();
-                    const to = (document.getElementById('servicePriceTo')?.value || '').trim();
-                    if (from && to) priceText = `od ${from} ${cur}/${unitText} do ${to} ${cur}/${unitText}`;
-                }
+                const priceText = computePriceText();
 
                 const fd = new FormData(form);
                 const data = {
@@ -151,15 +180,54 @@
 
                 // Odeslat přes existující Firebase funkci
                 if (typeof window.addService === 'function') {
+                    disablePublish(true);
                     await window.addService(data);
                     // Po úspěchu přesměrovat na moje inzeráty (pokud existuje stránka), nebo na homepage
                     setTimeout(() => {
                         window.location.href = 'my-ads.html';
                     }, 800);
+                    disablePublish(false);
                 } else {
                     alert('Chyba: funkcionalita přidání služby není dostupná.');
                 }
             });
+        }
+
+        // Disablovat publish, dokud nejsou povinné položky
+        const publishBtn = document.getElementById('publishSideBtn');
+        function disablePublish(disabled){
+            if (!publishBtn) return;
+            publishBtn.disabled = !!disabled;
+            publishBtn.style.opacity = disabled ? .6 : 1;
+        }
+        function validateRequired(){
+            const ok = !!titleEl?.value && !!catEl?.value && !!locEl?.value && !!desc?.value && !!previewImageInput?.files?.[0];
+            disablePublish(!ok);
+        }
+        ;['input','change'].forEach(evt=>{
+            titleEl?.addEventListener(evt, validateRequired);
+            catEl?.addEventListener(evt, validateRequired);
+            locEl?.addEventListener(evt, validateRequired);
+            desc?.addEventListener(evt, validateRequired);
+            previewImageInput?.addEventListener('change', validateRequired);
+        });
+        validateRequired();
+
+        // Helper pro sestavení textu ceny
+        function computePriceText(){
+            const priceType = document.querySelector('input[name=\"priceType\"]:checked')?.value || 'negotiable';
+            const unit = (document.querySelector('input[name=\"priceUnit\"]:checked')?.value || 'hour');
+            const unitText = unit === 'hour' ? 'hod' : 'práci';
+            const cur = 'Kč';
+            if (priceType === 'fixed') {
+                const val = (document.getElementById('servicePrice')?.value || '').trim();
+                return val ? `${val} ${cur}/${unitText}` : '';
+            } else if (priceType === 'range') {
+                const from = (document.getElementById('servicePriceFrom')?.value || '').trim();
+                const to = (document.getElementById('servicePriceTo')?.value || '').trim();
+                return (from && to) ? `od ${from} ${cur}/${unitText} do ${to} ${cur}/${unitText}` : '';
+            }
+            return 'dohodou';
         }
     }
 })();
