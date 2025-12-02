@@ -1845,14 +1845,7 @@
         // Open add ad modal
         function openAddAdModal() {
             console.log('🚀 Opening add ad modal');
-            // Open the add service modal
-            if (typeof window.showAddServiceModal === 'function') {
-                window.showAddServiceModal();
-            } else {
-                console.error('showAddServiceModal function not available');
-                // Fallback: redirect to my-ads page
-                window.location.href = 'my-ads.html';
-            }
+            window.location.href = 'create-ad.html';
         }
     </script>
 </body>

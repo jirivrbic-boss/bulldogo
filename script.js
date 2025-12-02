@@ -430,25 +430,9 @@ function checkAuthForProfile() {
     }
 }
 
-// Check auth for adding service - if logged in, open modal; if not, show login then open modal
+// Check auth for adding service - new behavior: redirect to create-ad page
 function checkAuthForAddService() {
-    if (window.firebaseAuth) {
-        window.firebaseAuth.onAuthStateChanged((user) => {
-            if (user) {
-                // User is logged in, open add service modal
-                showAddServiceModal();
-            } else {
-                // User is not logged in, show auth modal with callback
-                showAuthModal('login');
-                // Set up callback to open add service modal after successful login
-                setupLoginCallback();
-            }
-        });
-    } else {
-        // Firebase not loaded yet, show auth modal with callback
-        showAuthModal('login');
-        setupLoginCallback();
-    }
+    window.location.href = 'create-ad.html';
 }
 
 // Setup callback to open add service modal after login

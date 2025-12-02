@@ -2,6 +2,14 @@
   "outputDirectory": "public",
   "rewrites": [
     {
+      "source": "/create-ad",
+      "destination": "/create-ad.html"
+    },
+    {
+      "source": "/create-ad.html",
+      "destination": "/create-ad.html"
+    },
+    {
       "source": "/success",
       "destination": "/success.html"
     },

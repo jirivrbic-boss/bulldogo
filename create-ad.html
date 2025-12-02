@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bulldogo.cz – Vytvořit inzerát</title>
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/electric-border.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo" onclick="window.location.href='index.html'" style="cursor:pointer;">
+                <div class="logo-icon">B</div>
+                <span class="logo-text">
+                    <span class="logo-bull">ULL</span>
+                    <span class="logo-dogo">DOGO</span>
+                </span>
+            </div>
+            <div class="header-buttons"></div>
+        </div>
+    </nav>
+
+    <div class="main-content" style="padding: 24px;">
+        <h1 class="services-title" style="margin-bottom: 12px;">
+            <span class="title-text"><i class="fas fa-plus"></i> Vytvořit inzerát</span>
+            <span class="title-accent"></span>
+        </h1>
+        <p style="color:#6b7280; margin-bottom: 24px;">Vyplňte prosím informace o vaší službě.</p>
+
+        <!-- Wrapper s ID jako původní modal kvůli kompatibilitě s existujícím kódem -->
+        <div id="addServiceModal" style="display:block; background:none;">
+            <form id="addServiceForm" class="service-form" style="max-width:920px;">
+                <div class="form-group">
+                    <input type="text" id="serviceTitle" name="title" placeholder="Název služby" required>
+                </div>
+
+                <div class="form-group">
+                    <select id="serviceCategory" name="category" required>
+                        <option value="">Vyberte kategorii</option>
+                        <option value="home_craftsmen">Domácnost & Řemeslníci</option>
+                        <option value="auto_moto">Auto & Moto</option>
+                        <option value="garden_exterior">Zahrada & Exteriér</option>
+                        <option value="education_tutoring">Vzdělávání & Doučování</option>
+                        <option value="it_technology">IT & technologie</option>
+                        <option value="health_personal_care">Zdraví a Osobní péče</option>
+                        <option value="gastronomy_catering">Gastronomie & Catering</option>
+                        <option value="events_entertainment">Události & Zábava</option>
+                        <option value="personal_small_jobs">Osobní služby & drobné práce</option>
+                        <option value="auto_moto_transport">Auto - moto doprava</option>
+                        <option value="hobby_creative">Hobby & kreativní služby</option>
+                        <option value="law_finance_admin">Právo & finance & administrativa</option>
+                        <option value="pets">Domácí zvířata</option>
+                        <option value="specialized_custom">Specializované služby / na přání</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <textarea id="serviceDescription" name="description" placeholder="Popis služby" rows="4" maxlength="600" required></textarea>
+                    <div class="char-counter"><span id="serviceDescriptionCounter">600</span> znaků zbývá</div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Cena</label>
+                    <div class="price-options">
+                        <label class="price-option">
+                            <input type="radio" name="priceType" value="fixed">
+                            <span class="option-text">Fixní cena</span>
+                        </label>
+                        <label class="price-option">
+                            <input type="radio" name="priceType" value="range">
+                            <span class="option-text">Rozmezí</span>
+                        </label>
+                        <label class="price-option">
+                            <input type="radio" name="priceType" value="negotiable">
+                            <span class="option-text">Dohodou</span>
+                        </label>
+                    </div>
+                    <div id="priceInputs" class="price-inputs" style="display: none;">
+                        <div class="price-unit-selection" style="display: none;">
+                            <label class="form-label">Jednotka ceny</label>
+                            <div class="unit-options">
+                                <label class="unit-option">
+                                    <input type="radio" name="priceUnit" value="hour" checked>
+                                    <span class="option-text">Za hodinu</span>
+                                </label>
+                                <label class="unit-option">
+                                    <input type="radio" name="priceUnit" value="work">
+                                    <span class="option-text">Za odvedenou práci</span>
+                                </label>
+                            </div>
+                        </div>
+                        <input type="text" id="servicePrice" name="price" placeholder="Cena (např. 500 Kč/hod)" style="display: none;">
+                        <input type="text" id="servicePriceFrom" name="priceFrom" placeholder="Od (např. 300 Kč/hod)" style="display: none;">
+                        <input type="text" id="servicePriceTo" name="priceTo" placeholder="Do (např. 800 Kč/hod)" style="display: none;">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <select id="serviceLocation" name="location" required>
+                        <option value="">Vyberte kraj (ČR/SR)</option>
+                        <optgroup label="Česká republika">
+                            <option value="Praha">Hlavní město Praha</option>
+                            <option value="Stredocesky">Středočeský kraj</option>
+                            <option value="Jihocesky">Jihočeský kraj</option>
+                            <option value="Plzensky">Plzeňský kraj</option>
+                            <option value="Karlovarsky">Karlovarský kraj</option>
+                            <option value="Ustecky">Ústecký kraj</option>
+                            <option value="Liberecky">Liberecký kraj</option>
+                            <option value="Kralovehradecky">Královéhradecký kraj</option>
+                            <option value="Pardubicky">Pardubický kraj</option>
+                            <option value="Vysocina">Kraj Vysočina</option>
+                            <option value="Jihomoravsky">Jihomoravský kraj</option>
+                            <option value="Olomoucky">Olomoucký kraj</option>
+                            <option value="Zlinsky">Zlínský kraj</option>
+                            <option value="Moravskoslezsky">Moravskoslezský kraj</option>
+                        </optgroup>
+                        <optgroup label="Slovenská republika">
+                            <option value="Bratislavsky">Bratislavský kraj</option>
+                            <option value="Trnavsky">Trnavský kraj</option>
+                            <option value="Trenciansky">Trenčianský kraj</option>
+                            <option value="Nitriansky">Nitriansky kraj</option>
+                            <option value="Zilinsky">Žilinský kraj</option>
+                            <option value="Banskobystricky">Banskobystrický kraj</option>
+                            <option value="Presovsky">Prešovský kraj</option>
+                            <option value="Kosicky">Košický kraj</option>
+                        </optgroup>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-image"></i> Náhledový obrázek <span class="required">*</span></label>
+                    <input type="file" id="previewImage" name="previewImage" accept="image/*" required>
+                    <div class="image-preview" id="previewImagePreview"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-images"></i> Další fotky (volitelné, max 10)</label>
+                    <input type="file" id="additionalImages" name="additionalImages" accept="image/*" multiple>
+                    <div class="images-grid" id="additionalImagesPreview"></div>
+                </div>
+
+                <div style="display:flex; gap:12px;">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Publikovat inzerát</button>
+                    <a class="btn" href="index.html">Zpět</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module" src="/firebase-init.js"></script>
+    <script src="/auth.js" defer></script>
+    <script src="/script.js" defer></script>
+    <script src="/create-ad.js" defer></script>
+</body>
+</html>
+
+

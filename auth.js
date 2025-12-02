@@ -736,13 +736,9 @@ function showAddServiceButton() {
     let addServiceBtn = document.querySelector('.add-service-btn');
     if (!addServiceBtn) {
         addServiceBtn = document.createElement('a');
-        addServiceBtn.href = '#add-service';
+        addServiceBtn.href = 'create-ad.html';
         addServiceBtn.className = 'btn btn-primary add-service-btn';
         addServiceBtn.innerHTML = '<i class="fas fa-plus"></i> Přidat službu';
-        addServiceBtn.onclick = (e) => {
-            e.preventDefault();
-            showAddServiceModal();
-        };
         
         const heroButtons = document.querySelector('.hero-buttons');
         if (heroButtons) {

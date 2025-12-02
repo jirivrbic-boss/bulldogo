@@ -200,7 +200,7 @@
                                 </optgroup>
                             </select>
                         </div>
-                        <button class="btn-create-ad" onclick="checkAuthForAddService()">
+                        <button class="btn-create-ad" onclick="window.location.href='create-ad.html'">
                             <i class="fas fa-plus"></i>
                             Přidat inzerát
                         </button>
@@ -518,7 +518,7 @@
 							</li>
 						</ul>
 						<div class="promo-cta">
-                            <a class="btn-cta-primary" href="#addServiceModal" onclick="if(typeof showAddServiceModal === 'function') { showAddServiceModal(); } else { const modal = document.getElementById('addServiceModal'); if(modal) { modal.style.display='block'; document.body.style.overflow='hidden'; if(typeof initCharCounter === 'function') { setTimeout(() => { initCharCounter('serviceDescription', 'serviceDescriptionCounter', 600); }, 100); } } } return false;">
+                            <a class="btn-cta-primary" href="create-ad.html">
                                 <i class="fas fa-plus"></i>
                                 Vložit inzerát zdarma
                             </a>
@@ -690,7 +690,7 @@
                         <i class="fas fa-search"></i>
                         Vyhledat inzerát
                     </a>
-                    <a href="#addServiceModal" class="btn-cta-secondary" onclick="if(typeof showAddServiceModal === 'function') { showAddServiceModal(); } else { const modal = document.getElementById('addServiceModal'); if(modal) { modal.style.display='block'; document.body.style.overflow='hidden'; if(typeof initCharCounter === 'function') { setTimeout(() => { initCharCounter('serviceDescription', 'serviceDescriptionCounter', 600); }, 100); } } } return false;">
+                    <a href="create-ad.html" class="btn-cta-secondary">
                         <i class="fas fa-plus"></i>
                         Přidat svůj inzerát
                     </a>
