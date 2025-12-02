@@ -43,8 +43,9 @@ try {
 
     let db;
     try {
-        // Stabilnější v prohlížečích a lokálním vývoji
-        db = initializeFirestore(app, { experimentalAutoDetectLongPolling: true, useFetchStreams: false });
+        // Stabilnější v prohlížečích a na některých doménách (Safari/ITP/CORS)
+        // Vynutit long‑polling místo WebChannel/fetch streams kvůli „Listen/channel … access control checks“
+        db = initializeFirestore(app, { experimentalForceLongPolling: true, useFetchStreams: false });
         console.log('✅ Firebase Firestore inicializován s experimentalAutoDetectLongPolling');
     } catch (err) {
         console.warn('⚠️ Experimental Firestore inicializace selhala, používám standardní:', err);
