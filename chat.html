@@ -26,7 +26,7 @@
 </head>
 <body class="chat-page">
     <!-- Sidebar Navigation -->
-    <nav class="sidebar">
+    <nav class="sidebar" style="display: flex; flex-direction: column;">
         <!-- Logo Section -->
         <div class="sidebar-header">
             <div class="logo">
@@ -96,7 +96,7 @@
         </div>
 
         <!-- Auth Buttons Section (shown when not logged in) -->
-        <div class="auth-section" id="authSection">
+        <div class="auth-section" id="authSection" style="margin-top: auto;">
             <button class="btn-login" onclick="showAuthModal('login')">
                 <i class="fas fa-sign-in-alt"></i>
                 <span>Přihlášení</span>
@@ -108,7 +108,7 @@
         </div>
 
         <!-- User Profile Section (shown when logged in) -->
-        <div class="user-profile-section" id="userProfileSection" style="display: none;">
+        <div class="user-profile-section" id="userProfileSection" style="display: none; margin-top: auto;">
             <button class="btn-profile" onclick="window.location.href='profile.html'">
                 <i class="fas fa-user-circle"></i>
                 <span>Profil</span>
