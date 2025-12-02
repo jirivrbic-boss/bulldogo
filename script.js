@@ -439,7 +439,7 @@ function checkAuthForAddService() {
 function setupLoginCallback() {
     // Store the callback in a global variable
     window.afterLoginCallback = () => {
-        showAddServiceModal();
+        window.location.href = 'create-ad.html';
     };
 }
 
