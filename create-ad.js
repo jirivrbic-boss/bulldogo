@@ -2,30 +2,46 @@
 (function() {
     // Po načtení DOM připravit stránku
     document.addEventListener('DOMContentLoaded', () => {
-        // Gating: vyžaduje přihlášení
-        const ensureAuth = () => {
-            const user = window.firebaseAuth?.currentUser;
-            if (!user) {
-                if (typeof window.showAuthModal === 'function') {
-                    window.afterLoginCallback = () => {
-                        window.location.reload();
-                    };
-                    showAuthModal('login');
-                } else {
-                    alert('Pro vytvoření inzerátu se prosím přihlaste.');
-                    window.location.href = 'index.html';
-                }
-                return false;
-            }
-            return true;
-        };
-
-        // Počkat krátce na inicializaci Firebase a Auth
-        const waitForFirebase = setInterval(() => {
+        // Počkat na Firebase a poté rozhodnout podle onAuthStateChanged
+        const waitForFirebase = setInterval(async () => {
             if (window.firebaseReady && window.firebaseAuth && window.firebaseDb) {
                 clearInterval(waitForFirebase);
-                if (!ensureAuth()) return;
-                initCreateAdPage();
+                try {
+                    const { onAuthStateChanged } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+                    onAuthStateChanged(window.firebaseAuth, (user) => {
+                        if (user) {
+                            // Zavřít případný auth modal, pokud se zobrazil dříve
+                            const authModal = document.getElementById('authModal');
+                            if (authModal) {
+                                authModal.style.display = 'none';
+                                document.body.style.overflow = 'auto';
+                            }
+                            initCreateAdPage();
+                        } else {
+                            // Uživatel není přihlášen – až TEĎ zobrazit login
+                            if (typeof window.showAuthModal === 'function') {
+                                window.afterLoginCallback = () => window.location.reload();
+                                showAuthModal('login');
+                            } else {
+                                alert('Pro vytvoření inzerátu se prosím přihlaste.');
+                                window.location.href = 'index.html';
+                            }
+                        }
+                    });
+                } catch {
+                    // Bezpečný fallback
+                    if (!window.firebaseAuth?.currentUser) {
+                        if (typeof window.showAuthModal === 'function') {
+                            window.afterLoginCallback = () => window.location.reload();
+                            showAuthModal('login');
+                        } else {
+                            alert('Pro vytvoření inzerátu se prosím přihlaste.');
+                            window.location.href = 'index.html';
+                        }
+                    } else {
+                        initCreateAdPage();
+                    }
+                }
             }
         }, 100);
         setTimeout(() => clearInterval(waitForFirebase), 15000);
