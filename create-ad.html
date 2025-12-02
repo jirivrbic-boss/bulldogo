@@ -159,13 +159,21 @@
     </nav>
 
     <div class="main-content" style="padding: 24px;">
-        <h1 class="services-title" style="margin-bottom: 12px;">
-            <span class="title-text"><i class="fas fa-plus"></i> Vytvořit inzerát</span>
-            <span class="title-accent"></span>
-        </h1>
-        <div class="guide">
-            Vyplňte název, kategorii, popis, cenu, kraj a nahrajte náhledový obrázek. Vpravo vidíte náhled karty inzerátu. Položky označené <span class="required-badge">*</span> jsou povinné.
-        </div>
+        <!-- Hero ve stylu ostatních stránek -->
+        <section class="page-hero" style="margin-bottom:16px;">
+            <div class="container">
+                <div class="page-hero-card">
+                    <div class="page-hero-inner">
+                        <h2 class="services-title"><span class="title-text">Vytvořit inzerát</span><span class="title-accent"></span></h2>
+                        <p class="page-hero-subtitle">Vyplňte údaje a publikujte svou službu</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <div class="container">
+            <div class="guide">
+                Vyplňte název, kategorii, popis, cenu, kraj a nahrajte náhledový obrázek. Vpravo vidíte náhled karty inzerátu. Položky označené <span class="required-badge">*</span> jsou povinné.
+            </div>
 
         <div class="ad-create-layout">
             <!-- Wrapper s ID jako původní modal kvůli kompatibilitě s existujícím kódem -->
@@ -317,6 +325,7 @@
                 </div>
             </aside>
         </div>
+        </div> <!-- /container -->
     </div>
 
     <script type="module" src="/firebase-init.js"></script>
