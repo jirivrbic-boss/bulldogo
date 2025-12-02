@@ -85,6 +85,9 @@
 
         // Náhled obrázku v pravé kartě
         const previewImageInput = document.getElementById('previewImage');
+        if (imgPreview && !imgPreview.getAttribute('src')) {
+            imgPreview.setAttribute('src', 'fotky/team.jpg');
+        }
         if (previewImageInput && imgPreview) {
             previewImageInput.addEventListener('change', function(e) {
                 const file = e.target.files?.[0];
