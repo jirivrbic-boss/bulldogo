@@ -157,11 +157,13 @@ async function igRenderRightAds() {
 		const items = [];
 		snap.forEach(doc => {
 			const d = doc.data() || {};
+			const userRef = doc.ref.parent?.parent;
+			const userId = userRef?.id || '';
 			const title = d.title || 'Bez názvu';
 			const images = Array.isArray(d.images) ? d.images : [];
 			const preview = images.find(i => i?.isPreview)?.url || images[0]?.url || 'fotky/bulldogo-logo.png';
 			items.push(`
-				<div class="ig-conv" data-ad-id="${doc.id}">
+				<div class="ig-conv" data-ad-id="${doc.id}" data-user-id="${userId}">
 					<div class="ig-avatar"><img src="${preview}" alt="${title}"></div>
 					<div>
 						<div class="ig-title">${title}</div>
@@ -172,10 +174,14 @@ async function igRenderRightAds() {
 			`);
 		});
 		el.innerHTML = items.join('');
-		// Klik na inzerát otevře profilový modal s připnutým inzerátem (pokud bude navázáno)
+		// Klik na inzerát otevře detail inzerátu
 		Array.from(el.querySelectorAll('.ig-conv')).forEach(node => {
 			node.addEventListener('click', () => {
-				// TODO: napojit na detail inzerátu; prozatím neakce
+				const adId = node.getAttribute('data-ad-id') || '';
+				const userId = node.getAttribute('data-user-id') || '';
+				if (adId && userId) {
+					window.location.href = `ad-detail.html?id=${encodeURIComponent(adId)}&userId=${encodeURIComponent(userId)}`;
+				}
 			});
 		});
 	} catch (e) {
