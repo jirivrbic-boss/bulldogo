@@ -1366,11 +1366,12 @@ async function addService(serviceData) {
         }
 
         // Vytvořit službu s URL obrázků
+        const { serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
         const serviceToSave = {
             ...serviceData,
             userId: authCurrentUser.uid,
             userEmail: authCurrentUser.email,
-            createdAt: new Date(),
+            createdAt: serverTimestamp(),
             status: 'active',
             images: uploadedImages
         };
