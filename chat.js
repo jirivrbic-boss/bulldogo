@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 	igLoadMockData();
 	igHandleDeepLink();
 	igRenderConversations();
-	igRenderRightLogos();
+	igRenderRightAds();
 	igUpdateGating();
 });
 
@@ -141,31 +141,56 @@ function igHandleDeepLink() {
 	}
 }
 
-/** Pravý panel – loga Bulldogo **/
-function igRenderRightLogos() {
-	const el = igQ('igRightLogos');
+/** Pravý panel – 3 nejnovější inzeráty z Firestore (collectionGroup 'inzeraty') **/
+async function igRenderRightAds() {
+	const el = igQ('igRightAds');
 	if (!el) return;
-	const items = Array.from({ length: 16 }).map((_, i) => `
-		<div class="ig-conv" data-id="logo_${i}">
-			<div class="ig-avatar"><img src="fotky/bulldogo-logo.png" alt="Bulldogo logo"></div>
-			<div>
-				<div class="ig-title">Bulldogo</div>
-				<div class="ig-last">Logo ${i + 1}</div>
-			</div>
-			<div class="ig-time"></div>
-		</div>
-	`).join('');
-	el.innerHTML = items;
-	// Vyhledávání vpravo (filtrování podle "Logo X")
-	const search = igQ('igRightSearch');
-	if (search) {
-		search.addEventListener('input', () => {
-			const q = (search.value || '').toLowerCase();
-			Array.from(el.querySelectorAll('.ig-conv')).forEach(node => {
-				const txt = node.textContent.toLowerCase();
-				node.style.display = txt.includes(q) ? '' : 'none';
+	try {
+		if (!window.firebaseDb) throw new Error('Firestore není inicializován');
+		const { collectionGroup, getDocs, query, orderBy, limit } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+		const q = query(collectionGroup(window.firebaseDb, 'inzeraty'), orderBy('createdAt', 'desc'), limit(3));
+		const snap = await getDocs(q);
+		if (snap.empty) {
+			el.innerHTML = '<div style="padding:12px; color:#6b7280;">Zatím žádné inzeráty</div>';
+			return;
+		}
+		const items = [];
+		snap.forEach(doc => {
+			const d = doc.data() || {};
+			const title = d.title || 'Bez názvu';
+			const images = Array.isArray(d.images) ? d.images : [];
+			const preview = images.find(i => i?.isPreview)?.url || images[0]?.url || 'fotky/bulldogo-logo.png';
+			items.push(`
+				<div class="ig-conv" data-ad-id="${doc.id}">
+					<div class="ig-avatar"><img src="${preview}" alt="${title}"></div>
+					<div>
+						<div class="ig-title">${title}</div>
+						<div class="ig-last">${(d.location || '')}</div>
+					</div>
+					<div class="ig-time"></div>
+				</div>
+			`);
+		});
+		el.innerHTML = items.join('');
+		// Klik na inzerát otevře profilový modal s připnutým inzerátem (pokud bude navázáno)
+		Array.from(el.querySelectorAll('.ig-conv')).forEach(node => {
+			node.addEventListener('click', () => {
+				// TODO: napojit na detail inzerátu; prozatím neakce
 			});
 		});
+	} catch (e) {
+		console.warn('Pravý panel – nepodařilo se načíst inzeráty:', e);
+		// Fallback – 3 statické karty s logem
+		el.innerHTML = Array.from({ length: 3 }).map((_, i) => `
+			<div class="ig-conv">
+				<div class="ig-avatar"><img src="fotky/bulldogo-logo.png" alt="Bulldogo logo"></div>
+				<div>
+					<div class="ig-title">Bulldogo</div>
+					<div class="ig-last">Ukázka ${i + 1}</div>
+				</div>
+				<div class="ig-time"></div>
+			</div>
+		`).join('');
 	}
 }
 
