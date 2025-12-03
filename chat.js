@@ -206,8 +206,8 @@ async function igRenderRightAds() {
 			el.innerHTML = '<div style="padding:12px; color:#6b7280;">Zatím žádné inzeráty</div>';
 			return;
 		}
-		const items = [];
-		snap.forEach(doc => {
+        const items = [];
+        snap.forEach(doc => {
 			const d = doc.data() || {};
 			const userRef = doc.ref.parent?.parent;
 			const userId = userRef?.id || '';
@@ -217,29 +217,34 @@ async function igRenderRightAds() {
 			const metaLeft = [d.location || ''].filter(Boolean).join(' • ');
 			const price = d.price ? `<div class="ad-price">${d.price}</div>` : '';
 			const topStyle = d.isTop ? 'style="border: 3px solid #ff8a00 !important; box-shadow: 0 8px 28px rgba(255, 138, 0, 0.6), 0 0 0 2px rgba(255, 138, 0, 0.4) !important;"' : '';
-			items.push(`
-				<article class="ad-card${d.isTop ? ' is-top' : ''}" data-ad-id="${doc.id}" data-user-id="${userId}" ${topStyle}>
-					<div class="ad-thumb" onclick="window.location.href='ad-detail.html?id=${encodeURIComponent(doc.id)}&userId=${encodeURIComponent(userId)}'">
-						<img src="${preview}" alt="${title}" loading="lazy" decoding="async">
-					</div>
-					<div class="ad-body">
-						<h3 class="ad-title">${title}</h3>
-						<div class="ad-meta"><span>${metaLeft}</span>${d.category ? ` • <span>${d.category}</span>` : ''}</div>
-						${price}
-					</div>
-					<div class="ad-actions">
-						<button class="btn-contact" title="Kontaktovat" onclick="contactSeller('${doc.id}', '${userId}'); event.stopPropagation();">
-							<i class="fas fa-comment"></i>
-						</button>
-						<button class="btn-profile" title="Profil" onclick="window.location.href='profile.html?uid=${encodeURIComponent(userId)}'; event.stopPropagation();">
-							<i class="fas fa-user"></i>
-						</button>
-						<button class="btn-info" title="Info" onclick="window.location.href='ad-detail.html?id=${encodeURIComponent(doc.id)}&userId=${encodeURIComponent(userId)}'; event.stopPropagation();">
-							<i class="fas fa-info"></i>
-						</button>
-					</div>
-				</article>
-			`);
+            // Normalizovaný objekt ve formátu „Služby“
+            const serviceObj = {
+                id: doc.id,
+                userId,
+                title,
+                location: d.location || '',
+                category: d.category || '',
+                price: d.price || '',
+                isTop: !!d.isTop,
+                images: images.length ? images : [{ url: preview }]
+            };
+            if (typeof window.createAdCard === 'function') {
+                items.push(window.createAdCard(serviceObj, false));
+            } else {
+                // Fallback na lokální kartu
+                items.push(`
+                    <article class="ad-card${d.isTop ? ' is-top' : ''}" data-ad-id="${doc.id}" data-user-id="${userId}" ${topStyle}>
+                        <div class="ad-thumb" onclick="window.location.href='ad-detail.html?id=${encodeURIComponent(doc.id)}&userId=${encodeURIComponent(userId)}'">
+                            <img src="${preview}" alt="${title}" loading="lazy" decoding="async">
+                        </div>
+                        <div class="ad-body">
+                            <h3 class="ad-title">${title}</h3>
+                            <div class="ad-meta"><span>${metaLeft}</span>${d.category ? ` • <span>${d.category}</span>` : ''}</div>
+                            ${price}
+                        </div>
+                    </article>
+                `);
+            }
 		});
 		el.innerHTML = items.join('');
 		// Klik na kartu mimo tlačítka vede na detail
