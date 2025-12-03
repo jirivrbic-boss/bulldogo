@@ -1,24 +1,27 @@
 /* ===== Instagram-like chat (desktop layout, responsive) ===== */
-.ig-chat { display: grid; grid-template-columns: 320px 1fr; height: calc(100vh - 40px); background: #fff; border-radius: 16px; box-shadow: 0 20px 40px rgba(17,24,39,0.08); overflow: hidden; }
+.ig-chat { display: grid; grid-template-columns: 320px 1fr 320px; height: calc(100vh - 40px); background: #fff; border-radius: 16px; box-shadow: 0 20px 40px rgba(17,24,39,0.08); overflow: hidden; }
 .ig-sidebar { border-right: 1px solid rgba(0,0,0,0.06); display: flex; flex-direction: column; min-width: 0; }
+.ig-sidebar-right { border-right: 0; border-left: 1px solid rgba(0,0,0,0.06); }
 .ig-sidebar-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; }
-.ig-icon-btn { width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; border-radius: 10px; background: #f3f4f6; color: #111827; }
+.ig-icon-btn { width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; border-radius: 10px; background: #fff8eb; color: #f77c00; border: 1px solid #ffe0b2; }
+.ig-icon-btn:hover { background: #fff3de; }
 .ig-sidebar-search { display: flex; align-items: center; gap: 8px; padding: 8px 14px; }
 .ig-sidebar-search input { width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 10px; outline: none; }
 .ig-conversations { overflow: auto; padding: 8px 4px; }
 .ig-conv { display: grid; grid-template-columns: 48px 1fr auto; gap: 10px; padding: 10px 12px; align-items: center; border-radius: 12px; cursor: pointer; }
-.ig-conv:hover { background: #f8fafc; }
-.ig-conv.active { background: #eef2ff; }
+.ig-conv:hover { background: #fff8eb; }
+.ig-conv.active { background: #fff1db; }
 .ig-conv .ig-avatar { width: 44px; height: 44px; border-radius: 50%; background: #e5e7eb; display: flex; align-items: center; justify-content: center; color: #6b7280; }
+.ig-conv .ig-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
 .ig-conv .ig-title { font-weight: 700; color: #111827; }
 .ig-conv .ig-last { font-size: 12px; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ig-conv .ig-time { font-size: 12px; color: #9ca3af; }
 
 .ig-main { display: flex; flex-direction: column; min-width: 0; }
 .ig-main-header { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid rgba(0,0,0,0.06); }
-.ig-back-btn { display: none; width: 36px; height: 36px; align-items: center; justify-content: center; border-radius: 10px; background: #f3f4f6; color: #111827; }
+.ig-back-btn { display: none; width: 36px; height: 36px; align-items: center; justify-content: center; border-radius: 10px; background: #fff8eb; color: #f77c00; border: 1px solid #ffe0b2; }
 .ig-user { display: flex; align-items: center; gap: 10px; }
-.ig-user .ig-avatar { width: 40px; height: 40px; border-radius: 50%; background: #e5e7eb; display: flex; align-items: center; justify-content: center; color: #6b7280; }
+.ig-user .ig-avatar { width: 40px; height: 40px; border-radius: 50%; background: #fff8eb; display: flex; align-items: center; justify-content: center; color: #f59e0b; border: 1px solid #ffe0b2; }
 .ig-user-name { font-weight: 800; color: #111827; }
 .ig-user-status { font-size: 12px; color: #6b7280; }
 .ig-actions { display: flex; align-items: center; gap: 8px; }
@@ -30,9 +33,12 @@
 .ig-empty { margin: 24px; color: #6b7280; }
 .ig-row { display: grid; grid-template-columns: 40px 1fr; gap: 10px; margin-bottom: 10px; }
 .ig-row.mine { grid-template-columns: 1fr 40px; }
-.ig-row.mine .ig-bubble { order: 1; background: #111827; color: #fff; }
-.ig-row.mine .ig-avatar { order: 2; }
-.ig-bubble { background: #f3f4f6; border-radius: 20px; padding: 10px 14px; max-width: 70%; position: relative; }
+.ig-row .ig-bubble { justify-self: start; }
+.ig-row .ig-avatar { justify-self: start; }
+.ig-row.mine .ig-bubble { order: 1; justify-self: end; background: linear-gradient(135deg, #f77c00 0%, #fdf002 100%) !important; color: #111827 !important; }
+.ig-row.mine .ig-avatar { order: 2; justify-self: end; }
+.ig-messages .ig-row:not(.mine) .ig-bubble { background: #fff1db !important; border: 1px solid #ffd89a !important; color: #111827 !important; }
+.ig-bubble { background: #fff8eb; border: 1px solid #ffe0b2; color: #111827; border-radius: 20px; padding: 10px 14px; max-width: 70%; position: relative; }
 .ig-bubble .ig-meta { font-size: 11px; opacity: .7; margin-top: 4px; }
 .ig-images { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-top: 6px; }
 .ig-images img { width: 100%; height: 140px; object-fit: cover; border-radius: 10px; }
@@ -42,7 +48,9 @@
 .ig-file-preview img { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; }
 .ig-input-row { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; }
 .ig-input-row input[type="text"] { width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 10px; outline: none; }
-.ig-attach { display: inline-flex; width: 38px; height: 38px; align-items: center; justify-content: center; background: #f3f4f6; border-radius: 10px; color: #111827; cursor: pointer; }
+.ig-input-row input[type="text"]:focus { border-color: #f59e0b; box-shadow: 0 0 0 2px rgba(245,158,11,.15); }
+.ig-attach { display: inline-flex; width: 38px; height: 38px; align-items: center; justify-content: center; background: #fff8eb; border-radius: 10px; color: #f77c00; cursor: pointer; border: 1px solid #ffe0b2; }
+.ig-attach:hover { background: #fff3de; }
 
 .ig-login-prompt { display: flex; align-items: center; gap: 10px; justify-content: center; border-top: 1px solid rgba(0,0,0,0.06); background: #fff8eb; padding: 12px; }
 .ig-login-actions { display: flex; gap: 8px; }
@@ -50,6 +58,7 @@
 @media (max-width: 900px) {
   .ig-chat { grid-template-columns: 1fr; height: calc(100vh - 20px); border-radius: 12px; }
   .ig-sidebar { display: none; }
+  .ig-sidebar-right { display: none; }
   .ig-main-header .ig-back-btn { display: inline-flex; }
   .ig-bubble { max-width: 100%; }
   .ig-images img { height: 100px; }

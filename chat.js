@@ -37,6 +37,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 	igLoadMockData();
 	igHandleDeepLink();
 	igRenderConversations();
+	igRenderRightLogos();
 	igUpdateGating();
 });
 
@@ -137,6 +138,34 @@ function igHandleDeepLink() {
 			}
 		}
 		igOpenConversation(conv.id);
+	}
+}
+
+/** Pravý panel – loga Bulldogo **/
+function igRenderRightLogos() {
+	const el = igQ('igRightLogos');
+	if (!el) return;
+	const items = Array.from({ length: 16 }).map((_, i) => `
+		<div class="ig-conv" data-id="logo_${i}">
+			<div class="ig-avatar"><img src="fotky/bulldogo-logo.png" alt="Bulldogo logo"></div>
+			<div>
+				<div class="ig-title">Bulldogo</div>
+				<div class="ig-last">Logo ${i + 1}</div>
+			</div>
+			<div class="ig-time"></div>
+		</div>
+	`).join('');
+	el.innerHTML = items;
+	// Vyhledávání vpravo (filtrování podle "Logo X")
+	const search = igQ('igRightSearch');
+	if (search) {
+		search.addEventListener('input', () => {
+			const q = (search.value || '').toLowerCase();
+			Array.from(el.querySelectorAll('.ig-conv')).forEach(node => {
+				const txt = node.textContent.toLowerCase();
+				node.style.display = txt.includes(q) ? '' : 'none';
+			});
+		});
 	}
 }
 
