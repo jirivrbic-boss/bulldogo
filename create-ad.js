@@ -1,5 +1,23 @@
 /* eslint-disable no-console */
 (function() {
+    // Globální pomocné funkce pro publikovat tlačítko a validaci (dostupné i před init)
+    function disablePublish(disabled){
+        const btn = document.getElementById('publishSideBtn');
+        if (!btn) return;
+        btn.disabled = !!disabled;
+        btn.style.opacity = disabled ? .6 : 1;
+    }
+    function validateRequired(){
+        const titleEl = document.getElementById('serviceTitle');
+        const catEl = document.getElementById('serviceCategory');
+        const locEl = document.getElementById('serviceLocation');
+        const desc = document.getElementById('serviceDescription');
+        const noPrev = !!document.getElementById('noPreviewImage')?.checked;
+        const previewInput = document.getElementById('previewImage');
+        const ok = !!titleEl?.value && !!catEl?.value && !!locEl?.value && !!desc?.value && (noPrev || !!previewInput?.files?.[0]);
+        disablePublish(!ok);
+        return ok;
+    }
     // Po načtení DOM připravit stránku
     document.addEventListener('DOMContentLoaded', () => {
         // Inicializace UI prvků nezávislá na Firebase (aby price inputs fungovaly hned)
@@ -298,18 +316,7 @@
             });
         }
 
-        // Disablovat publish, dokud nejsou povinné položky
-        const publishBtn = document.getElementById('publishSideBtn');
-        function disablePublish(disabled){
-            if (!publishBtn) return;
-            publishBtn.disabled = !!disabled;
-            publishBtn.style.opacity = disabled ? .6 : 1;
-        }
-        function validateRequired(){
-            const noPrev = !!noPreviewCheckbox?.checked;
-            const ok = !!titleEl?.value && !!catEl?.value && !!locEl?.value && !!desc?.value && (noPrev || !!previewImageInput?.files?.[0]);
-            disablePublish(!ok);
-        }
+        // Disablovat publish, dokud nejsou povinné položky (globální helper již existuje)
         ;['input','change'].forEach(evt=>{
             titleEl?.addEventListener(evt, validateRequired);
             catEl?.addEventListener(evt, validateRequired);
