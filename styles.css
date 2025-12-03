@@ -13,6 +13,11 @@
 .ig-conv.active { background: #fff1db; }
 .ig-conv .ig-avatar { width: 44px; height: 44px; border-radius: 50%; background: #e5e7eb; display: flex; align-items: center; justify-content: center; color: #6b7280; }
 .ig-conv .ig-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+
+/* Pravý panel – karty inzerátů v úzkém sloupci */
+.ig-sidebar-right .ad-card { margin: 10px; }
+.ig-sidebar-right .ad-card .ad-thumb img { height: 140px; object-fit: cover; }
+.ig-sidebar-right .ad-card .ad-actions { margin-top: 10px; }
 .ig-conv .ig-title { font-weight: 700; color: #111827; }
 .ig-conv .ig-last { font-size: 12px; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ig-conv .ig-time { font-size: 12px; color: #9ca3af; }

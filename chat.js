@@ -162,26 +162,40 @@ async function igRenderRightAds() {
 			const title = d.title || 'Bez názvu';
 			const images = Array.isArray(d.images) ? d.images : [];
 			const preview = images.find(i => i?.isPreview)?.url || images[0]?.url || 'fotky/bulldogo-logo.png';
+			const metaLeft = [d.location || ''].filter(Boolean).join(' • ');
+			const price = d.price ? `<div class="ad-price">${d.price}</div>` : '';
+			const topStyle = d.isTop ? 'style="border: 3px solid #ff8a00 !important; box-shadow: 0 8px 28px rgba(255, 138, 0, 0.6), 0 0 0 2px rgba(255, 138, 0, 0.4) !important;"' : '';
 			items.push(`
-				<div class="ig-conv" data-ad-id="${doc.id}" data-user-id="${userId}">
-					<div class="ig-avatar"><img src="${preview}" alt="${title}"></div>
-					<div>
-						<div class="ig-title">${title}</div>
-						<div class="ig-last">${(d.location || '')}</div>
+				<article class="ad-card${d.isTop ? ' is-top' : ''}" data-ad-id="${doc.id}" data-user-id="${userId}" ${topStyle}>
+					<div class="ad-thumb" onclick="window.location.href='ad-detail.html?id=${encodeURIComponent(doc.id)}&userId=${encodeURIComponent(userId)}'">
+						<img src="${preview}" alt="${title}" loading="lazy" decoding="async">
 					</div>
-					<div class="ig-time"></div>
-				</div>
+					<div class="ad-body">
+						<h3 class="ad-title">${title}</h3>
+						<div class="ad-meta"><span>${metaLeft}</span>${d.category ? ` • <span>${d.category}</span>` : ''}</div>
+						${price}
+					</div>
+					<div class="ad-actions">
+						<button class="btn-contact" title="Kontaktovat" onclick="contactSeller('${doc.id}', '${userId}', '${title.replace(/'/g, '\\'')}'); event.stopPropagation();">
+							<i class="fas fa-comment"></i>
+						</button>
+						<button class="btn-profile" title="Profil" onclick="window.location.href='profile.html?uid=${encodeURIComponent(userId)}'; event.stopPropagation();">
+							<i class="fas fa-user"></i>
+						</button>
+						<button class="btn-info" title="Info" onclick="window.location.href='ad-detail.html?id=${encodeURIComponent(doc.id)}&userId=${encodeURIComponent(userId)}'; event.stopPropagation();">
+							<i class="fas fa-info"></i>
+						</button>
+					</div>
+				</article>
 			`);
 		});
 		el.innerHTML = items.join('');
-		// Klik na inzerát otevře detail inzerátu
-		Array.from(el.querySelectorAll('.ig-conv')).forEach(node => {
+		// Klik na kartu mimo tlačítka vede na detail
+		Array.from(el.querySelectorAll('.ad-card')).forEach(node => {
 			node.addEventListener('click', () => {
 				const adId = node.getAttribute('data-ad-id') || '';
 				const userId = node.getAttribute('data-user-id') || '';
-				if (adId && userId) {
-					window.location.href = `ad-detail.html?id=${encodeURIComponent(adId)}&userId=${encodeURIComponent(userId)}`;
-				}
+				if (adId && userId) window.location.href = `ad-detail.html?id=${encodeURIComponent(adId)}&userId=${encodeURIComponent(userId)}`;
 			});
 		});
 	} catch (e) {
