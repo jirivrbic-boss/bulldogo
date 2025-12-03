@@ -290,6 +290,10 @@
 
                     <div class="form-group">
                         <label class="form-label"><i class="fas fa-image"></i> Náhledový obrázek <span class="required-badge">*</span></label>
+                        <div style="display:flex; align-items:center; gap:12px; margin:6px 0 8px 0;">
+                            <input type="checkbox" id="noPreviewImage" />
+                            <label for="noPreviewImage" style="margin:0; font-size:14px; color:#374151;">Přidat bez náhledového obrázku (použít výchozí logo)</label>
+                        </div>
                         <input type="file" id="previewImage" name="previewImage" accept="image/*" required>
                         <div class="image-preview" id="previewImagePreview"></div>
                     </div>

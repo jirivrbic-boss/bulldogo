@@ -1291,7 +1291,7 @@ async function addService(serviceData) {
             });
         }
         
-        // Nahrát náhledový obrázek
+        // Nahrát náhledový obrázek, nebo použít výchozí URL bez uploadu
         if (serviceData.previewImage) {
             try {
                 console.log('📸 Nahrávám náhledový obrázek...', {
@@ -1332,6 +1332,12 @@ async function addService(serviceData) {
                 showMessage(errorMessage, 'error');
                 throw uploadError; // Přerušit proces přidávání služby
             }
+        } else if (serviceData.defaultPreviewUrl) {
+            uploadedImages.push({
+                url: serviceData.defaultPreviewUrl,
+                isPreview: true,
+                name: 'default'
+            });
         }
         
         // Nahrát další obrázky

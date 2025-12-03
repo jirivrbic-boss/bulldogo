@@ -85,8 +85,9 @@
 
         // Náhled obrázku v pravé kartě
         const previewImageInput = document.getElementById('previewImage');
+        const noPreviewCheckbox = document.getElementById('noPreviewImage');
         if (imgPreview && !imgPreview.getAttribute('src')) {
-            imgPreview.setAttribute('src', 'fotky/team.jpg');
+            imgPreview.setAttribute('src', '/fotky/bulldogo-logo.png');
         }
         if (previewImageInput && imgPreview) {
             previewImageInput.addEventListener('change', function(e) {
@@ -96,6 +97,22 @@
                 reader.onload = (ev) => { imgPreview.src = ev.target.result; };
                 reader.readAsDataURL(file);
             });
+        }
+        if (noPreviewCheckbox && previewImageInput && imgPreview) {
+            const updateNoPreviewState = () => {
+                const checked = !!noPreviewCheckbox.checked;
+                previewImageInput.required = !checked;
+                if (checked) {
+                    imgPreview.src = '/fotky/bulldogo-logo.png';
+                } else {
+                    if (!previewImageInput.files?.[0]) {
+                        imgPreview.src = '/fotky/bulldogo-logo.png';
+                    }
+                }
+                validateRequired();
+            };
+            noPreviewCheckbox.addEventListener('change', updateNoPreviewState);
+            updateNoPreviewState();
         }
 
         // Přepínání cen
@@ -168,11 +185,17 @@
 
                 const previewImage = document.getElementById('previewImage');
                 const additionalImages = document.getElementById('additionalImages');
-                if (!previewImage?.files?.[0]) {
-                    alert('Náhledový obrázek je povinný.');
-                    return;
+                const noPreview = !!noPreviewCheckbox?.checked;
+                if (!noPreview) {
+                    if (!previewImage?.files?.[0]) {
+                        alert('Náhledový obrázek je povinný (nebo zaškrtněte volbu bez náhledu).');
+                        return;
+                    }
+                    data.previewImage = previewImage.files[0];
+                } else {
+                    // použít výchozí logo, neuploadovat do Storage
+                    data.defaultPreviewUrl = '/fotky/bulldogo-logo.png';
                 }
-                data.previewImage = previewImage.files[0];
                 if (additionalImages?.files?.length) {
                     if (additionalImages.files.length > 10) {
                         alert('Můžete nahrát maximálně 10 dalších fotek.');
