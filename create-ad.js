@@ -116,8 +116,8 @@
         }
 
         // Přepínání cen
-        const priceInputs = document.getElementById('priceInputs');
-        const unitSel = document.querySelector('.price-unit-selection');
+        const priceInputs = document.querySelector('.price-inline .inputs');
+        const unitSel = document.getElementById('unitPills');
         const p = document.getElementById('servicePrice');
         const pf = document.getElementById('servicePriceFrom');
         const pt = document.getElementById('servicePriceTo');
@@ -128,7 +128,7 @@
             const sel = document.querySelector('input[name=\"priceType\"]:checked');
             if (!sel) { if (priceInputs) priceInputs.style.display = 'none'; return; }
             if (priceInputs) priceInputs.style.display = 'block';
-            const unitHint = document.getElementById('priceUnitHint');
+            const unitHint = null;
             if (p && pf && pt && unitSel) {
                 p.style.display = 'none'; pf.style.display = 'none'; pt.style.display = 'none'; unitSel.style.display = 'none';
                 p.required = false; pf.required = false; pt.required = false;
@@ -148,7 +148,7 @@
                 }
                 updatePreview();
             }
-            if (unitHint) unitHint.style.display = sel?.value === 'negotiable' ? 'none' : '';
+            if (unitSel) unitSel.style.display = sel?.value === 'negotiable' ? 'none' : unitSel.style.display;
         }
         function updatePlaceholders() {
             const unit = (document.querySelector('input[name=\"priceUnit\"]:checked')?.value || 'hour');

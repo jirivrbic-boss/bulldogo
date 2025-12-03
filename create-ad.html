@@ -92,6 +92,45 @@
             padding:12px 14px;
             font-size:14px;
         }
+        /* Price inline row */
+        .price-inline{
+            display:flex;
+            flex-wrap:wrap;
+            align-items:center;
+            gap:12px;
+        }
+        .price-inline .radio-group{
+            display:flex;
+            gap:10px;
+            align-items:center;
+        }
+        .price-inline .inputs{
+            display:flex;
+            gap:10px;
+            align-items:center;
+        }
+        .pill-group{
+            display:flex;
+            gap:8px;
+            align-items:center;
+        }
+        .pill-group label{
+            display:inline-flex;
+            align-items:center;
+            gap:6px;
+            padding:6px 10px;
+            border:1px solid #e5e7eb;
+            border-radius:9999px;
+            cursor:pointer;
+            font-size:13px;
+            color:#374151;
+            background:#fff;
+        }
+        .pill-group input[type="radio"]{ display:none; }
+        .pill-group input[type="radio"]:checked + span{
+            color:#111827;
+            font-weight:600;
+        }
     </style>
 </head>
 <body>
@@ -216,41 +255,22 @@
 
                     <div class="form-group">
                         <label class="form-label">Cena</label>
-                        <div class="form-hint">Zvol typ ceny a případně jednotku. Částky zadávej jako čísla (bez „Kč“).</div>
-                        <div class="price-options">
-                            <label class="price-option">
-                                <input type="radio" name="priceType" value="fixed">
-                                <span class="option-text">Fixní cena</span>
-                            </label>
-                            <label class="price-option">
-                                <input type="radio" name="priceType" value="range">
-                                <span class="option-text">Rozmezí</span>
-                            </label>
-                            <label class="price-option">
-                                <input type="radio" name="priceType" value="negotiable">
-                                <span class="option-text">Dohodou</span>
-                            </label>
-                        </div>
-                        <div id="priceInputs" class="price-inputs" style="display: none;">
-                            <div class="price-unit-selection" style="display: none;">
-                                <label class="form-label">Jednotka ceny</label>
-                                <div class="unit-options">
-                                    <label class="unit-option">
-                                        <input type="radio" name="priceUnit" value="hour" checked>
-                                        <span class="option-text">Za hodinu</span>
-                                    </label>
-                                    <label class="unit-option">
-                                        <input type="radio" name="priceUnit" value="work">
-                                        <span class="option-text">Za odvedenou práci</span>
-                                    </label>
-                                </div>
+                        <div class="form-hint">Vyber typ ceny a zadej částky (bez „Kč“). Pak vyber jednotku.</div>
+                        <div class="price-inline">
+                            <div class="radio-group">
+                                <label><input type="radio" name="priceType" value="fixed"> Fixní</label>
+                                <label><input type="radio" name="priceType" value="range"> Rozmezí</label>
+                                <label><input type="radio" name="priceType" value="negotiable"> Dohodou</label>
                             </div>
-                            <div class="field-row">
-                                <input type="number" min="0" step="1" id="servicePrice" name="price" placeholder="Cena (např. 500)" style="display: none;">
-                                <input type="number" min="0" step="1" id="servicePriceFrom" name="priceFrom" placeholder="Od (např. 300)" style="display: none;">
-                                <input type="number" min="0" step="1" id="servicePriceTo" name="priceTo" placeholder="Do (např. 800)" style="display: none;">
+                            <div class="inputs">
+                                <input type="number" min="0" step="1" id="servicePrice" name="price" placeholder="Cena" style="display:none; width:120px;">
+                                <input type="number" min="0" step="1" id="servicePriceFrom" name="priceFrom" placeholder="Od" style="display:none; width:120px;">
+                                <input type="number" min="0" step="1" id="servicePriceTo" name="priceTo" placeholder="Do" style="display:none; width:120px;">
                             </div>
-                            <div class="form-hint" id="priceUnitHint" style="display:none;">K výsledné ceně se automaticky doplní „Kč“ a zvolená jednotka.</div>
+                            <div class="pill-group" id="unitPills" style="display:none;">
+                                <label><input type="radio" name="priceUnit" value="hour" checked><span>Kč / hod</span></label>
+                                <label><input type="radio" name="priceUnit" value="work"><span>Kč / práci</span></label>
+                            </div>
                         </div>
                     </div>
 
