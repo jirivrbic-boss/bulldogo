@@ -122,7 +122,15 @@
         const pf = document.getElementById('servicePriceFrom');
         const pt = document.getElementById('servicePriceTo');
         const priceRadios = document.querySelectorAll('input[name=\"priceType\"]');
-        priceRadios.forEach(r => r.addEventListener('change', onPriceTypeChange));
+        priceRadios.forEach(r => {
+            r.addEventListener('change', onPriceTypeChange);
+            r.addEventListener('click', onPriceTypeChange);
+        });
+        // Výchozí stav: pokud není nic vybráno, zvolit Fixní
+        if (!document.querySelector('input[name=\"priceType\"]:checked')) {
+            const fallback = document.getElementById('priceTypeFixed');
+            if (fallback) { fallback.checked = true; }
+        }
         onPriceTypeChange();
         function onPriceTypeChange() {
             const sel = document.querySelector('input[name=\"priceType\"]:checked');
@@ -148,7 +156,7 @@
                 }
                 updatePreview();
             }
-            if (unitSel) unitSel.style.display = sel?.value === 'negotiable' ? 'none' : unitSel.style.display;
+            if (unitSel) unitSel.style.display = sel?.value === 'negotiable' ? 'none' : 'flex';
         }
         function updatePlaceholders() {
             const unit = (document.querySelector('input[name=\"priceUnit\"]:checked')?.value || 'hour');
