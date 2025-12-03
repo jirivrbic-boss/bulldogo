@@ -228,7 +228,7 @@ async function igRenderRightAds() {
 						${price}
 					</div>
 					<div class="ad-actions">
-						<button class="btn-contact" title="Kontaktovat" onclick="contactSeller('${doc.id}', '${userId}', '${title.replace(/'/g, '\\'')}'); event.stopPropagation();">
+						<button class="btn-contact" title="Kontaktovat" onclick="contactSeller('${doc.id}', '${userId}'); event.stopPropagation();">
 							<i class="fas fa-comment"></i>
 						</button>
 						<button class="btn-profile" title="Profil" onclick="window.location.href='profile.html?uid=${encodeURIComponent(userId)}'; event.stopPropagation();">
