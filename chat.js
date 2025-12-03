@@ -146,6 +146,12 @@ async function igRenderRightAds() {
 	const el = igQ('igRightAds');
 	if (!el) return;
 	try {
+		// Počkat na inicializaci Firebasu (až 3s)
+		let tries = 0;
+		while (!window.firebaseDb && tries < 30) {
+			await new Promise(r => setTimeout(r, 100));
+			tries++;
+		}
 		if (!window.firebaseDb) throw new Error('Firestore není inicializován');
 		const { collectionGroup, getDocs, query, orderBy, limit } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
 		const q = query(collectionGroup(window.firebaseDb, 'inzeraty'), orderBy('createdAt', 'desc'), limit(3));
