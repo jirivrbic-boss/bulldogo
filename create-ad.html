@@ -117,19 +117,30 @@
         .pill-group label{
             display:inline-flex;
             align-items:center;
-            gap:6px;
-            padding:6px 10px;
-            border:1px solid #e5e7eb;
-            border-radius:9999px;
+            gap:0;
+            padding:0;
+            border:none;
             cursor:pointer;
             font-size:13px;
             color:#374151;
             background:#fff;
         }
         .pill-group input[type="radio"]{ display:none; }
+        .pill-group label span{
+            display:inline-flex;
+            align-items:center;
+            gap:6px;
+            padding:6px 12px;
+            border:1px solid #e5e7eb;
+            border-radius:9999px;
+            transition:border-color .15s ease, box-shadow .15s ease, color .15s ease, background .15s ease;
+        }
         .pill-group input[type="radio"]:checked + span{
             color:#111827;
             font-weight:600;
+            border-color:#f59e0b;
+            box-shadow:0 0 0 2px rgba(245,158,11,.15);
+            background:#fff;
         }
         /* Toggle (on/off) */
         .toggle-row{
@@ -306,9 +317,9 @@
                                 <label><input type="radio" id="priceTypeNegotiable" name="priceType" value="negotiable"> Dohodou</label>
                             </div>
                             <div class="inputs">
-                                <input type="number" min="0" step="1" id="servicePrice" name="price" placeholder="Cena" style="display:none; width:120px;">
-                                <input type="number" min="0" step="1" id="servicePriceFrom" name="priceFrom" placeholder="Od" style="display:none; width:120px;">
-                                <input type="number" min="0" step="1" id="servicePriceTo" name="priceTo" placeholder="Do" style="display:none; width:120px;">
+                                <input type="number" min="0" step="1" id="servicePrice" name="price" placeholder="Cena" style="display:none; width:180px;">
+                                <input type="number" min="0" step="1" id="servicePriceFrom" name="priceFrom" placeholder="Od" style="display:none; width:180px;">
+                                <input type="number" min="0" step="1" id="servicePriceTo" name="priceTo" placeholder="Do" style="display:none; width:180px;">
                             </div>
                             <div class="pill-group" id="unitPills" style="display:none;">
                                 <label><input type="radio" name="priceUnit" value="hour" checked><span>Kč / hod</span></label>
