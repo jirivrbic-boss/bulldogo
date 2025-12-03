@@ -162,7 +162,9 @@
             const updateNoPreviewState = () => {
                 const checked = !!noPreviewCheckbox.checked;
                 previewImageInput.required = !checked;
+                previewImageInput.disabled = checked;
                 if (checked) {
+                    try { previewImageInput.value = ''; } catch(_) {}
                     imgPreview.src = '/fotky/bulldogo-logo.png';
                 } else {
                     if (!previewImageInput.files?.[0]) {
