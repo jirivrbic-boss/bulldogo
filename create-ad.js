@@ -144,11 +144,15 @@
                     unitSel.style.display = 'block';
                     p.style.display = 'block';
                     p.required = true;
+                    // focus na pole ceny při volbě fixní
+                    setTimeout(() => p?.focus(), 0);
                     updatePlaceholders();
                 } else if (sel.value === 'range') {
                     unitSel.style.display = 'block';
                     pf.style.display = 'block'; pt.style.display = 'block';
                     pf.required = true; pt.required = true;
+                    // focus na první pole rozsahu
+                    setTimeout(() => pf?.focus(), 0);
                     updatePlaceholders();
                 } else {
                     // negotiable
