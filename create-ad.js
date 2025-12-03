@@ -2,6 +2,9 @@
 (function() {
     // Po načtení DOM připravit stránku
     document.addEventListener('DOMContentLoaded', () => {
+        // Inicializace UI prvků nezávislá na Firebase (aby price inputs fungovaly hned)
+        setupPriceControls();
+
         // Počkat na Firebase a poté rozhodnout podle onAuthStateChanged
         const waitForFirebase = setInterval(async () => {
             if (window.firebaseReady && window.firebaseAuth && window.firebaseDb) {
@@ -46,6 +49,63 @@
         }, 100);
         setTimeout(() => clearInterval(waitForFirebase), 15000);
     });
+
+    // Samostatná inicializace ovládání ceny (funguje i bez Firebase)
+    function setupPriceControls() {
+        if (window._priceUiInit) return;
+        window._priceUiInit = true;
+
+        const p = document.getElementById('servicePrice');
+        const pf = document.getElementById('servicePriceFrom');
+        const pt = document.getElementById('servicePriceTo');
+        const priceInputs = document.querySelector('.price-inline .inputs');
+        const unitSel = document.getElementById('unitPills');
+
+        function updatePlaceholders() {
+            const unit = (document.querySelector('input[name="priceUnit"]:checked')?.value || 'hour');
+            const unitText = unit === 'hour' ? 'hod' : 'práci';
+            const cur = 'Kč';
+            if (p) p.placeholder = `Cena (např. 500)`;
+            if (pf) pf.placeholder = `Od (např. 300)`;
+            if (pt) pt.placeholder = `Do (např. 800)`;
+        }
+        function onPriceTypeChange() {
+            const sel = document.querySelector('input[name="priceType"]:checked');
+            if (!sel) { if (priceInputs) priceInputs.style.display = 'none'; return; }
+            if (priceInputs) priceInputs.style.display = 'block';
+            if (p && pf && pt && unitSel) {
+                p.style.display = 'none'; pf.style.display = 'none'; pt.style.display = 'none'; unitSel.style.display = 'none';
+                p.required = false; pf.required = false; pt.required = false;
+                if (sel.value === 'fixed') {
+                    unitSel.style.display = 'flex';
+                    p.style.display = 'block';
+                    p.required = true;
+                    setTimeout(() => p?.focus(), 0);
+                } else if (sel.value === 'range') {
+                    unitSel.style.display = 'flex';
+                    pf.style.display = 'block'; pt.style.display = 'block';
+                    pf.required = true; pt.required = true;
+                    setTimeout(() => pf?.focus(), 0);
+                } else {
+                    // negotiable
+                    unitSel.style.display = 'none';
+                }
+            }
+        }
+        document.querySelectorAll('input[name="priceType"]').forEach(r => {
+            r.addEventListener('change', onPriceTypeChange);
+            r.addEventListener('click', onPriceTypeChange);
+        });
+        document.querySelectorAll('input[name="priceUnit"]').forEach(r => r.addEventListener('change', updatePlaceholders));
+
+        // Výchozí stav
+        if (!document.querySelector('input[name="priceType"]:checked')) {
+            const fallback = document.getElementById('priceTypeFixed');
+            if (fallback) fallback.checked = true;
+        }
+        updatePlaceholders();
+        onPriceTypeChange();
+    }
 
     function initCreateAdPage() {
         // Počítadlo znaků popisu
