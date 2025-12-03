@@ -216,7 +216,7 @@
 
                     <div class="form-group">
                         <label class="form-label">Cena</label>
-                        <div class="form-hint">Zvol si typ ceny; jednotku můžeš přepnout mezi „za hodinu“ a „za odvedenou práci“.</div>
+                        <div class="form-hint">Zvol typ ceny a případně jednotku. Částky zadávej jako čísla (bez „Kč“).</div>
                         <div class="price-options">
                             <label class="price-option">
                                 <input type="radio" name="priceType" value="fixed">
@@ -246,12 +246,11 @@
                                 </div>
                             </div>
                             <div class="field-row">
-                                <input type="text" id="servicePrice" name="price" placeholder="Cena (např. 500 Kč/hod)" style="display: none;">
-                                <div class="field-row" style="grid-template-columns: 1fr 1fr;">
-                                    <input type="text" id="servicePriceFrom" name="priceFrom" placeholder="Od (např. 300 Kč/hod)" style="display: none;">
-                                    <input type="text" id="servicePriceTo" name="priceTo" placeholder="Do (např. 800 Kč/hod)" style="display: none;">
-                                </div>
+                                <input type="number" min="0" step="1" id="servicePrice" name="price" placeholder="Cena (např. 500)" style="display: none;">
+                                <input type="number" min="0" step="1" id="servicePriceFrom" name="priceFrom" placeholder="Od (např. 300)" style="display: none;">
+                                <input type="number" min="0" step="1" id="servicePriceTo" name="priceTo" placeholder="Do (např. 800)" style="display: none;">
                             </div>
+                            <div class="form-hint" id="priceUnitHint" style="display:none;">K výsledné ceně se automaticky doplní „Kč“ a zvolená jednotka.</div>
                         </div>
                     </div>
 
@@ -290,12 +289,12 @@
 
                     <div class="form-group">
                         <label class="form-label"><i class="fas fa-image"></i> Náhledový obrázek <span class="required-badge">*</span></label>
-                        <div style="display:flex; align-items:center; gap:12px; margin:6px 0 8px 0;">
+                        <input type="file" id="previewImage" name="previewImage" accept="image/*" required>
+                        <div class="image-preview" id="previewImagePreview"></div>
+                        <div style="display:flex; align-items:center; gap:10px; margin-top:8px;">
                             <input type="checkbox" id="noPreviewImage" />
                             <label for="noPreviewImage" style="margin:0; font-size:14px; color:#374151;">Přidat bez náhledového obrázku (použít výchozí logo)</label>
                         </div>
-                        <input type="file" id="previewImage" name="previewImage" accept="image/*" required>
-                        <div class="image-preview" id="previewImagePreview"></div>
                     </div>
 
                     <div class="form-group">

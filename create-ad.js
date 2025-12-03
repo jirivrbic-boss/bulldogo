@@ -128,6 +128,7 @@
             const sel = document.querySelector('input[name=\"priceType\"]:checked');
             if (!sel) { if (priceInputs) priceInputs.style.display = 'none'; return; }
             if (priceInputs) priceInputs.style.display = 'block';
+            const unitHint = document.getElementById('priceUnitHint');
             if (p && pf && pt && unitSel) {
                 p.style.display = 'none'; pf.style.display = 'none'; pt.style.display = 'none'; unitSel.style.display = 'none';
                 p.required = false; pf.required = false; pt.required = false;
@@ -141,17 +142,21 @@
                     pf.style.display = 'block'; pt.style.display = 'block';
                     pf.required = true; pt.required = true;
                     updatePlaceholders();
+                } else {
+                    // negotiable
+                    // no inputs required
                 }
                 updatePreview();
             }
+            if (unitHint) unitHint.style.display = sel?.value === 'negotiable' ? 'none' : '';
         }
         function updatePlaceholders() {
             const unit = (document.querySelector('input[name=\"priceUnit\"]:checked')?.value || 'hour');
             const unitText = unit === 'hour' ? 'hod' : 'práci';
             const cur = 'Kč';
-            if (p) p.placeholder = `Cena (např. 500 ${cur}/${unitText})`;
-            if (pf) pf.placeholder = `Od (např. 300 ${cur}/${unitText})`;
-            if (pt) pt.placeholder = `Do (např. 800 ${cur}/${unitText})`;
+            if (p) p.placeholder = `Cena (např. 500)`;
+            if (pf) pf.placeholder = `Od (např. 300)`;
+            if (pt) pt.placeholder = `Do (např. 800)`;
             updatePreview();
         }
         document.querySelectorAll('input[name=\"priceUnit\"]').forEach(r => r.addEventListener('change', updatePlaceholders));
@@ -227,7 +232,8 @@
             publishBtn.style.opacity = disabled ? .6 : 1;
         }
         function validateRequired(){
-            const ok = !!titleEl?.value && !!catEl?.value && !!locEl?.value && !!desc?.value && !!previewImageInput?.files?.[0];
+            const noPrev = !!noPreviewCheckbox?.checked;
+            const ok = !!titleEl?.value && !!catEl?.value && !!locEl?.value && !!desc?.value && (noPrev || !!previewImageInput?.files?.[0]);
             disablePublish(!ok);
         }
         ;['input','change'].forEach(evt=>{
