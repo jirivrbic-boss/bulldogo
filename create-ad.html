@@ -131,6 +131,50 @@
             color:#111827;
             font-weight:600;
         }
+        /* Toggle (on/off) */
+        .toggle-row{
+            display:flex;
+            align-items:center;
+            gap:10px;
+            margin-top:8px;
+            user-select:none;
+        }
+        .toggle{
+            position:relative;
+            width:44px;
+            height:24px;
+            display:inline-block;
+        }
+        .toggle input{ display:none; }
+        .toggle-slider{
+            position:absolute;
+            inset:0;
+            background:#e5e7eb;
+            border-radius:9999px;
+            transition:background .2s ease;
+        }
+        .toggle-slider::before{
+            content:"";
+            position:absolute;
+            height:18px;
+            width:18px;
+            left:3px;
+            top:3px;
+            background:#fff;
+            border-radius:9999px;
+            box-shadow:0 1px 2px rgba(0,0,0,.15);
+            transition:transform .2s ease;
+        }
+        .toggle input:checked + .toggle-slider{
+            background:#f59e0b;
+        }
+        .toggle input:checked + .toggle-slider::before{
+            transform:translateX(20px);
+        }
+        .toggle-label{
+            font-size:14px;
+            color:#374151;
+        }
     </style>
 </head>
 <body>
@@ -311,9 +355,12 @@
                         <label class="form-label"><i class="fas fa-image"></i> Náhledový obrázek <span class="required-badge">*</span></label>
                         <input type="file" id="previewImage" name="previewImage" accept="image/*" required>
                         <div class="image-preview" id="previewImagePreview"></div>
-                        <div style="display:flex; align-items:center; gap:10px; margin-top:8px;">
-                            <input type="checkbox" id="noPreviewImage" />
-                            <label for="noPreviewImage" style="margin:0; font-size:14px; color:#374151;">Přidat bez náhledového obrázku (použít výchozí logo)</label>
+                        <div class="toggle-row">
+                            <label class="toggle" title="Použít výchozí logo místo nahrání souboru">
+                                <input type="checkbox" id="noPreviewImage">
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <span class="toggle-label">Bez náhledového obrázku (použít výchozí logo)</span>
                         </div>
                     </div>
 
