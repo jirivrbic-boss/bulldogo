@@ -388,23 +388,47 @@ function igFilterConversations() {
 }
 
 /** Otevření konverzace **/
-function igOpenConversation(convId, peerUserIdFromUrl = null) {
+async function igOpenConversation(convId, peerUserIdFromUrl = null) {
 	igSelectedConvId = convId;
 	igRenderConversations();
 	// hlavička
 	const conv = igConversations.find(c => c.id === convId);
-	igQ('igPeerName').textContent = conv?.title || 'Konverzace';
-	igQ('igPeerStatus').textContent = 'Online';
-	
-	// Načíst inzeráty druhého účastníka do pravého panelu
-	// Použít userId z parametru (deep link) nebo z konverzace
 	const peerUserId = peerUserIdFromUrl || conv?.peerId || null;
+	
+	// Načíst jméno uživatele z profilu
+	let peerName = conv?.title || 'Konverzace';
+	if (peerUserId && window.firebaseDb) {
+		try {
+			const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+			const profileRef = doc(window.firebaseDb, 'users', peerUserId, 'profile', 'profile');
+			const profileSnap = await getDoc(profileRef);
+			if (profileSnap.exists()) {
+				const profileData = profileSnap.data();
+				peerName = profileData.name || profileData.email || 'Uživatel';
+				console.log('✅ Načteno jméno uživatele:', peerName);
+			} else {
+				// Fallback - použít email z users dokumentu
+				const userRef = doc(window.firebaseDb, 'users', peerUserId);
+				const userSnap = await getDoc(userRef);
+				if (userSnap.exists()) {
+					const userData = userSnap.data();
+					peerName = userData.email || 'Uživatel';
+				}
+			}
+		} catch (e) {
+			console.warn('⚠️ Nepodařilo se načíst jméno uživatele:', e);
+		}
+	}
+	
+	igQ('igPeerName').textContent = peerName;
+	igQ('igPeerStatus').textContent = 'Online';
 	
 	console.log('🔍 igOpenConversation:', {
 		convId,
 		peerUserIdFromUrl,
 		convPeerId: conv?.peerId,
-		finalPeerUserId: peerUserId
+		finalPeerUserId: peerUserId,
+		peerName
 	});
 	
 	if (peerUserId) {
