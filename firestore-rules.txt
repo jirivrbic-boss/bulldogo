@@ -53,5 +53,50 @@ service cloud.firestore {
       allow update: if request.auth != null && request.auth.uid == resource.data.reviewerId;
       allow delete: if request.auth != null && request.auth.uid == resource.data.reviewerId;
     }
+    
+    // ===== PRAVIDLA PRO CHATY =====
+    // Chat dokumenty - přístup pouze pro účastníky chatu
+    match /chats/{chatId} {
+      // Čtení: povoleno pouze účastníkům chatu (pokud je jejich UID v poli participants)
+      allow read: if request.auth != null && 
+                    request.auth.uid in resource.data.participants;
+      
+      // Vytvoření: povoleno přihlášeným uživatelům
+      allow create: if request.auth != null && 
+                      request.auth.uid in request.resource.data.participants;
+      
+      // Aktualizace: povoleno účastníkům (např. pro lastMessage, lastAt)
+      allow update: if request.auth != null && 
+                      request.auth.uid in resource.data.participants;
+      
+      // Smazání: povoleno účastníkům
+      allow delete: if request.auth != null && 
+                      request.auth.uid in resource.data.participants;
+      
+      // Zprávy v chatu
+      match /messages/{messageId} {
+        // Čtení: povoleno účastníkům chatu
+        allow read: if request.auth != null && 
+                      request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+        
+        // Vytvoření: povoleno pouze odesílateli (fromUid musí být stejný jako auth.uid)
+        allow create: if request.auth != null && 
+                        request.auth.uid == request.resource.data.fromUid &&
+                        request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+        
+        // Aktualizace a smazání zpráv: pouze vlastník zprávy
+        allow update, delete: if request.auth != null && 
+                                request.auth.uid == resource.data.fromUid;
+      }
+    }
+    
+    // ===== PRAVIDLA PRO PLATBY =====
+    // Platby uživatele
+    match /users/{userId}/payments/{paymentId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && request.auth.uid == userId;
+      allow delete: if false; // Platby nelze mazat
+    }
   }
 }
