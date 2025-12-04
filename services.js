@@ -516,7 +516,9 @@ function initLocalFallback() {
 
 // Vytvoření testovacích služeb pro lokální databázi
 function createTestServices() {
-    console.log('🧪 Vytvářím testovací služby...');
+    console.log('🧪 Testovací služby jsou vypnuté - používám prázdný seznam');
+    allServices = [];
+    /* Odstraněno - stock inzeráty
     allServices = [
         {
             id: '1',
@@ -591,8 +593,9 @@ function createTestServices() {
             status: "active"
         }
     ];
+    */
     
-    console.log(`✅ Vytvořeno ${allServices.length} testovacích služeb`);
+    console.log(`✅ Stock inzeráty jsou vypnuté, používám prázdný seznam`);
     saveServicesToLocalStorage();
 }
 
@@ -1285,6 +1288,10 @@ function showErrorMessage(message) {
 
 // Přidání testovacích služeb
 async function addTestServices() {
+    console.log('🚫 Testovací služby jsou vypnuté');
+    return; // Vypnuto - nepoužívat stock inzeráty
+    
+    /* VYPNUTO - Stock inzeráty
     try {
         console.log('🧪 Přidávám testovací služby...');
         console.log('Firebase DB pro testovací služby:', servicesFirebaseDb);
@@ -1416,6 +1423,7 @@ async function addTestServices() {
         displayServices();
         updateStats();
     }
+    */ // Konec vypnutých testovacích služeb
 }
 
 // Přidání nové služby
