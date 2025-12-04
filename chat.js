@@ -33,11 +33,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 				igUpdateGating();
 				if (igCurrentUser) {
 					igStartConversationsListener(igCurrentUser.uid);
+					// Po přihlášení zkusit zpracovat deep link znovu (pokud je v URL)
+					igHandleDeepLink();
 				} else {
 					if (igUnsubConvs) { igUnsubConvs(); igUnsubConvs = null; }
 					if (igUnsubMsgs) { igUnsubMsgs(); igUnsubMsgs = null; }
 					igConversations = [];
 					igRenderConversations();
+					igRenderRightAds(); // Reset pravého panelu
 					const box = igQ('igMessages'); if (box) box.innerHTML = '<div class="ig-empty">Vyberte konverzaci vlevo nebo začněte novou.</div>';
 				}
 			});
@@ -47,7 +50,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 	igInitUI();
 	igHandleDeepLink();
 	igRenderConversations();
-	igRenderRightAds();
+	igRenderRightAds(); // Načte se až při výběru konverzace
 	igUpdateGating();
 });
 
@@ -188,10 +191,17 @@ async function igEnsureChatWith(peerUid, listingId, listingTitle) {
 	}
 }
 
-/** Pravý panel – 3 nejnovější inzeráty z Firestore (collectionGroup 'inzeraty') **/
-async function igRenderRightAds() {
+/** Pravý panel – 3 nejnovější inzeráty daného uživatele **/
+async function igRenderRightAds(peerUserId = null) {
 	const el = igQ('igRightAds');
 	if (!el) return;
+	
+	// Pokud není zadán peerUserId, zobrazit prázdný stav
+	if (!peerUserId) {
+		el.innerHTML = '<div style="padding:12px; color:#6b7280;">Vyberte konverzaci pro zobrazení inzerátů</div>';
+		return;
+	}
+	
 	try {
 		// Počkat na inicializaci Firebasu (až 3s)
 		let tries = 0;
@@ -200,8 +210,11 @@ async function igRenderRightAds() {
 			tries++;
 		}
 		if (!window.firebaseDb) throw new Error('Firestore není inicializován');
-		const { collectionGroup, getDocs, query, orderBy, limit } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
-		const q = query(collectionGroup(window.firebaseDb, 'inzeraty'), orderBy('createdAt', 'desc'), limit(3));
+		
+		// Načíst inzeráty konkrétního uživatele
+		const { collection, getDocs, query, orderBy, limit } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+		const inzeraty = collection(window.firebaseDb, 'users', peerUserId, 'inzeraty');
+		const q = query(inzeraty, orderBy('createdAt', 'desc'), limit(3));
 		const snap = await getDocs(q);
 		if (snap.empty) {
 			el.innerHTML = '<div style="padding:12px; color:#6b7280;">Zatím žádné inzeráty</div>';
@@ -328,6 +341,13 @@ function igOpenConversation(convId) {
 	const conv = igConversations.find(c => c.id === convId);
 	igQ('igPeerName').textContent = conv?.title || 'Konverzace';
 	igQ('igPeerStatus').textContent = 'Online';
+	
+	// Načíst inzeráty druhého účastníka do pravého panelu
+	const peerUserId = conv?.peerId || null;
+	if (peerUserId) {
+		igRenderRightAds(peerUserId);
+	}
+	
 	igStartMessagesListener(convId);
 	igRenderMessages();
 }
