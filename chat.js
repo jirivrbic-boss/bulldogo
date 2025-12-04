@@ -61,7 +61,7 @@ function igInitUI() {
 	});
 	const openProfile = igQ('igOpenProfile');
 	if (openProfile) openProfile.addEventListener('click', () => {
-		console.log('Profil – TODO navázat na profil uživatele');
+		igOpenPeerProfile();
 	});
 
 	const input = igQ('igText');
@@ -107,7 +107,8 @@ async function igStartConversationsListener(uid) {
 					last: data.lastMessage || '',
 					time: data.lastAt?.toDate?.() || new Date(0),
 					avatar: data.peerAvatar || '',
-					peerId: otherId
+					peerId: otherId,
+					participants: data.participants || []
 				};
 			}).sort((a,b) => (b.time?.getTime?.()||0) - (a.time?.getTime?.()||0));
 			igRenderConversations();
@@ -329,6 +330,34 @@ function igOpenConversation(convId) {
 	igQ('igPeerStatus').textContent = 'Online';
 	igStartMessagesListener(convId);
 	igRenderMessages();
+}
+
+/** Otevřít profil druhého účastníka chatu **/
+function igOpenPeerProfile() {
+	if (!igSelectedConvId) {
+		console.warn('⚠️ Žádná vybraná konverzace');
+		return;
+	}
+	
+	// Najít konverzaci a získat userId druhého účastníka
+	const conv = igConversations.find(c => c.id === igSelectedConvId);
+	if (!conv || !conv.participants || conv.participants.length < 2) {
+		console.warn('⚠️ Konverzace nemá účastníky');
+		return;
+	}
+	
+	// Zjistit userId druhého účastníka (ne mě)
+	const myUid = igCurrentUser?.uid;
+	const peerUid = conv.participants.find(uid => uid !== myUid);
+	
+	if (!peerUid) {
+		console.warn('⚠️ Nepodařilo se najít druhého účastníka');
+		return;
+	}
+	
+	console.log('🔗 Otevírám profil:', peerUid);
+	// Přesměrovat na profil
+	window.location.href = `profile-detail.html?userId=${encodeURIComponent(peerUid)}`;
 }
 
 /** Render zpráv **/
