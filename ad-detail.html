@@ -445,42 +445,49 @@
                 <!-- Formulář pro firmu -->
                 <div class="company-form" style="display: none;">
                     <div class="form-group">
-                        <input type="text" id="companyName" name="companyName" placeholder="Název firmy" required>
+                        <input type="text" id="companyName" name="companyName" placeholder="Obchodní název">
                     </div>
                     <div class="form-group">
-                        <input type="text" id="companyId" name="companyId" placeholder="IČO" required>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <input type="text" id="ico" name="ico" placeholder="IČ" style="flex:1;">
+                            <button type="button" id="btnVerifyICO" class="btn">Ověřit</button>
+                        </div>
+                        <div id="icoStatus" style="font-size:13px; margin-top:4px; color:#6b7280;"></div>
                     </div>
                     <div class="form-group">
-                        <input type="tel" id="companyPhone" name="companyPhone" placeholder="Telefon" required>
+                        <input type="text" id="dic" name="dic" placeholder="DIČ (volitelné)" data-optional="true">
                     </div>
                     <div class="form-group">
-                        <input type="email" id="companyEmail" name="companyEmail" placeholder="Email" required>
+                        <input type="tel" id="companyPhone" name="companyPhone" placeholder="Telefon">
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="companyAddress" name="companyAddress" placeholder="Sídlo firmy">
                     </div>
                 </div>
 
-                <!-- Telefon a heslo -->
+                <!-- Společná pole -->
                 <div class="form-group">
-                    <input type="tel" id="authPhone" name="phone" placeholder="Telefon" required>
+                    <input type="email" id="email" name="email" placeholder="Email" required>
                 </div>
-                
-                <div class="form-group" id="phoneStep2" style="display: none;">
-                    <input type="text" id="phoneCode" name="phoneCode" placeholder="Kód z SMS" required>
-                </div>
-                
                 <div class="form-group">
-                    <input type="password" id="authPassword" name="password" placeholder="Heslo" required>
+                    <input type="password" id="password" name="password" placeholder="Heslo" required>
                 </div>
-
-                <div class="form-group">
-                    <button type="submit" class="auth-submit-btn btn btn-primary">Přihlásit se</button>
-                    <button type="button" id="btnSendPhoneCode" class="btn btn-secondary" style="display: none;">Odeslat SMS kód</button>
-                    <button type="button" id="btnAuthSubmit" class="btn btn-primary" style="display: none;">Dokončit registraci</button>
+                <button type="button" id="btnSendPhoneCode" class="btn btn-primary auth-submit-btn" style="display:none;">Pokračovat na ověření telefonního čísla</button>
+                <button type="submit" class="btn btn-primary auth-submit-btn" id="btnAuthSubmit">Přihlásit se</button>
+                <div id="phoneStep2" style="display:none; margin-top:8px;">
+                    <div class="form-group">
+                        <input type="text" id="smsCode" inputmode="numeric" placeholder="Kód z SMS">
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <button type="button" id="btnVerifyPhoneCode" class="btn btn-primary">Ověřit kód a dokončit registraci</button>
+                        <button type="button" id="btnPhoneBack" class="btn">Zpět</button>
+                    </div>
                 </div>
-
-                <div class="form-group">
-                    <button type="button" class="auth-switch-btn btn btn-link">Nemáte účet? Zaregistrujte se</button>
-                </div>
+                <div id="recaptcha-container" style="height:0; overflow:hidden;"></div>
             </form>
+            <div class="auth-switch">
+                <button type="button" class="auth-switch-btn" data-type="register">Nemáte účet? Zaregistrujte se</button>
+            </div>
         </div>
     </div>
 

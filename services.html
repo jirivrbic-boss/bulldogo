@@ -287,7 +287,11 @@
                         <input type="text" id="companyName" name="companyName" placeholder="Obchodní název">
                     </div>
                     <div class="form-group">
-                        <input type="text" id="ico" name="ico" placeholder="IČ">
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <input type="text" id="ico" name="ico" placeholder="IČ" style="flex:1;">
+                            <button type="button" id="btnVerifyICO" class="btn">Ověřit</button>
+                        </div>
+                        <div id="icoStatus" style="font-size:13px; margin-top:4px; color:#6b7280;"></div>
                     </div>
                     <div class="form-group">
                         <input type="text" id="dic" name="dic" placeholder="DIČ (volitelné)" data-optional="true">

@@ -139,7 +139,7 @@
         <section class="top-ads-pricing">
             <div class="container">
                 <div class="pricing-header">
-                    <h2 class="section-title">Ceník topování</h2>
+                    <h2 class="section-title">Topování inzerátů – přehled plánů</h2>
                     <p class="section-subtitle">Vyberte si délku topování, která vám vyhovuje</p>
                 </div>
 
@@ -194,6 +194,7 @@
                                 <li><i class="fas fa-check"></i> Zlatý rámeček kolem inzerátu</li>
                                 <li><i class="fas fa-check"></i> Zvýraznění v seznamu a v kategorii</li>
                                 <li><i class="fas fa-check"></i> 7 dní topování</li>
+                                <li><i class="fas fa-check"></i> Opakovaný TOP odznak každý den</li>
                                 <li><i class="fas fa-check"></i> Vysoká viditelnost (priorita ve vyhledávání)</li>
                             </ul>
                         </div>
@@ -223,9 +224,12 @@
                             <ul>
                                 <li><i class="fas fa-check"></i> TOP odznak u inzerátu</li>
                                 <li><i class="fas fa-check"></i> Zlatý rámeček kolem inzerátu</li>
+                                <li><i class="fas fa-check"></i> Animovaný efekt</li>
                                 <li><i class="fas fa-check"></i> Zvýraznění na hlavní stránce a v kategorii</li>
-                                <li><i class="fas fa-check"></i> 30 dní topování</li>
+                                <li><i class="fas fa-check"></i> 30 dní topování (automatické prodlužování každý týden)</li>
+                                <li><i class="fas fa-check"></i> Doporučení systému: „Tento inzerát doporučujeme“</li>
                                 <li><i class="fas fa-check"></i> Priorita ve vyhledávání a v kategorii (vyšší než týdenní plán)</li>
+                                <li><i class="fas fa-check"></i> Statistiky zobrazení a kliků (denní / týdenní přehled)</li>
                             </ul>
                         </div>
                         <button class="btn-pricing" data-duration="30" data-price="179">
@@ -428,7 +432,11 @@
                         <input type="text" id="companyName" name="companyName" placeholder="Obchodní název">
                     </div>
                     <div class="form-group">
-                        <input type="text" id="ico" name="ico" placeholder="IČ">
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <input type="text" id="ico" name="ico" placeholder="IČ" style="flex:1;">
+                            <button type="button" id="btnVerifyICO" class="btn">Ověřit</button>
+                        </div>
+                        <div id="icoStatus" style="font-size:13px; margin-top:4px; color:#6b7280;"></div>
                     </div>
                     <div class="form-group">
                         <input type="text" id="dic" name="dic" placeholder="DIČ (volitelné)" data-optional="true">
