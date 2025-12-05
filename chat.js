@@ -231,19 +231,15 @@ async function igEnsureChatWith(peerUid, listingId, listingTitle) {
 	}
 }
 
-/** Pravý panel – 3 nejnovější inzeráty daného uživatele **/
+/** Pravý panel – nejnovější inzeráty
+ *  - pokud je znám peerUserId: zobrazí inzeráty daného uživatele
+ *  - jinak: zobrazí globální nejnovější inzeráty (collectionGroup 'inzeraty')
+ */
 async function igRenderRightAds(peerUserId = null) {
 	const el = igQ('igRightAds');
 	if (!el) return;
 	
 	console.log('📋 igRenderRightAds volána s peerUserId:', peerUserId);
-	
-	// Pokud není zadán peerUserId, zobrazit prázdný stav
-	if (!peerUserId) {
-		console.warn('⚠️ peerUserId je null, zobrazuji prázdný stav');
-		el.innerHTML = '<div style="padding:12px; color:#6b7280;">Vyberte konverzaci pro zobrazení inzerátů</div>';
-		return;
-	}
 	
 	try {
 		// Počkat na inicializaci Firebasu (až 3s)
@@ -254,19 +250,29 @@ async function igRenderRightAds(peerUserId = null) {
 		}
 		if (!window.firebaseDb) throw new Error('Firestore není inicializován');
 		
-		// Načíst inzeráty konkrétního uživatele
-		const { collection, getDocs, query, orderBy, limit } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
-		const inzeraty = collection(window.firebaseDb, 'users', peerUserId, 'inzeraty');
-		const q = query(inzeraty, orderBy('createdAt', 'desc'), limit(3));
-		const snap = await getDocs(q);
+		const { collection, collectionGroup, getDocs, query, orderBy, limit } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+		
+		// Dotaz: buď konkrétní uživatel, nebo globální
+		let snap;
+		if (peerUserId) {
+			const inzeratyUser = collection(window.firebaseDb, 'users', peerUserId, 'inzeraty');
+			const qUser = query(inzeratyUser, orderBy('createdAt', 'desc'), limit(10));
+			snap = await getDocs(qUser);
+		} else {
+			// Globální nejnovější inzeráty
+			const inzeratyAll = collectionGroup(window.firebaseDb, 'inzeraty');
+			const qAll = query(inzeratyAll, orderBy('createdAt', 'desc'), limit(10));
+			snap = await getDocs(qAll);
+		}
+		
 		if (snap.empty) {
 			el.innerHTML = '<div style="padding:12px; color:#6b7280;">Zatím žádné inzeráty</div>';
 			return;
 		}
         const items = [];
-        snap.forEach(doc => {
-			const d = doc.data() || {};
-			const userRef = doc.ref.parent?.parent;
+        snap.forEach(dSnap => {
+			const d = dSnap.data() || {};
+			const userRef = dSnap.ref.parent?.parent;
 			const userId = userRef?.id || '';
 			const title = d.title || 'Bez názvu';
 			const location = d.location || 'Neuvedeno';
@@ -308,7 +314,7 @@ async function igRenderRightAds(peerUserId = null) {
 				" 
 				onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 16px rgba(247,124,0,0.25)'; this.style.borderColor='#f77c00';"
 				onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.05)'; this.style.borderColor='#e5e7eb';"
-				onclick="window.location.href='ad-detail.html?id=${encodeURIComponent(doc.id)}&userId=${encodeURIComponent(userId)}'">
+				onclick="window.location.href='ad-detail.html?id=${encodeURIComponent(dSnap.id)}&userId=${encodeURIComponent(userId)}'">
 					
 					<!-- Hlavička s názvem a TOP badge -->
 					<div style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px; margin-bottom:8px;">
