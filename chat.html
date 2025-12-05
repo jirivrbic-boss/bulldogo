@@ -185,7 +185,7 @@
                 <!-- Login prompt (gating) -->
                 <div class="ig-login-prompt" id="igLoginPrompt" style="display:none;">
                     <i class="fas fa-lock"></i>
-                    <p>Pro odesílání zpráv se prosím přihlaste nebo registrujte.</p>
+                    <p>Pro odesílání zpráv se prosím <a href="#" onclick="showAuthModal('login'); return false;" style="text-decoration: underline;">přihlaste</a> nebo se <a href="#" onclick="showAuthModal('register'); return false;" style="text-decoration: underline;">zaregistrujte</a>.</p>
                     <div class="ig-login-actions">
                         <button class="btn-cta-primary" onclick="showAuthModal('login')"><i class="fas fa-sign-in-alt"></i> Přihlásit</button>
                         <button class="btn-cta-secondary" onclick="showAuthModal('register')"><i class="fas fa-user-plus"></i> Registrovat</button>
