@@ -477,9 +477,10 @@ async function igOpenConversation(convId, peerUserIdFromUrl = null) {
 	});
 	
 	if (peerUserId) {
-		igRenderRightAds(peerUserId);
+		// Zůstat u globálního přehledu – nezúžíme na konkrétního uživatele
+		igRenderRightAds(null);
 	} else {
-		console.warn('⚠️ Nepodařilo se zjistit peerUserId pro načtení inzerátů');
+		igRenderRightAds(null);
 	}
 	
 	igStartMessagesListener(convId);
