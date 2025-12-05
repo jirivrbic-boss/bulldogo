@@ -252,28 +252,68 @@ async function igRenderRightAds(peerUserId = null) {
 		
 		const { collection, collectionGroup, getDocs, query, orderBy, limit } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
 		
-		// Dotaz: buď konkrétní uživatel, nebo globální
-		let snap;
-		if (peerUserId) {
-			const inzeratyUser = collection(window.firebaseDb, 'users', peerUserId, 'inzeraty');
-			const qUser = query(inzeratyUser, orderBy('createdAt', 'desc'), limit(10));
-			snap = await getDocs(qUser);
-		} else {
-			// Globální nejnovější inzeráty
-			const inzeratyAll = collectionGroup(window.firebaseDb, 'inzeraty');
-			const qAll = query(inzeratyAll, orderBy('createdAt', 'desc'), limit(10));
-			snap = await getDocs(qAll);
+		// Helper: alternativní načtení přes users → inzeraty (pro případ, že collectionGroup není povolená)
+		async function loadNewestViaUsers(maxCount = 10) {
+			const usersRef = collection(window.firebaseDb, 'users');
+			const usersQ = query(usersRef, limit(100));
+			const usersSnap = await getDocs(usersQ);
+			const collected = [];
+			for (const u of usersSnap.docs) {
+				try {
+					const userId = u.id;
+					const adsRef = collection(window.firebaseDb, 'users', userId, 'inzeraty');
+					const adsSnap = await getDocs(adsRef);
+					adsSnap.forEach(adDoc => {
+						const d = adDoc.data() || {};
+						collected.push({
+							id: adDoc.id,
+							userId,
+							createdAt: d.createdAt?.toDate?.() || new Date(0),
+							data: d
+						});
+					});
+				} catch (_) {}
+			}
+			// Seřadit a omezený výběr
+			collected.sort((a, b) => (b.createdAt?.getTime?.() || 0) - (a.createdAt?.getTime?.() || 0));
+			return collected.slice(0, maxCount);
 		}
 		
-		if (snap.empty) {
+		// Dotaz: buď konkrétní uživatel, nebo globální (s fallbackem)
+		let entries = [];
+		if (peerUserId) {
+			// Inzeráty uživatele
+			try {
+				const inzeratyUser = collection(window.firebaseDb, 'users', peerUserId, 'inzeraty');
+				const qUser = query(inzeratyUser, orderBy('createdAt', 'desc'), limit(10));
+				const userSnap = await getDocs(qUser);
+				entries = userSnap.docs.map(dSnap => ({ dSnap, userId: peerUserId }));
+			} catch (e) {
+				// Fallback: přes users (vrátí globální – lepší než nic)
+				const newest = await loadNewestViaUsers(10);
+				entries = newest.map(x => ({ dSnap: { id: x.id, data: () => x.data, ref: { parent: { parent: { id: x.userId } } } }, userId: x.userId }));
+			}
+		} else {
+			// Globální nejnovější
+			try {
+				const inzeratyAll = collectionGroup(window.firebaseDb, 'inzeraty');
+				const qAll = query(inzeratyAll, orderBy('createdAt', 'desc'), limit(10));
+				const allSnap = await getDocs(qAll);
+				entries = allSnap.docs.map(dSnap => ({ dSnap, userId: dSnap.ref.parent?.parent?.id || '' }));
+			} catch (e) {
+				// Fallback: přes users
+				const newest = await loadNewestViaUsers(10);
+				entries = newest.map(x => ({ dSnap: { id: x.id, data: () => x.data, ref: { parent: { parent: { id: x.userId } } } }, userId: x.userId }));
+			}
+		}
+		
+		if (!entries || entries.length === 0) {
 			el.innerHTML = '<div style="padding:12px; color:#6b7280;">Zatím žádné inzeráty</div>';
 			return;
 		}
         const items = [];
-        snap.forEach(dSnap => {
-			const d = dSnap.data() || {};
-			const userRef = dSnap.ref.parent?.parent;
-			const userId = userRef?.id || '';
+        entries.forEach(({ dSnap, userId }) => {
+			const d = (typeof dSnap.data === 'function' ? dSnap.data() : dSnap.data) || {};
 			const title = d.title || 'Bez názvu';
 			const location = d.location || 'Neuvedeno';
 			const category = d.category || '';
