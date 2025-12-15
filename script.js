@@ -270,14 +270,21 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         if (!href || href === '#') return;
         e.preventDefault();
 
-        // Speciální zacházení pro kontakt: posunout na úplné zápatí (pokud je k dispozici), jinak přejít na index.html#contact
-        if (href === '#contact') {
+        // Speciální zacházení pro kontakt: posunout na úplné zápatí
+        if (href === '#contact' || href === 'index.html#contact') {
+            // Pokud jsme na jiné stránce než index.html, přesměrovat na index.html#contact
+            if (window.location.pathname !== '/index.html' && window.location.pathname !== '/' && !window.location.pathname.endsWith('index.html')) {
+                window.location.href = 'index.html#contact';
+                return;
+            }
+            // Pokud jsme na index.html, scrollovat do footeru
             const footerBottom = document.querySelector('.footer-bottom') || document.querySelector('footer');
             if (footerBottom) {
                 footerBottom.scrollIntoView({ behavior: 'smooth', block: 'end' });
-                try { history.replaceState(null, '', href); } catch (_) { /* no-op */ }
+                try { history.replaceState(null, '', '#contact'); } catch (_) { /* no-op */ }
             } else {
-                window.location.href = 'index.html#contact';
+                window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+                try { history.replaceState(null, '', '#contact'); } catch (_) { /* no-op */ }
             }
             return;
         }
@@ -293,21 +300,44 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     });
 });
 
+// Zpracování odkazů s index.html#contact (z jiných stránek)
+document.querySelectorAll('a[href="index.html#contact"], a[href*="index.html#contact"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        // Pokud už jsme na index.html, scrollovat do footeru
+        if (window.location.pathname === '/index.html' || window.location.pathname === '/' || window.location.pathname.endsWith('index.html')) {
+            const footerBottom = document.querySelector('.footer-bottom') || document.querySelector('footer');
+            if (footerBottom) {
+                footerBottom.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            } else {
+                window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+            }
+            try { history.replaceState(null, '', '#contact'); } catch (_) { /* no-op */ }
+        } else {
+            // Pokud jsme na jiné stránce, přesměrovat na index.html#contact
+            window.location.href = 'index.html#contact';
+        }
+    });
+});
+
 // Při načtení stránky se zadaným hashem zajistit správné doscrollování
 document.addEventListener('DOMContentLoaded', () => {
-    const h = window.location.hash;
-    if (!h) return;
-    if (h === '#contact') {
-        const footerBottom = document.querySelector('.footer-bottom') || document.querySelector('footer');
-        if (footerBottom) {
-            footerBottom.scrollIntoView({ behavior: 'smooth', block: 'end' });
-        } else {
-            window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+    // Počkat chvíli, aby se stránka načetla
+    setTimeout(() => {
+        const h = window.location.hash;
+        if (!h) return;
+        if (h === '#contact') {
+            const footerBottom = document.querySelector('.footer-bottom') || document.querySelector('footer');
+            if (footerBottom) {
+                footerBottom.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            } else {
+                window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+            }
+            return;
         }
-        return;
-    }
-    const target = document.querySelector(h);
-    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const target = document.querySelector(h);
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
 });
 
 // Chat link handling with auth check

@@ -448,6 +448,9 @@ function updateProfileInfo() {
     const fullPhone = userProfile.phone || currentProfileUser.phone || 'Telefon neuveden';
     const viewer = window.firebaseAuth?.currentUser;
     
+    // Zobrazit/skrýt zprávu o přihlášení
+    const loginMessageEl = document.getElementById('profileContactLoginMessage');
+    
     if (profileDisplayEmailEl) {
         profileDisplayEmailEl.textContent = fullEmail;
         if (!viewer) {
@@ -479,6 +482,15 @@ function updateProfileInfo() {
             profileDisplayPhoneEl.classList.remove('blurred-contact');
             profileDisplayPhoneEl.onclick = null;
             profileDisplayPhoneEl.style.cursor = 'default';
+        }
+    }
+    
+    // Zobrazit/skrýt zprávu podle stavu přihlášení
+    if (loginMessageEl) {
+        if (!viewer) {
+            loginMessageEl.style.display = 'block';
+        } else {
+            loginMessageEl.style.display = 'none';
         }
     }
     

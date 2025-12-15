@@ -223,6 +223,9 @@ function displayAdDetail() {
         const fullPhone = adOwner.phone || adOwner.companyPhone || adOwner.telefon || 'N/A';
         const viewer = window.firebaseAuth?.currentUser;
         
+        // Zobrazit/skrýt zprávu o přihlášení
+        const loginMessageEl = document.getElementById('adContactLoginMessage');
+        
         if (viewer) {
             // Přihlášený uživatel - zobrazit normálně
             emailEl.textContent = fullEmail;
@@ -233,6 +236,7 @@ function displayAdDetail() {
             phoneEl.onclick = null;
             emailEl.style.cursor = 'default';
             phoneEl.style.cursor = 'default';
+            if (loginMessageEl) loginMessageEl.style.display = 'none';
         } else {
             // Nepřihlášený uživatel - zobrazit s blur efektem
             emailEl.textContent = fullEmail;
@@ -251,6 +255,7 @@ function displayAdDetail() {
             };
             emailEl.style.cursor = 'pointer';
             phoneEl.style.cursor = 'pointer';
+            if (loginMessageEl) loginMessageEl.style.display = 'block';
         }
         
         // Zobrazit jméno v profilu níže na stránce
