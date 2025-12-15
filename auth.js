@@ -265,6 +265,22 @@ function initAuth() {
             authCurrentUser = user;
             updateUI(user);
             
+            // Pokud je uživatel přihlášen, aktualizovat v profilu čas posledního přihlášení
+            if (user && window.firebaseDb) {
+                (async () => {
+                    try {
+                        const { setDoc, doc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                        const profileRef = doc(window.firebaseDb, 'users', user.uid, 'profile', 'profile');
+                        await setDoc(profileRef, {
+                            lastLoginAt: serverTimestamp()
+                        }, { merge: true });
+                        console.log('🕒 lastLoginAt uložen do profilu uživatele:', user.uid);
+                    } catch (e) {
+                        console.warn('⚠️ Nepodařilo se uložit lastLoginAt:', e);
+                    }
+                })();
+            }
+            
             // Zkontrolovat, zda existuje callback po přihlášení
             if (user && window.afterLoginCallback) {
                 console.log('🔄 Spouštím callback po přihlášení');
