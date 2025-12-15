@@ -6475,9 +6475,10 @@ html {
 }
 
 .no-services .btn-primary:hover {
-    transform: translateY(-1px);
+    transform: scale(1.05);
     box-shadow: 0 14px 32px rgba(247, 124, 0, 0.45);
-    background: linear-gradient(135deg, #fdf002 0%, #f77c00 100%);
+    /* Barva zůstává stejná - gradient se nemění */
+    background: linear-gradient(135deg, #f77c00 0%, #fdf002 100%);
 }
 
 .error-message {
