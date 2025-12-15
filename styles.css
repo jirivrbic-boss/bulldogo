@@ -6436,8 +6436,11 @@ html {
 .no-services i {
     font-size: 3rem;
     margin-bottom: 1.25rem;
-    /* Stejný oranžový tón jako nadpis "Mé inzeráty" (services-title gradient start) */
-    color: #f77c00;
+    /* Gradient stejný jako nadpis "Mé inzeráty" */
+    background: linear-gradient(135deg, #f77c00 0%, #fdf002 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
 }
 
 .no-services-actions {
