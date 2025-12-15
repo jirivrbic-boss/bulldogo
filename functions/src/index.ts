@@ -5,7 +5,7 @@ import cors from "cors";
 
 // Inicializace Firebase Admin (pouze pokud ještě není inicializováno)
 if (!admin.apps.length) {
-  admin.initializeApp();
+admin.initializeApp();
 }
 
 // CORS middleware
@@ -849,9 +849,9 @@ export const paymentReturn = functions.https.onRequest(async (req, res) => {
               }
             } else {
               // Pro ostatní balíčky použijeme standardní přesměrování
-              const frontendUrl = functions.config().frontend?.url || "https://bulldogo.cz";
-              const returnPath = `/packages.html?payment=${goPayPayment.state}&orderNumber=${orderNumber}&paymentId=${paymentId}`;
-              res.redirect(`${frontendUrl}${returnPath}`);
+            const frontendUrl = functions.config().frontend?.url || "https://bulldogo.cz";
+            const returnPath = `/packages.html?payment=${goPayPayment.state}&orderNumber=${orderNumber}&paymentId=${paymentId}`;
+            res.redirect(`${frontendUrl}${returnPath}`);
             }
             return;
           }
@@ -870,8 +870,8 @@ export const paymentReturn = functions.https.onRequest(async (req, res) => {
           res.redirect(`https://bulldogo8.vercel.app/failed?orderNumber=${orderNumber}&state=${state || "unknown"}`);
         }
       } else {
-        const frontendUrl = functions.config().frontend?.url || "https://bulldogo.cz";
-        res.redirect(`${frontendUrl}/packages.html?payment=${state || "unknown"}`);
+      const frontendUrl = functions.config().frontend?.url || "https://bulldogo.cz";
+      res.redirect(`${frontendUrl}/packages.html?payment=${state || "unknown"}`);
       }
     } catch (error: any) {
       console.error("Payment return error:", error);
@@ -880,9 +880,150 @@ export const paymentReturn = functions.https.onRequest(async (req, res) => {
       if (orderNumber && orderNumber.startsWith("hobby-")) {
         res.redirect(`https://bulldogo8.vercel.app/failed?orderNumber=${orderNumber}&error=true`);
       } else {
-        const frontendUrl = functions.config().frontend?.url || "https://bulldogo.cz";
-        res.redirect(`${frontendUrl}/packages.html?payment=error`);
+      const frontendUrl = functions.config().frontend?.url || "https://bulldogo.cz";
+      res.redirect(`${frontendUrl}/packages.html?payment=error`);
       }
+    }
+  });
+});
+
+// Funkce pro mazání neaktivních účtů (používá se v scheduled i HTTP endpointu)
+async function deleteInactiveAccountsLogic() {
+  console.log('🕒 Spouštím kontrolu neaktivních účtů...');
+  
+  const db = admin.firestore();
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+  
+  let deletedCount = 0;
+  let errorCount = 0;
+  
+  try {
+    // Načíst všechny uživatele z Firestore
+    const usersRef = db.collection('users');
+    const usersSnapshot = await usersRef.get();
+    
+    console.log(`📊 Nalezeno ${usersSnapshot.size} uživatelů k kontrole`);
+    
+    for (const userDoc of usersSnapshot.docs) {
+      const userId = userDoc.id;
+      
+      try {
+        // Načíst profil uživatele
+        const profileRef = db.collection('users').doc(userId).collection('profile').doc('profile');
+        const profileDoc = await profileRef.get();
+        
+        if (!profileDoc.exists) {
+          console.log(`⚠️ Uživatel ${userId} nemá profil, přeskočeno`);
+          continue;
+        }
+        
+        const profileData = profileDoc.data();
+        const lastLoginAt = profileData?.lastLoginAt;
+        
+        // Pokud nemá lastLoginAt, přeskočit (může to být starý účet)
+        if (!lastLoginAt) {
+          console.log(`⚠️ Uživatel ${userId} nemá lastLoginAt, přeskočeno`);
+          continue;
+        }
+        
+        // Převést Firestore Timestamp na Date
+        const lastLoginDate = lastLoginAt.toDate ? lastLoginAt.toDate() : new Date(lastLoginAt);
+        
+        // Pokud je poslední přihlášení starší než 6 měsíců, smazat účet
+        if (lastLoginDate < sixMonthsAgo) {
+          console.log(`🗑️ Mazání neaktivního účtu ${userId} (poslední přihlášení: ${lastLoginDate.toISOString()})`);
+          
+          // Smazat všechna data uživatele z Firestore
+          const userRef = db.collection('users').doc(userId);
+          
+          // Smazat všechny subkolekce (inzeráty, recenze, atd.)
+          const subcollections = ['inzeraty', 'reviews', 'profile', 'payments'];
+          
+          for (const subcollection of subcollections) {
+            const subcollectionRef = userRef.collection(subcollection);
+            const subcollectionSnapshot = await subcollectionRef.get();
+            
+            const deletePromises = subcollectionSnapshot.docs.map(doc => doc.ref.delete());
+            await Promise.all(deletePromises);
+            
+            console.log(`  ✓ Smazáno ${subcollectionSnapshot.size} dokumentů z ${subcollection}`);
+          }
+          
+          // Smazat hlavní dokument uživatele
+          await userRef.delete();
+          console.log(`  ✓ Smazán hlavní dokument uživatele`);
+          
+          // Smazat uživatele z Firebase Auth
+          try {
+            await admin.auth().deleteUser(userId);
+            console.log(`  ✓ Smazán uživatel z Firebase Auth`);
+          } catch (authError: any) {
+            // Pokud uživatel neexistuje v Auth, není to problém
+            if (authError.code !== 'auth/user-not-found') {
+              console.warn(`  ⚠️ Chyba při mazání z Auth: ${authError.message}`);
+            }
+          }
+          
+          deletedCount++;
+        } else {
+          console.log(`✓ Uživatel ${userId} je aktivní (poslední přihlášení: ${lastLoginDate.toISOString()})`);
+        }
+      } catch (userError: any) {
+        console.error(`❌ Chyba při zpracování uživatele ${userId}:`, userError);
+        errorCount++;
+      }
+    }
+    
+    console.log(`✅ Kontrola dokončena: ${deletedCount} účtů smazáno, ${errorCount} chyb`);
+    
+    return {
+      success: true,
+      deletedCount,
+      errorCount,
+      checkedAt: new Date().toISOString(),
+    };
+  } catch (error: any) {
+    console.error('❌ Kritická chyba při kontrole neaktivních účtů:', error);
+    throw error;
+  }
+}
+
+// Automatické mazání neaktivních účtů (starší než 6 měsíců)
+// Spouští se každý den ve 2:00 ráno UTC
+export const deleteInactiveAccounts = functions.pubsub.schedule('0 2 * * *')
+  .timeZone('UTC')
+  .onRun(async (context) => {
+    return await deleteInactiveAccountsLogic();
+  });
+
+// HTTP endpoint pro manuální spuštění (pro testování)
+export const deleteInactiveAccountsManual = functions.https.onRequest(async (req, res) => {
+  corsHandler(req, res, async () => {
+    try {
+      // Bezpečnostní kontrola - pouze POST request
+      if (req.method !== 'POST') {
+        res.status(405).json({ error: 'Method not allowed. Use POST.' });
+        return;
+      }
+      
+      // Volitelně: kontrola API klíče nebo admin tokenu
+      const apiKey = req.headers['x-api-key'] || req.body?.apiKey;
+      const expectedApiKey = functions.config().admin?.api_key;
+      
+      if (expectedApiKey && apiKey !== expectedApiKey) {
+        res.status(401).json({ error: 'Unauthorized. Invalid API key.' });
+        return;
+      }
+      
+      const result = await deleteInactiveAccountsLogic();
+      res.status(200).json(result);
+    } catch (error: any) {
+      console.error('❌ Chyba při manuálním spuštění:', error);
+      res.status(500).json({ 
+        error: 'Internal server error',
+        message: error.message 
+      });
     }
   });
 });

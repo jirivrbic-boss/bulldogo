@@ -917,6 +917,59 @@ function setupEventListeners() {
     }
 }
 
+// Mapování měst na kraje (podle hodnot v regionFilter dropdownu)
+// Hodnoty v dropdownu: "Praha", "Stredocesky", "Jihocesky", atd.
+const CITY_TO_REGION_MAP = {
+    // Hlavní město Praha
+    'Praha': ['praha'],
+    // Středočeský kraj
+    'Stredocesky': ['benesov', 'beroun', 'kladno', 'kolin', 'kutna hora', 'melnik', 'mlada boleslav', 'nymburk', 'pribram', 'rakovnik', 'brandys nad labem', 'mnichovo hradiste', 'ricany', 'rozdalovice'],
+    // Jihočeský kraj
+    'Jihocesky': ['ceske budejovice', 'cesky krumlov', 'jindrichuv hradec', 'pisek', 'prachatice', 'strakonice', 'tabor', 'trebon', 'vodnany', 'milevsko'],
+    // Plzeňský kraj
+    'Plzensky': ['domazlice', 'klatovy', 'plzen', 'rokycany', 'susice', 'tachov', 'blovice', 'horice', 'nepomuk'],
+    // Karlovarský kraj
+    'Karlovarsky': ['cheb', 'karlovy vary', 'sokolov', 'marianske lazne', 'ostrov', 'kraslice'],
+    // Ústecký kraj
+    'Ustecky': ['chomutov', 'decin', 'litomerice', 'louny', 'most', 'teplice', 'usti nad labem', 'kadan', 'lovosice', 'rupka'],
+    // Liberecký kraj
+    'Liberecky': ['ceska lipa', 'jablonec nad nisou', 'liberec', 'semily', 'turnov', 'frydlant', 'tanvald'],
+    // Královéhradecký kraj
+    'Kralovehradecky': ['hradec kralove', 'jicin', 'nachod', 'rychnov nad kniznou', 'trutnov', 'dvor kralove', 'novy bydzov'],
+    // Pardubický kraj
+    'Pardubicky': ['chrudim', 'pardubice', 'svitavy', 'usti nad orlici', 'litomysl', 'moravska trebova', 'policka'],
+    // Kraj Vysočina
+    'Vysocina': ['havlickuv brod', 'jihlava', 'pelhrimov', 'trebic', 'zdar nad sazavou', 'namest nad oslavou', 'velke mezirici'],
+    // Jihomoravský kraj
+    'Jihomoravsky': ['blansko', 'brno', 'breclav', 'hodonin', 'vyskov', 'znojmo', 'boskovice', 'kromeriz', 'slavkov u brna', 'ivancice'],
+    // Olomoucký kraj
+    'Olomoucky': ['jesenik', 'olomouc', 'prerov', 'prostejov', 'sumperk', 'litovel', 'hranice', 'unikov'],
+    // Zlínský kraj
+    'Zlinsky': ['kromeriz', 'uhorske hradiste', 'vsetin', 'zlin', 'kromeriz', 'valasske mezirici', 'rozhov pod radhostem'],
+    // Moravskoslezský kraj
+    'Moravskoslezsky': ['bruntal', 'frydek-mistek', 'karvina', 'novy jicin', 'opava', 'ostrava', 'havirov', 'cesky tesin', 'trinec', 'frydek-mistek']
+};
+
+// Pomocná funkce pro zjištění kraje z města
+function getRegionFromCity(cityName) {
+    if (!cityName) return null;
+    const normalizedCity = normalize(cityName);
+    
+    // Procházet mapování - klíče jsou už hodnoty z dropdownu
+    for (const [regionKey, cities] of Object.entries(CITY_TO_REGION_MAP)) {
+        if (Array.isArray(cities)) {
+            // Kontrola, zda město patří do tohoto kraje
+            for (const city of cities) {
+                if (normalizedCity.includes(city) || city.includes(normalizedCity)) {
+                    return regionKey; // Vrátit přímo hodnotu z dropdownu
+                }
+            }
+        }
+    }
+    
+    return null;
+}
+
 // Filtrování služeb
 function filterServices() {
     const rawSearch = (document.getElementById('searchInput')?.value || '').trim();
@@ -937,7 +990,19 @@ function filterServices() {
 
         const matchesSearch = !searchTerm || title.includes(searchTerm) || desc.includes(searchTerm) || loc.includes(searchTerm);
         const matchesCategory = !categoryFilter || (service?.category === categoryFilter);
-        const matchesRegion = !regionFilter || (service?.location === regionFilter);
+        
+        // Filtrování podle kraje - buď přesná shoda nebo mapování města na kraj
+        let matchesRegion = true;
+        if (regionFilter) {
+            const normalizedLocation = normalize(service?.location || '');
+            const serviceRegion = getRegionFromCity(service?.location);
+            
+            // Přesná shoda s hodnotou z dropdownu nebo shoda přes mapování
+            matchesRegion = (normalizedLocation === normalize(regionFilter)) || 
+                           (serviceRegion === regionFilter) ||
+                           (normalizedLocation.includes(normalize(regionFilter))) ||
+                           (normalize(regionFilter) === 'praha' && normalizedLocation.includes('praha'));
+        }
         // Zobrazit všechny inzeráty kromě smazaných nebo archivovaných
         // Pokud status není nastaven, považujeme ho za aktivní
         const status = service?.status || 'active';
@@ -982,7 +1047,19 @@ function filterServicesDom(searchTerm, categoryFilter, regionFilter) {
 
         const matchesSearch = !searchTerm || title.includes(searchTerm) || meta.includes(searchTerm);
         const matchesCategory = !categoryFilter || dataCategory === categoryFilter;
-        const matchesRegion = !regionFilter || locationMatch === regionFilter;
+        
+        // Filtrování podle kraje - buď přesná shoda nebo mapování města na kraj
+        let matchesRegion = true;
+        if (regionFilter) {
+            const normalizedLocation = normalize(locationMatch);
+            const serviceRegion = getRegionFromCity(locationMatch);
+            
+            // Přesná shoda s hodnotou z dropdownu nebo shoda přes mapování
+            matchesRegion = (normalizedLocation === normalize(regionFilter)) || 
+                           (serviceRegion === regionFilter) ||
+                           (normalizedLocation.includes(normalize(regionFilter))) ||
+                           (normalize(regionFilter) === 'praha' && normalizedLocation.includes('praha'));
+        }
 
         const show = matchesSearch && matchesCategory && matchesRegion;
         card.style.display = show ? '' : 'none';

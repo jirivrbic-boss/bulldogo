@@ -22,12 +22,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (typeof window.processGoPayPayment === 'function' && 
             typeof window.createGoPayPayment === 'function') {
             console.log('✅ gopay-frontend.js je načten po', attempts * 100, 'ms');
-            initializePackages();
-            initializeAuthState();
-            // Po načtení stránky vyčkej na Firebase a načti stav balíčku
-            (function waitAndLoadPlan(){
-                if (window.firebaseAuth && window.firebaseDb) {
-                    loadCurrentPlan();
+    initializePackages();
+    initializeAuthState();
+    // Po načtení stránky vyčkej na Firebase a načti stav balíčku
+    (function waitAndLoadPlan(){
+        if (window.firebaseAuth && window.firebaseDb) {
+            loadCurrentPlan();
                     showManageSectionIfNeeded();
                 } else {
                     setTimeout(waitAndLoadPlan, 100);
@@ -205,7 +205,7 @@ async function processPayment() {
         console.log('💳 Používám REST API pro vytvoření platby');
         try {
             return await window.processGoPayPayment();
-        } catch (error) {
+    } catch (error) {
             console.error('❌ Chyba při volání processGoPayPayment:', error);
             throw error;
         }

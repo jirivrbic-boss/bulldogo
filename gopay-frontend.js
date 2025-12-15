@@ -122,12 +122,12 @@ async function createGoPayPayment(paymentData) {
     let response;
     try {
       response = await fetch(`${FUNCTIONS_BASE_URL}/createPayment`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestData),
-      });
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestData),
+    });
     } catch (fetchError) {
       // Pokud je 404, Functions pravděpodobně nejsou nasazeny nebo je špatný region
       if (fetchError.message.includes("404") || fetchError.message.includes("Load failed")) {
@@ -546,7 +546,7 @@ function initGoPayIntegration() {
 
   // Zpracování návratu z GoPay (kontrola URL parametrů)
   handleGoPayReturn();
-  
+
   // Funkce jsou již exportovány výše, jen ověříme
   console.log("✅ GoPay funkce dostupné:", {
     processGoPayPayment: typeof window.processGoPayPayment,
