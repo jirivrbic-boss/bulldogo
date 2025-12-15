@@ -346,9 +346,25 @@
                 businessSection.style.display = 'none';
             }
             
-            // Zkusit načíst data okamžitě (pokud je Firebase už dostupný)
+            // OKAMŽITĚ načíst data z cache (pokud existují)
+            const currentUser = window.firebaseAuth?.currentUser;
+            if (currentUser) {
+                const cacheKey = `profile_settings_${currentUser.uid}`;
+                const cachedData = localStorage.getItem(cacheKey);
+                if (cachedData) {
+                    try {
+                        const userProfile = JSON.parse(cachedData);
+                        console.log('⚡ OKAMŽITĚ načtena data z cache při otevření stránky');
+                        updateFormFields(userProfile);
+                    } catch (e) {
+                        console.warn('⚠️ Chyba při načtení cache:', e);
+                    }
+                }
+            }
+            
+            // Pak načíst aktuální data z Firebase
             if (window.firebaseAuth && window.firebaseDb) {
-                console.log('✅ Firebase je dostupný, načítám data okamžitě');
+                console.log('✅ Firebase je dostupný, načítám aktuální data');
                 initializeSettings();
                 loadUserProfile();
             } else {
@@ -465,6 +481,18 @@
                 
                 await setDoc(profileRef, personalData, { merge: true });
 
+                // Aktualizovat cache okamžitě
+                const cacheKey = `profile_settings_${currentUser.uid}`;
+                try {
+                    const { getDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                    const updatedProfile = await getDoc(profileRef);
+                    if (updatedProfile.exists()) {
+                        localStorage.setItem(cacheKey, JSON.stringify(updatedProfile.data()));
+                    }
+                } catch (e) {
+                    console.warn('⚠️ Nepodařilo se aktualizovat cache:', e);
+                }
+
                 console.log('✅ Data úspěšně uložena do Firebase');
                 showMessage('✅ Osobní informace byly uloženy!', 'success');
 
@@ -537,6 +565,18 @@
                 console.log('📝 Cesta k dokumentu:', `users/${currentUser.uid}/profile/profile`);
                 
                 await setDoc(profileRef, businessData, { merge: true });
+
+                // Aktualizovat cache okamžitě
+                const cacheKey = `profile_settings_${currentUser.uid}`;
+                try {
+                    const { getDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                    const updatedProfile = await getDoc(profileRef);
+                    if (updatedProfile.exists()) {
+                        localStorage.setItem(cacheKey, JSON.stringify(updatedProfile.data()));
+                    }
+                } catch (e) {
+                    console.warn('⚠️ Nepodařilo se aktualizovat cache:', e);
+                }
 
                 console.log('✅ Data úspěšně uložena do Firebase');
                 showMessage('✅ Obchodní informace byly uloženy!', 'success');
@@ -1121,7 +1161,22 @@ Prosím kontaktujte podporu.
                     return;
                 }
 
-                console.log('🔄 Automaticky načítám data pro uživatele:', currentUser.uid);
+                const cacheKey = `profile_settings_${currentUser.uid}`;
+                
+                // OKAMŽITĚ načíst data z cache a zobrazit je
+                const cachedData = localStorage.getItem(cacheKey);
+                if (cachedData) {
+                    try {
+                        const userProfile = JSON.parse(cachedData);
+                        console.log('⚡ OKAMŽITĚ načtena data z cache');
+                        updateFormFields(userProfile);
+                    } catch (e) {
+                        console.warn('⚠️ Chyba při načtení cache:', e);
+                    }
+                }
+
+                // Pak načíst aktuální data z Firebase (na pozadí)
+                console.log('🔄 Načítám aktuální data z Firebase pro uživatele:', currentUser.uid);
 
                 const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
                 const profileRef = doc(window.firebaseDb, 'users', currentUser.uid, 'profile', 'profile');
@@ -1130,7 +1185,14 @@ Prosím kontaktujte podporu.
                 let userProfile = null;
                 if (profileSnap.exists()) {
                     userProfile = profileSnap.data();
-                    console.log('✅ Automaticky načtený profil:', userProfile);
+                    console.log('✅ Aktuální profil načten z Firebase:', userProfile);
+                    
+                    // Uložit do cache pro příští načtení
+                    try {
+                        localStorage.setItem(cacheKey, JSON.stringify(userProfile));
+                    } catch (e) {
+                        console.warn('⚠️ Nepodařilo se uložit do cache:', e);
+                    }
                 } else {
                     // Pokud profil neexistuje, vytvořit základní strukturu s aktuálními daty uživatele
                     const displayName = currentUser.displayName || currentUser.email?.split('@')[0] || '';
@@ -1160,9 +1222,16 @@ Prosím kontaktujte podporu.
                     const { setDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
                     await setDoc(profileRef, userProfile, { merge: true });
                     console.log('✅ Automaticky vytvořen základní profil:', userProfile);
+                    
+                    // Uložit do cache
+                    try {
+                        localStorage.setItem(cacheKey, JSON.stringify(userProfile));
+                    } catch (e) {
+                        console.warn('⚠️ Nepodařilo se uložit do cache:', e);
+                    }
                 }
 
-                // Automaticky aktualizovat formulář s daty (vždy prefilled)
+                // Aktualizovat formulář s aktuálními daty (přepíše cache, pokud jsou novější)
                 updateFormFields(userProfile);
                 
                 // Tichá notifikace o úspěšném načtení (pouze při prvním načtení)
@@ -1183,15 +1252,22 @@ Prosím kontaktujte podporu.
                 const currentUser = window.firebaseAuth.currentUser;
                 if (!currentUser) return;
 
-                const { onSnapshot, doc } = import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
-                
-                onSnapshot.then(({ onSnapshot }) => {
+                const cacheKey = `profile_settings_${currentUser.uid}`;
+
+                import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js').then(({ onSnapshot, doc }) => {
                     const profileRef = doc(window.firebaseDb, 'users', currentUser.uid, 'profile', 'profile');
                     
                     profileListener = onSnapshot(profileRef, (snapshot) => {
                         if (snapshot.exists()) {
                             const userProfile = snapshot.data();
                             console.log('🔄 Real-time aktualizace profilu:', userProfile);
+                            
+                            // Uložit do cache
+                            try {
+                                localStorage.setItem(cacheKey, JSON.stringify(userProfile));
+                            } catch (e) {
+                                console.warn('⚠️ Nepodařilo se uložit do cache:', e);
+                            }
                             
                             // Aktualizovat pouze pokud uživatel neupravuje formulář
                             const activeElement = document.activeElement;
