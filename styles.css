@@ -8168,8 +8168,10 @@ html {
 
 .profile-content {
     padding: 20px;
-    height: calc(100% - 80px);
-    overflow: hidden;
+    /* U profilu nechceme pevnou výšku ani schované přetečení –
+       obsah (např. „Moje služby“) se musí normálně vejít a scrollovat */
+    height: auto;
+    overflow: visible;
     box-sizing: border-box;
 }
 
