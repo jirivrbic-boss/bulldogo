@@ -8168,11 +8168,13 @@ html {
 
 .profile-content {
     padding: 20px;
-    /* U profilu nechceme pevnou výšku ani schované přetečení –
-       obsah (např. „Moje služby“) se musí normálně vejít a scrollovat */
+    /* Profilová stránka použije přirozenou výšku a klasický scroll celé stránky */
     height: auto;
     overflow: visible;
     box-sizing: border-box;
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr);
+    gap: 2rem;
 }
 
 .profile-header {
