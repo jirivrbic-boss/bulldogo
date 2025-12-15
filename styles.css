@@ -6436,6 +6436,7 @@ html {
 .no-services i {
     font-size: 3rem;
     margin-bottom: 1.25rem;
+    /* Stejný oranžový tón jako nadpis "Mé inzeráty" (services-title gradient start) */
     color: #f77c00;
 }
 
@@ -6463,16 +6464,17 @@ html {
     padding: 0.75rem 1.75rem;
     font-size: 0.95rem;
     border-radius: 999px;
-    background: linear-gradient(135deg, #f97316, #ea580c);
-    box-shadow: 0 10px 25px rgba(234, 88, 12, 0.35);
+    /* Barvy sladěné s gradientem .services-title (#f77c00 → #fdf002) */
+    background: linear-gradient(135deg, #f77c00 0%, #fdf002 100%);
+    box-shadow: 0 10px 25px rgba(247, 124, 0, 0.35);
     border: none;
     transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
 
 .no-services .btn-primary:hover {
     transform: translateY(-1px);
-    box-shadow: 0 14px 32px rgba(234, 88, 12, 0.45);
-    background: linear-gradient(135deg, #fb923c, #f97316);
+    box-shadow: 0 14px 32px rgba(247, 124, 0, 0.45);
+    background: linear-gradient(135deg, #fdf002 0%, #f77c00 100%);
 }
 
 .error-message {
