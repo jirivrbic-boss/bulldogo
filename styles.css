@@ -4094,8 +4094,13 @@ select.search-input::-ms-expand { /* skrytí defaultní šipky v IE/Edge */
 
 .form-group input:focus,
 .form-group textarea:focus {
-    outline: none;
-    border-color: #f77c00;
+    outline: none !important;
+    border-color: #f77c00 !important;
+    /* Zabraň modré barvě z browser default stylů */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    box-shadow: 0 0 0 3px rgba(247, 124, 0, 0.1);
 }
 
 .form-group textarea {
@@ -5053,9 +5058,13 @@ select.search-input::-ms-expand { /* skrytí defaultní šipky v IE/Edge */
 }
 
 .form-input:focus, .form-textarea:focus {
-    outline: none;
-    border-color: #f77c00;
-    box-shadow: 0 0 0 3px rgba(247, 124, 0, 0.1);
+    outline: none !important;
+    border-color: #f77c00 !important;
+    box-shadow: 0 0 0 3px rgba(247, 124, 0, 0.1) !important;
+    /* Zabraň modré barvě z browser default stylů */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
 }
 
 .form-textarea {
