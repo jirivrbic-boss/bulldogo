@@ -346,83 +346,147 @@
                 businessSection.style.display = 'none';
             }
             
-            // OKAMŽITĚ načíst data z cache (pokud existují)
-            const currentUser = window.firebaseAuth?.currentUser;
-            if (currentUser) {
-                const cacheKey = `profile_settings_${currentUser.uid}`;
-                const cachedData = localStorage.getItem(cacheKey);
-                if (cachedData) {
-                    try {
-                        const userProfile = JSON.parse(cachedData);
-                        console.log('⚡ OKAMŽITĚ načtena data z cache při otevření stránky');
-                        updateFormFields(userProfile);
-                    } catch (e) {
-                        console.warn('⚠️ Chyba při načtení cache:', e);
-                    }
-                }
-            }
-            
-            // Pak načíst aktuální data z Firebase
-            if (window.firebaseAuth && window.firebaseDb) {
-                console.log('✅ Firebase je dostupný, načítám aktuální data');
-                initializeSettings();
-                loadUserProfile();
-            } else {
-                // Pokud Firebase není dostupný, počkat na něj
-                console.log('⏳ Čekám na Firebase...');
-                initializeSettings();
-                loadUserProfile();
-            }
+            // OKAMŽITĚ nastavit real-time listener - data se načtou automaticky
+            setupInstantDataLoad();
         });
-
-        // Load user profile data
-        async function loadUserProfile() {
-            console.log('🔧 Loading user profile...');
-            
-            // Funkce pro načtení dat (použije se hned, jakmile je Firebase dostupný)
-            const tryLoadData = async () => {
-                if (window.firebaseAuth && window.firebaseDb) {
-                    console.log('✅ Firebase available, loading data immediately');
-                    await loadUserData();
-                    return true;
+        
+        // Okamžité načtení dat pomocí real-time listeneru
+        function setupInstantDataLoad() {
+            // Použít onAuthStateChanged pro okamžité načtení
+            if (window.firebaseAuth) {
+                window.firebaseAuth.onAuthStateChanged(async (user) => {
+                    if (user) {
+                        console.log('👤 Uživatel přihlášen, načítám data OKAMŽITĚ');
+                        await loadDataInstantly(user.uid);
+                    }
+                });
+                
+                // Pokud je uživatel už přihlášen, načíst data okamžitě
+                const currentUser = window.firebaseAuth.currentUser;
+                if (currentUser) {
+                    console.log('👤 Uživatel už přihlášen, načítám data OKAMŽITĚ');
+                    loadDataInstantly(currentUser.uid);
                 }
-                return false;
-            };
-            
-            // Zkusit načíst hned (pokud je Firebase už dostupný)
-            if (await tryLoadData()) {
-                // Nastavit listener pro změny
-                if (window.firebaseAuth) {
-                    window.firebaseAuth.onAuthStateChanged((user) => {
-                        if (user) {
-                            loadUserData();
+            } else {
+                // Pokud Firebase Auth není dostupný, počkat na něj (max 2 sekundy)
+                let attempts = 0;
+                const checkAuth = setInterval(() => {
+                    attempts++;
+                    if (window.firebaseAuth) {
+                        clearInterval(checkAuth);
+                        const currentUser = window.firebaseAuth.currentUser;
+                        if (currentUser) {
+                            loadDataInstantly(currentUser.uid);
                         }
-                    });
-                }
+                        window.firebaseAuth.onAuthStateChanged(async (user) => {
+                            if (user) {
+                                await loadDataInstantly(user.uid);
+                            }
+                        });
+                    } else if (attempts >= 40) { // 2 sekundy
+                        clearInterval(checkAuth);
+                        console.warn('⚠️ Firebase Auth není dostupný');
+                    }
+                }, 50);
+            }
+        }
+        
+        // Okamžité načtení dat z Firestore pomocí onSnapshot
+        async function loadDataInstantly(userId) {
+            if (!window.firebaseDb) {
+                // Počkat na Firestore (max 1 sekundu)
+                let attempts = 0;
+                const checkDb = setInterval(() => {
+                    attempts++;
+                    if (window.firebaseDb) {
+                        clearInterval(checkDb);
+                        doLoadDataInstantly(userId);
+                    } else if (attempts >= 20) { // 1 sekunda
+                        clearInterval(checkDb);
+                        console.warn('⚠️ Firestore není dostupný');
+                    }
+                }, 50);
                 return;
             }
             
-            // Pokud Firebase není dostupný, počkat na něj (rychlejší kontrola)
-            let attempts = 0;
-            const maxAttempts = 50; // 5 sekund místo neomezeně
-            const checkFirebase = setInterval(async () => {
-                attempts++;
-                if (await tryLoadData()) {
-                    clearInterval(checkFirebase);
-                    // Nastavit listener pro změny
-                    if (window.firebaseAuth) {
-                        window.firebaseAuth.onAuthStateChanged((user) => {
-                            if (user) {
-                                loadUserData();
-                            }
-                        });
-                    }
-                } else if (attempts >= maxAttempts) {
-                    clearInterval(checkFirebase);
-                    console.warn('⚠️ Firebase není dostupný po 5 sekundách');
-                }
-            }, 100);
+            await doLoadDataInstantly(userId);
         }
+        
+        // Skutečné načtení dat
+        async function doLoadDataInstantly(userId) {
+            try {
+                const { onSnapshot, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                const profileRef = doc(window.firebaseDb, 'users', userId, 'profile', 'profile');
+                
+                // OKAMŽITĚ nastavit real-time listener - data se načtou hned
+                if (profileListener) {
+                    profileListener(); // Zrušit starý listener
+                }
+                
+                profileListener = onSnapshot(profileRef, (snapshot) => {
+                    if (snapshot.exists()) {
+                        const userProfile = snapshot.data();
+                        console.log('⚡ Data načtena OKAMŽITĚ z Firestore:', userProfile);
+                        updateFormFields(userProfile);
+                        toggleBusinessInfoSection(userProfile);
+                        
+                        // Uložit do cache
+                        try {
+                            localStorage.setItem(`profile_settings_${userId}`, JSON.stringify(userProfile));
+                        } catch (e) {
+                            console.warn('⚠️ Nepodařilo se uložit do cache:', e);
+                        }
+                    } else {
+                        // Pokud profil neexistuje, vytvořit základní
+                        const currentUser = window.firebaseAuth.currentUser;
+                        if (currentUser) {
+                            const displayName = currentUser.displayName || currentUser.email?.split('@')[0] || '';
+                            const nameParts = displayName.split(' ');
+                            
+                            const userProfile = {
+                                firstName: nameParts[0] || '',
+                                lastName: nameParts.slice(1).join(' ') || '',
+                                name: displayName,
+                                email: currentUser.email || '',
+                                phone: '',
+                                city: '',
+                                bio: '',
+                                businessName: '',
+                                businessType: '',
+                                businessIco: '',
+                                businessDic: '',
+                                businessAddress: '',
+                                businessDescription: '',
+                                emailNotifications: true,
+                                smsNotifications: false,
+                                marketingEmails: false,
+                                createdAt: new Date()
+                            };
+                            
+                            // Uložit do Firestore
+                            import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js').then(({ setDoc }) => {
+                                setDoc(profileRef, userProfile, { merge: true });
+                            });
+                            
+                            updateFormFields(userProfile);
+                        }
+                    }
+                }, (error) => {
+                    console.error('❌ Chyba real-time listeneru:', error);
+                });
+                
+                // Nastavit event listenery pro formuláře
+                if (!isInitialized) {
+                    setupFormListeners();
+                    isInitialized = true;
+                }
+                
+            } catch (error) {
+                console.error('❌ Chyba při okamžitém načtení dat:', error);
+            }
+        }
+
+        // Tato funkce už není potřeba - používáme setupInstantDataLoad()
 
         // Uložení osobních informací - DEFINICE HNED
         async function savePersonalInfo() {
@@ -1062,32 +1126,7 @@ Prosím kontaktujte podporu.
             changePassword: typeof window.changePassword
         });
 
-        // Hlavní inicializační funkce
-        async function initializeSettings() {
-            try {
-                // Počkat na Firebase
-                await waitForFirebase();
-                
-                // Načíst data uživatele (automaticky prefilled)
-                await loadUserSettings();
-                
-                // Nastavit real-time listener
-                setupRealtimeListener();
-                
-                // Nastavit event listenery pro formuláře
-                setupFormListeners();
-                
-                // Automatické načítání dat při různých událostech
-                setupAutoRefresh();
-                
-                isInitialized = true;
-                console.log('✅ Nastavení profilu inicializováno s automatickým prefilled daty');
-                
-            } catch (error) {
-                console.error('❌ Chyba při inicializaci:', error);
-                showMessage('Chyba při načítání nastavení', 'error');
-            }
-        }
+        // Tato funkce už není potřeba - používáme setupInstantDataLoad()
 
         // Nastavení automatického načítání dat
         function setupAutoRefresh() {
