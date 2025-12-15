@@ -234,7 +234,7 @@
                 </div>
 
                 <!-- Business Information -->
-                <div class="settings-section">
+                <div class="settings-section" id="businessInfoSection">
                     <h3 class="settings-title">
                         <i class="fas fa-briefcase"></i>
                         Obchodní informace
@@ -340,6 +340,11 @@
         // Inicializace po načtení DOM
         document.addEventListener('DOMContentLoaded', () => {
             console.log('🚀 Inicializuji nastavení profilu');
+            // Výchozí stav: skrýt sekci "Obchodní informace" (zobrazí se až po ověření, že uživatel není Hobby)
+            const businessSection = document.getElementById('businessInfoSection');
+            if (businessSection) {
+                businessSection.style.display = 'none';
+            }
             initializeSettings();
             loadUserProfile();
         });
@@ -1184,6 +1189,35 @@ Prosím kontaktujte podporu.
             });
         }
 
+        // Skrýt/zobrazit sekci "Obchodní informace" podle typu uživatele
+        async function toggleBusinessInfoSection(userProfile) {
+            const businessSection = document.getElementById('businessInfoSection');
+            if (!businessSection) return;
+            
+            // Zkontrolovat plán uživatele - nejprve z profilu, pak z databáze
+            let userPlan = userProfile?.plan;
+            
+            // Pokud není plán v profilu, zkusit načíst z databáze pomocí checkUserPlanFromDatabase
+            if (!userPlan && window.checkUserPlanFromDatabase && window.firebaseAuth?.currentUser) {
+                try {
+                    userPlan = await window.checkUserPlanFromDatabase(window.firebaseAuth.currentUser.uid);
+                    console.log('📦 Plán načten z databáze:', userPlan);
+                } catch (error) {
+                    console.warn('⚠️ Nepodařilo se načíst plán z databáze:', error);
+                }
+            }
+            
+            // Pokud má uživatel plán "hobby", skrýt sekci "Obchodní informace"
+            if (userPlan === 'hobby') {
+                businessSection.style.display = 'none';
+                console.log('🔒 Skrývám sekci "Obchodní informace" pro uživatele s plánem Hobby');
+            } else {
+                // Pro firmy nebo pokud není plán nastaven, zobrazit sekci
+                businessSection.style.display = 'block';
+                console.log('✅ Zobrazuji sekci "Obchodní informace" pro uživatele s plánem:', userPlan || 'není nastaven');
+            }
+        }
+
         // Aktualizace formulářových polí s daty (vždy prefilled kromě hesel)
         function updateFormFields(userProfile) {
             console.log('🔄 Aktualizuji formulář s daty:', userProfile);
@@ -1311,6 +1345,9 @@ Prosím kontaktujte podporu.
                 // Update statistics
                 console.log('📊 Calling updateStatistics with:', { userAds: userAds.length, userProfile });
                 updateStatistics(userAds, userProfile);
+                
+                // Skrýt/zobrazit sekci "Obchodní informace" podle typu uživatele
+                toggleBusinessInfoSection(userProfile);
                 
                 // Load all reviews and update rating after loading
                 loadAllUserReviews(currentUser.uid);

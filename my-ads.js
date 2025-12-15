@@ -134,12 +134,10 @@ async function loadUserAds() {
             userAds.push({ id: doc.id, ...data });
         });
         
-        // Seřadit podle data vytvoření (nejnovější první)
-        userAds.sort((a, b) => {
-            const dateA = new Date(a.createdAt?.toDate?.() || a.createdAt);
-            const dateB = new Date(b.createdAt?.toDate?.() || b.createdAt);
-            return dateB - dateA;
-        });
+        // Výchozí řazení:
+        // 1) TOP inzeráty vždy nahoře, seřazené podle data TOP (topExpiresAt – nové TOP jako první)
+        // 2) Ostatní inzeráty podle data vytvoření (nejnovější první)
+        userAds = sortByTopAndDate(userAds);
         
         console.log('Celkem načteno inzerátů:', userAds.length);
         updateStats();
@@ -166,6 +164,32 @@ function updateStats() {
     if (activeAdsElement) {
         activeAdsElement.textContent = activeAds;
     }
+}
+
+// Pomocná funkce: seřadí inzeráty tak, aby:
+// - TOP inzeráty byly vždy nahoře a seřazené podle topExpiresAt (novější TOP jako první)
+// - ostatní inzeráty byly seřazené podle createdAt (nejnovější první)
+function sortByTopAndDate(ads) {
+    const cloned = Array.isArray(ads) ? [...ads] : [];
+    
+    const topAds = cloned.filter(ad => ad.isTop);
+    const normalAds = cloned.filter(ad => !ad.isTop);
+    
+    // TOP – podle data expirace TOP (přibližně odpovídá datu zakoupení TOP, novější nahoře)
+    topAds.sort((a, b) => {
+        const ta = a.topExpiresAt?.toDate ? a.topExpiresAt.toDate() : (a.topExpiresAt ? new Date(a.topExpiresAt) : new Date(0));
+        const tb = b.topExpiresAt?.toDate ? b.topExpiresAt.toDate() : (b.topExpiresAt ? new Date(b.topExpiresAt) : new Date(0));
+        return tb - ta; // novější expirace (novější TOP) jako první
+    });
+    
+    // Ostatní – podle data vytvoření, nejnovější první
+    normalAds.sort((a, b) => {
+        const da = new Date(a.createdAt?.toDate?.() || a.createdAt || 0);
+        const db = new Date(b.createdAt?.toDate?.() || b.createdAt || 0);
+        return db - da;
+    });
+    
+    return [...topAds, ...normalAds];
 }
 
 // Zobrazení inzerátů
@@ -321,12 +345,9 @@ function filterAds() {
         return matchesSearch && matchesCategory;
     });
     
-    // TOP inzeráty vždy první
-    filteredAds.sort((a, b) => {
-        if (a.isTop && !b.isTop) return -1;
-        if (!a.isTop && b.isTop) return 1;
-        return 0;
-    });
+    // Použijeme stejné pravidlo jako u výchozího zobrazení:
+    // TOP nahoře dle topExpiresAt, ostatní dle createdAt (nejnovější první)
+    filteredAds = sortByTopAndDate(filteredAds);
     displayAds(filteredAds);
 }
 
@@ -337,7 +358,8 @@ function sortAds() {
     
     switch (sortBy) {
         case 'newest':
-            sortedAds.sort((a, b) => new Date(b.createdAt?.toDate?.() || b.createdAt) - new Date(a.createdAt?.toDate?.() || a.createdAt));
+            // Výchozí řazení: TOP nahoře (dle topExpiresAt), ostatní dle createdAt (nejnovější)
+            sortedAds = sortByTopAndDate(sortedAds);
             break;
         case 'oldest':
             sortedAds.sort((a, b) => new Date(a.createdAt?.toDate?.() || a.createdAt) - new Date(b.createdAt?.toDate?.() || b.createdAt));
@@ -347,12 +369,15 @@ function sortAds() {
             break;
     }
     
-    // TOP inzeráty vždy první bez ohledu na vybrané řazení
-    sortedAds.sort((a, b) => {
-        if (a.isTop && !b.isTop) return -1;
-        if (!a.isTop && b.isTop) return 1;
-        return 0;
-    });
+    // U „oldest“ a „title“ stále chceme, aby TOP byly nahoře,
+    // proto na tyto režimy aplikujeme ještě jemné seřazení podle TOP příznaku.
+    if (sortBy === 'oldest' || sortBy === 'title') {
+        sortedAds.sort((a, b) => {
+            if (a.isTop && !b.isTop) return -1;
+            if (!a.isTop && b.isTop) return 1;
+            return 0;
+        });
+    }
     displayAds(sortedAds);
 }
 

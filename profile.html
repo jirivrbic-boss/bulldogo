@@ -1618,6 +1618,32 @@
             if (activeAdsElement) activeAdsElement.textContent = activeAds;
         }
 
+        // Pomocná funkce: seřadí inzeráty tak, aby:
+        // - TOP inzeráty byly vždy nahoře a seřazené podle topExpiresAt (novější TOP jako první)
+        // - ostatní inzeráty byly seřazené podle createdAt (nejnovější první)
+        function sortByTopAndDate(ads) {
+            const cloned = Array.isArray(ads) ? [...ads] : [];
+            
+            const topAds = cloned.filter(ad => ad.isTop);
+            const normalAds = cloned.filter(ad => !ad.isTop);
+            
+            // TOP – podle data expirace TOP (přibližně odpovídá datu zakoupení TOP, novější nahoře)
+            topAds.sort((a, b) => {
+                const ta = a.topExpiresAt?.toDate ? a.topExpiresAt.toDate() : (a.topExpiresAt ? new Date(a.topExpiresAt) : new Date(0));
+                const tb = b.topExpiresAt?.toDate ? b.topExpiresAt.toDate() : (b.topExpiresAt ? new Date(b.topExpiresAt) : new Date(0));
+                return tb - ta;
+            });
+            
+            // Ostatní – podle data vytvoření, nejnovější první
+            normalAds.sort((a, b) => {
+                const da = new Date(a.createdAt?.toDate?.() || a.createdAt || 0);
+                const db = new Date(b.createdAt?.toDate?.() || b.createdAt || 0);
+                return db - da;
+            });
+            
+            return [...topAds, ...normalAds];
+        }
+
         // Display ads
         function displayAds(ads) {
             const container = document.getElementById('myServicesContainer');
@@ -1636,7 +1662,8 @@
                 return;
             }
             
-            container.innerHTML = ads.map(ad => createAdCard(ad)).join('');
+            const sorted = sortByTopAndDate(ads);
+            container.innerHTML = sorted.map(ad => createAdCard(ad)).join('');
         }
 
         // Create ad card

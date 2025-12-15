@@ -603,6 +603,32 @@ function saveServicesToLocalStorage() {
     console.log('Služby uloženy do localStorage');
 }
 
+// Pomocná funkce: jednotné řazení – TOP nahoře, seřazené podle topExpiresAt (novější TOP první),
+// ostatní podle createdAt (nejnovější první)
+function sortByTopAndDateGlobal(services) {
+    const cloned = Array.isArray(services) ? [...services] : [];
+    const toDate = (d) => new Date(d?.toDate?.() || d || 0);
+
+    const top = cloned.filter(s => !!s.isTop);
+    const rest = cloned.filter(s => !s.isTop);
+
+    // TOP – podle expirace TOP (přibližně odpovídá datu zakoupení TOP), novější TOP výš
+    top.sort((a, b) => {
+        const ta = a.topExpiresAt ? toDate(a.topExpiresAt) : new Date(0);
+        const tb = b.topExpiresAt ? toDate(b.topExpiresAt) : new Date(0);
+        return tb - ta;
+    });
+
+    // Ostatní – podle data vytvoření, nejnovější první
+    rest.sort((a, b) => {
+        const da = toDate(a.createdAt);
+        const db = toDate(b.createdAt);
+        return db - da;
+    });
+
+    return [...top, ...rest];
+}
+
 // Zobrazení služeb v gridu (volitelné předání seznamu)
 function displayServices(list) {
     const grid = document.getElementById('servicesGrid');
@@ -614,7 +640,10 @@ function displayServices(list) {
     const limit = limitAttr ? parseInt(limitAttr, 10) : null;
     const showActions = showActionsAttr ? showActionsAttr === 'true' : true;
     
-    const servicesToRender = Array.isArray(list) ? list : filteredServices;
+    // VŠECHNY výpisy (hlavní stránka i stránka služeb) používají stejné základní řazení:
+    // TOP nahoře (dle topExpiresAt), ostatní dle createdAt (nejnovější první)
+    const baseList = Array.isArray(list) ? list : filteredServices;
+    const servicesToRender = sortByTopAndDateGlobal(baseList);
     
     // Pokud je nastaven limit (např. na homepage), vždy použij prvních N služeb
     // Limit se aplikuje, i když je předán parametr list (např. z sortServices)
@@ -1098,27 +1127,31 @@ function sortServices() {
     // Řaď aktuálně filtrované výsledky (ne všechny služby)
     const base = Array.isArray(filteredServices) && filteredServices.length ? [...filteredServices] : [...allServices];
 
-    const toDate = (d) => new Date(d?.toDate?.() || d);
+    const toDate = (d) => new Date(d?.toDate?.() || d || 0);
 
-    // Nejprve seřadit podle zvoleného klíče
+    // Speciálně pro "newest" použijeme stejné chování jako výchozí:
+    // TOP nahoře (dle topExpiresAt), ostatní dle createdAt (nejnovější první)
+    if (sortBy === 'newest') {
+        filteredServices = sortByTopAndDateGlobal(base);
+        displayServices(filteredServices);
+        return;
+    }
+
+    // Pro ostatní režimy (oldest, title) držíme logiku, ale TOP necháme nahoře
     base.sort((a, b) => {
         switch (sortBy) {
             case 'oldest':
                 return toDate(a.createdAt) - toDate(b.createdAt);
             case 'title':
                 return (a.title || '').localeCompare(b.title || '');
-            case 'newest':
             default:
-                return toDate(b.createdAt) - toDate(a.createdAt);
+                return 0;
         }
     });
 
-    // TOP vždy nahoře, ale uvnitř skupin zachovat výše provedené řazení
     const top = base.filter(s => !!s.isTop);
     const rest = base.filter(s => !s.isTop);
-    const result = [...top, ...rest];
-
-    filteredServices = result;
+    filteredServices = [...top, ...rest];
     displayServices(filteredServices);
 }
 
