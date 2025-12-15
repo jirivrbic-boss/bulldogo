@@ -6422,15 +6422,21 @@ html {
 
 .no-services {
     grid-column: 1 / -1;
+    max-width: 540px;
+    margin: 3rem auto;
+    padding: 2.5rem 2.75rem;
     text-align: center;
-    padding: 3rem;
-    color: #666;
+    color: #444;
+    background: #ffffff;
+    border-radius: 18px;
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.12);
+    border: 1px solid rgba(247, 124, 0, 0.15);
 }
 
 .no-services i {
     font-size: 3rem;
-    margin-bottom: 1rem;
-    color: #ccc;
+    margin-bottom: 1.25rem;
+    color: #f77c00;
 }
 
 .no-services-actions {
@@ -6438,6 +6444,35 @@ html {
     gap: 1rem;
     justify-content: center;
     margin-top: 1rem;
+}
+
+.no-services h3 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: #111827;
+    font-weight: 700;
+}
+
+.no-services p {
+    margin: 0.25rem 0 0.75rem;
+    font-size: 0.95rem;
+    color: #6b7280;
+}
+
+.no-services .btn-primary {
+    padding: 0.75rem 1.75rem;
+    font-size: 0.95rem;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #f97316, #ea580c);
+    box-shadow: 0 10px 25px rgba(234, 88, 12, 0.35);
+    border: none;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.no-services .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 32px rgba(234, 88, 12, 0.45);
+    background: linear-gradient(135deg, #fb923c, #f97316);
 }
 
 .error-message {
