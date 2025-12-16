@@ -137,7 +137,9 @@
         <!-- User Profile Section (shown when logged in) -->
         <div class="user-profile-section" id="userProfileSection" style="display: none;">
             <button class="btn-profile" onclick="window.location.href='profile.html'">
-                <i class="fas fa-user-circle"></i>
+                <div class="user-avatar" style="width: 24px; height: 24px; border-radius: 50%; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #f77c00 0%, #fdf002 100%); margin-right: 8px; flex-shrink: 0;">
+                    <i class="fas fa-user" style="font-size: 0.9rem; color: white;"></i>
+                </div>
                 <span>Profil</span>
             </button>
             <button class="btn-logout" onclick="logout()">

@@ -668,30 +668,7 @@ function updateUI(user) {
                     }
                     
                     // Zobrazit profilový obrázek v navbaru
-                    if (userProfile && userProfile.profilePictureUrl) {
-                        const userAvatarElements = document.querySelectorAll('.user-avatar');
-                        userAvatarElements.forEach(avatar => {
-                            let img = avatar.querySelector('img');
-                            if (!img) {
-                                const icon = avatar.querySelector('i');
-                                if (icon) icon.style.display = 'none';
-                                img = document.createElement('img');
-                                img.style.cssText = 'width: 100%; height: 100%; border-radius: 50%; object-fit: cover;';
-                                avatar.appendChild(img);
-                            }
-                            img.src = userProfile.profilePictureUrl;
-                            img.style.display = 'block';
-                        });
-                    } else {
-                        // Zobrazit ikonu, pokud není obrázek
-                        const userAvatarElements = document.querySelectorAll('.user-avatar');
-                        userAvatarElements.forEach(avatar => {
-                            const icon = avatar.querySelector('i');
-                            if (icon) icon.style.display = 'flex';
-                            const img = avatar.querySelector('img');
-                            if (img) img.style.display = 'none';
-                        });
-                    }
+                    updateNavbarAvatar(userProfile?.profilePictureUrl);
                     
                     // Zobrazit zůstatek
                     const balanceAmount = document.querySelector('.balance-amount');
@@ -2204,3 +2181,46 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }, 1000);
 });
+
+// Funkce pro aktualizaci profilového obrázku v navbaru
+function updateNavbarAvatar(profilePictureUrl) {
+    const userAvatarElements = document.querySelectorAll('.user-avatar');
+    if (userAvatarElements.length === 0) {
+        console.log('⚠️ Žádné .user-avatar elementy nenalezeny');
+        return;
+    }
+    
+    userAvatarElements.forEach(avatar => {
+        if (profilePictureUrl) {
+            // Pokud má uživatel profilový obrázek, zobrazit ho
+            let img = avatar.querySelector('img');
+            if (!img) {
+                const icon = avatar.querySelector('i');
+                if (icon) icon.style.display = 'none';
+                img = document.createElement('img');
+                img.style.cssText = 'width: 100%; height: 100%; border-radius: 50%; object-fit: cover;';
+                avatar.appendChild(img);
+            }
+            img.src = profilePictureUrl;
+            img.style.display = 'block';
+            img.alt = 'Profilový obrázek';
+        } else {
+            // Pokud nemá profilový obrázek, zobrazit ikonu
+            const icon = avatar.querySelector('i');
+            if (icon) {
+                icon.style.display = 'flex';
+            } else {
+                // Pokud není ikona, vytvořit ji
+                const newIcon = document.createElement('i');
+                newIcon.className = 'fas fa-user';
+                newIcon.style.cssText = 'font-size: 0.9rem; color: white;';
+                avatar.appendChild(newIcon);
+            }
+            const img = avatar.querySelector('img');
+            if (img) img.style.display = 'none';
+        }
+    });
+}
+
+// Export funkce globálně
+window.updateNavbarAvatar = updateNavbarAvatar;
