@@ -19,6 +19,9 @@
     "rules": "firestore-rules.txt",
     "indexes": "firestore.indexes.json"
   },
+  "storage": {
+    "rules": "storage.rules"
+  },
   "hosting": {
     "public": ".",
     "ignore": [

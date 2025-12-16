@@ -1,9 +1,3 @@
-// Firebase Storage pravidla pro povolení nahrávání
-// Tyto pravidla musí být nastavena v Firebase Console
-// 
-// DŮLEŽITÉ: Zkopírujte tento obsah do Firebase Console → Storage → Rules → Edit
-// POZNÁMKA: Při testování v Rules simulátoru zvolte "Write" jako Simulation type
-
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
@@ -32,3 +26,4 @@ service firebase.storage {
     }
   }
 }
+

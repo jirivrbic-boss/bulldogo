@@ -1,4 +1,4 @@
-// Firebase Storage pravidla pro povolení nahrávání
+// Firebase Storage pravidla - KOMPLETNÍ VERZE
 // Tyto pravidla musí být nastavena v Firebase Console
 // 
 // DŮLEŽITÉ: Zkopírujte tento obsah do Firebase Console → Storage → Rules → Edit
@@ -7,6 +7,8 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
+    
+    // ===== OBRÁZKY SLUŽEB/INZERÁTŮ =====
     // Povolit přihlášeným uživatelům nahrávat obrázky služeb do jejich složek
     match /services/{userId}/{allPaths=**} {
       // Každý může číst obrázky
@@ -16,6 +18,7 @@ service firebase.storage {
       allow write: if request.auth != null && request.auth.uid == userId;
     }
     
+    // ===== PROFILOVÉ OBRÁZKY =====
     // Povolit přihlášeným uživatelům nahrávat profilové obrázky do jejich složek
     match /profile-pictures/{userId}/{allPaths=**} {
       // Každý může číst profilové obrázky
@@ -26,9 +29,18 @@ service firebase.storage {
       allow delete: if request.auth != null && request.auth.uid == userId;
     }
     
-    // Výchozí: zakázat přístup
+    // ===== DALŠÍ SEKCE (přidej zde další, pokud je máš) =====
+    // Příklad pro další složky:
+    // match /documents/{userId}/{allPaths=**} {
+    //   allow read: if true;
+    //   allow write: if request.auth != null && request.auth.uid == userId;
+    // }
+    
+    // ===== VÝCHOZÍ: ZAKÁZAT PŘÍSTUP =====
+    // Všechno ostatní je zakázané
     match /{allPaths=**} {
       allow read, write: if false;
     }
   }
 }
+
