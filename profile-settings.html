@@ -1301,6 +1301,13 @@ Prosím kontaktujte podporu.
                 // Aktualizovat formulář s aktuálními daty (přepíše cache, pokud jsou novější)
                 updateFormFields(userProfile);
                 
+                // Aktualizovat profilový obrázek v navbaru
+                if (userProfile && userProfile.profilePictureUrl) {
+                    updateNavbarProfilePicture(userProfile.profilePictureUrl);
+                } else {
+                    updateNavbarProfilePicture(null);
+                }
+                
                 // Tichá notifikace o úspěšném načtení (pouze při prvním načtení)
                 if (!window.dataLoaded) {
                     console.log('✅ Data automaticky načtena a formulář prefilled');
@@ -1342,6 +1349,13 @@ Prosím kontaktujte podporu.
                             
                             if (!isEditing) {
                                 updateFormFields(userProfile);
+                            }
+                            
+                            // Aktualizovat profilový obrázek v navbaru
+                            if (userProfile && userProfile.profilePictureUrl) {
+                                updateNavbarProfilePicture(userProfile.profilePictureUrl);
+                            } else {
+                                updateNavbarProfilePicture(null);
                             }
                         }
                     }, (error) => {
@@ -1653,6 +1667,7 @@ Prosím kontaktujte podporu.
         // Export funkcí
         window.handleProfilePictureUpload = handleProfilePictureUpload;
         window.deleteProfilePicture = deleteProfilePicture;
+        window.updateNavbarProfilePicture = updateNavbarProfilePicture;
 
         // CSS pro animace
         const settingsStyle = document.createElement('style');
