@@ -202,6 +202,34 @@
                         Osobní informace
                     </h3>
                     <div class="settings-form">
+                        <!-- Profile Picture Section -->
+                        <div class="form-group">
+                            <label>Profilový obrázek</label>
+                            <div class="profile-picture-section" style="display: flex; flex-direction: column; gap: 1rem; align-items: flex-start;">
+                                <div class="profile-picture-preview" style="display: flex; align-items: center; gap: 1.5rem;">
+                                    <div class="profile-picture-container" style="position: relative; width: 120px; height: 120px;">
+                                        <img id="profilePicturePreview" src="" alt="Profilový obrázek" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid #e5e7eb; display: none;">
+                                        <div id="profilePicturePlaceholder" class="profile-picture-placeholder" style="width: 120px; height: 120px; border-radius: 50%; background: linear-gradient(135deg, #f77c00 0%, #fdf002 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 3rem; border: 3px solid #e5e7eb;">
+                                            <i class="fas fa-user"></i>
+                                        </div>
+                                    </div>
+                                    <div class="profile-picture-actions" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                                        <label for="profilePictureInput" class="btn-save" style="cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; margin: 0;">
+                                            <i class="fas fa-upload"></i>
+                                            <span>Nahrát obrázek</span>
+                                        </label>
+                                        <input type="file" id="profilePictureInput" accept="image/*" style="display: none;" onchange="handleProfilePictureUpload(event)">
+                                        <button type="button" id="deleteProfilePictureBtn" class="btn-save" style="background: #ef4444; display: none; cursor: pointer; border: none;" onclick="deleteProfilePicture()">
+                                            <i class="fas fa-trash"></i>
+                                            <span>Smazat obrázek</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <p style="font-size: 0.85rem; color: #6b7280; margin: 0;">
+                                    Podporované formáty: JPG, PNG, GIF. Maximální velikost: 5 MB.
+                                </p>
+                            </div>
+                        </div>
                         <div class="form-group">
                             <label for="firstName">Křestní jméno</label>
                             <input type="text" id="firstName" value="" class="form-input" placeholder="Zadejte vaše křestní jméno">
@@ -1435,8 +1463,186 @@ Prosím kontaktujte podporu.
                 }
             });
             
+            // Profilový obrázek
+            updateProfilePicturePreview(userProfile?.profilePictureUrl);
+            
             console.log('✅ Formulář aktualizován s prefilled daty (kromě hesel)');
         }
+        
+        // Aktualizace preview profilového obrázku
+        function updateProfilePicturePreview(imageUrl) {
+            const previewImg = document.getElementById('profilePicturePreview');
+            const placeholder = document.getElementById('profilePicturePlaceholder');
+            const deleteBtn = document.getElementById('deleteProfilePictureBtn');
+            
+            if (imageUrl) {
+                if (previewImg) {
+                    previewImg.src = imageUrl;
+                    previewImg.style.display = 'block';
+                }
+                if (placeholder) {
+                    placeholder.style.display = 'none';
+                }
+                if (deleteBtn) {
+                    deleteBtn.style.display = 'inline-flex';
+                }
+            } else {
+                if (previewImg) {
+                    previewImg.style.display = 'none';
+                }
+                if (placeholder) {
+                    placeholder.style.display = 'flex';
+                }
+                if (deleteBtn) {
+                    deleteBtn.style.display = 'none';
+                }
+            }
+        }
+        
+        // Nahrání profilového obrázku
+        async function handleProfilePictureUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            // Validace
+            if (!file.type.startsWith('image/')) {
+                showMessage('Prosím vyberte obrázek', 'error');
+                return;
+            }
+            
+            if (file.size > 5 * 1024 * 1024) { // 5 MB
+                showMessage('Obrázek je příliš velký. Maximální velikost je 5 MB.', 'error');
+                return;
+            }
+            
+            const currentUser = window.firebaseAuth.currentUser;
+            if (!currentUser) {
+                showMessage('Musíte být přihlášeni', 'error');
+                return;
+            }
+            
+            try {
+                showMessage('Nahrávám obrázek...', 'info');
+                
+                // Nahrát do Firebase Storage
+                const { ref, uploadBytes, getDownloadURL } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js');
+                const storageRef = ref(window.firebaseStorage, `profile-pictures/${currentUser.uid}/${Date.now()}_${file.name}`);
+                
+                await uploadBytes(storageRef, file);
+                const downloadURL = await getDownloadURL(storageRef);
+                
+                // Uložit URL do Firestore
+                const { setDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                const profileRef = doc(window.firebaseDb, 'users', currentUser.uid, 'profile', 'profile');
+                await setDoc(profileRef, { profilePictureUrl: downloadURL }, { merge: true });
+                
+                // Aktualizovat preview
+                updateProfilePicturePreview(downloadURL);
+                
+                // Aktualizovat cache
+                const cacheKey = `profile_settings_${currentUser.uid}`;
+                try {
+                    const cachedData = localStorage.getItem(cacheKey);
+                    if (cachedData) {
+                        const cachedProfile = JSON.parse(cachedData);
+                        cachedProfile.profilePictureUrl = downloadURL;
+                        localStorage.setItem(cacheKey, JSON.stringify(cachedProfile));
+                    }
+                } catch (e) {
+                    console.warn('⚠️ Nepodařilo se aktualizovat cache:', e);
+                }
+                
+                // Aktualizovat navbar
+                updateNavbarProfilePicture(downloadURL);
+                
+                showMessage('✅ Profilový obrázek byl úspěšně nahrán', 'success');
+                
+                // Resetovat input
+                event.target.value = '';
+                
+            } catch (error) {
+                console.error('❌ Chyba při nahrávání obrázku:', error);
+                showMessage('Nepodařilo se nahrát obrázek: ' + error.message, 'error');
+            }
+        }
+        
+        // Smazání profilového obrázku
+        async function deleteProfilePicture() {
+            if (!confirm('Opravdu chcete smazat profilový obrázek?')) {
+                return;
+            }
+            
+            const currentUser = window.firebaseAuth.currentUser;
+            if (!currentUser) {
+                showMessage('Musíte být přihlášeni', 'error');
+                return;
+            }
+            
+            try {
+                showMessage('Mažu obrázek...', 'info');
+                
+                // Smazat z Firestore (nastavit na null)
+                const { setDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                const profileRef = doc(window.firebaseDb, 'users', currentUser.uid, 'profile', 'profile');
+                await setDoc(profileRef, { profilePictureUrl: null }, { merge: true });
+                
+                // Aktualizovat preview
+                updateProfilePicturePreview(null);
+                
+                // Aktualizovat cache
+                const cacheKey = `profile_settings_${currentUser.uid}`;
+                try {
+                    const cachedData = localStorage.getItem(cacheKey);
+                    if (cachedData) {
+                        const cachedProfile = JSON.parse(cachedData);
+                        cachedProfile.profilePictureUrl = null;
+                        localStorage.setItem(cacheKey, JSON.stringify(cachedProfile));
+                    }
+                } catch (e) {
+                    console.warn('⚠️ Nepodařilo se aktualizovat cache:', e);
+                }
+                
+                // Aktualizovat navbar
+                updateNavbarProfilePicture(null);
+                
+                showMessage('✅ Profilový obrázek byl smazán', 'success');
+                
+            } catch (error) {
+                console.error('❌ Chyba při mazání obrázku:', error);
+                showMessage('Nepodařilo se smazat obrázek: ' + error.message, 'error');
+            }
+        }
+        
+        // Aktualizace profilového obrázku v navbaru
+        function updateNavbarProfilePicture(imageUrl) {
+            const userAvatarElements = document.querySelectorAll('.user-avatar');
+            userAvatarElements.forEach(avatar => {
+                if (imageUrl) {
+                    // Pokud už existuje img, použít ho, jinak vytvořit
+                    let img = avatar.querySelector('img');
+                    if (!img) {
+                        // Skrýt ikonu a vytvořit img
+                        const icon = avatar.querySelector('i');
+                        if (icon) icon.style.display = 'none';
+                        img = document.createElement('img');
+                        img.style.cssText = 'width: 100%; height: 100%; border-radius: 50%; object-fit: cover;';
+                        avatar.appendChild(img);
+                    }
+                    img.src = imageUrl;
+                    img.style.display = 'block';
+                } else {
+                    // Zobrazit ikonu a skrýt img
+                    const icon = avatar.querySelector('i');
+                    if (icon) icon.style.display = 'flex';
+                    const img = avatar.querySelector('img');
+                    if (img) img.style.display = 'none';
+                }
+            });
+        }
+        
+        // Export funkcí
+        window.handleProfilePictureUpload = handleProfilePictureUpload;
+        window.deleteProfilePicture = deleteProfilePicture;
 
         // CSS pro animace
         const style = document.createElement('style');

@@ -667,6 +667,32 @@ function updateUI(user) {
                         displayName.textContent = emailName.charAt(0).toUpperCase() + emailName.slice(1);
                     }
                     
+                    // Zobrazit profilový obrázek v navbaru
+                    if (userProfile && userProfile.profilePictureUrl) {
+                        const userAvatarElements = document.querySelectorAll('.user-avatar');
+                        userAvatarElements.forEach(avatar => {
+                            let img = avatar.querySelector('img');
+                            if (!img) {
+                                const icon = avatar.querySelector('i');
+                                if (icon) icon.style.display = 'none';
+                                img = document.createElement('img');
+                                img.style.cssText = 'width: 100%; height: 100%; border-radius: 50%; object-fit: cover;';
+                                avatar.appendChild(img);
+                            }
+                            img.src = userProfile.profilePictureUrl;
+                            img.style.display = 'block';
+                        });
+                    } else {
+                        // Zobrazit ikonu, pokud není obrázek
+                        const userAvatarElements = document.querySelectorAll('.user-avatar');
+                        userAvatarElements.forEach(avatar => {
+                            const icon = avatar.querySelector('i');
+                            if (icon) icon.style.display = 'flex';
+                            const img = avatar.querySelector('img');
+                            if (img) img.style.display = 'none';
+                        });
+                    }
+                    
                     // Zobrazit zůstatek
                     const balanceAmount = document.querySelector('.balance-amount');
                     if (balanceAmount && userProfile) {

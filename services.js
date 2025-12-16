@@ -682,6 +682,11 @@ function displayServices(list) {
     }
 
     grid.innerHTML = finalServices.map(service => createAdCard(service, showActions)).join('');
+    
+    // Načíst profilové obrázky pro tlačítka profilu
+    if (showActions && window.firebaseDb) {
+        loadProfilePicturesForAds(finalServices);
+    }
 }
 
 // Funkce pro aktualizaci paginace
@@ -767,8 +772,10 @@ function createAdCard(service, showActions = true) {
                 <button class="btn-contact" onclick="contactService('${service.id}')" title="Kontaktovat">
                     <i class="fas fa-comment"></i>
                 </button>
-                <button class="btn-profile" onclick="openUserProfile('${service.userId}')" title="Profil">
-                    <i class="fas fa-user"></i>
+                <button class="btn-profile" onclick="openUserProfile('${service.userId}')" title="Profil" data-user-id="${service.userId}">
+                    <div class="btn-profile-avatar" style="width: 20px; height: 20px; border-radius: 50%; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #f77c00 0%, #fdf002 100%);">
+                        <i class="fas fa-user" style="font-size: 0.7rem; color: white;"></i>
+                    </div>
                 </button>
                 <button class="btn-info" onclick="showServiceDetails('${service.id}')" title="Info">
                     <i class="fas fa-info"></i>
@@ -2005,6 +2012,48 @@ window.showAuthRequiredModal = function() {
         }
     });
 };
+
+// Načíst profilové obrázky pro inzeráty
+async function loadProfilePicturesForAds(services) {
+    if (!window.firebaseDb) return;
+    
+    const userIds = [...new Set(services.map(s => s.userId).filter(Boolean))];
+    
+    for (const userId of userIds) {
+        try {
+            const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+            const profileRef = doc(window.firebaseDb, 'users', userId, 'profile', 'profile');
+            const profileSnap = await getDoc(profileRef);
+            
+            if (profileSnap.exists()) {
+                const profileData = profileSnap.data();
+                const profilePictureUrl = profileData.profilePictureUrl;
+                
+                if (profilePictureUrl) {
+                    // Aktualizovat všechny tlačítka profilu pro tohoto uživatele
+                    const profileButtons = document.querySelectorAll(`button.btn-profile[data-user-id="${userId}"]`);
+                    profileButtons.forEach(btn => {
+                        const avatarDiv = btn.querySelector('.btn-profile-avatar');
+                        if (avatarDiv) {
+                            const icon = avatarDiv.querySelector('i');
+                            if (icon) icon.style.display = 'none';
+                            let img = avatarDiv.querySelector('img');
+                            if (!img) {
+                                img = document.createElement('img');
+                                img.style.cssText = 'width: 100%; height: 100%; object-fit: cover;';
+                                avatarDiv.appendChild(img);
+                            }
+                            img.src = profilePictureUrl;
+                            img.style.display = 'block';
+                        }
+                    });
+                }
+            }
+        } catch (error) {
+            console.warn(`⚠️ Nepodařilo se načíst profilový obrázek pro uživatele ${userId}:`, error);
+        }
+    }
+}
 
 window.contactService = contactService;
 window.showServiceDetails = showServiceDetails;
