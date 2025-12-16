@@ -1302,10 +1302,23 @@ Prosím kontaktujte podporu.
                 updateFormFields(userProfile);
                 
                 // Aktualizovat profilový obrázek v navbaru
+                console.log('📸 Načtený profil při inicializaci:', userProfile);
+                console.log('🖼️ URL profilového obrázku při inicializaci:', userProfile?.profilePictureUrl);
                 if (userProfile && userProfile.profilePictureUrl) {
                     updateNavbarProfilePicture(userProfile.profilePictureUrl);
+                    // Také zavolat globální funkci pro jistotu
+                    if (typeof window.updateNavbarAvatar === 'function') {
+                        setTimeout(() => {
+                            window.updateNavbarAvatar(userProfile.profilePictureUrl);
+                        }, 200);
+                    }
                 } else {
                     updateNavbarProfilePicture(null);
+                    if (typeof window.updateNavbarAvatar === 'function') {
+                        setTimeout(() => {
+                            window.updateNavbarAvatar(null);
+                        }, 200);
+                    }
                 }
                 
                 // Tichá notifikace o úspěšném načtení (pouze při prvním načtení)
@@ -1352,10 +1365,22 @@ Prosím kontaktujte podporu.
                             }
                             
                             // Aktualizovat profilový obrázek v navbaru
+                            console.log('🔄 Real-time aktualizace profilového obrázku:', userProfile?.profilePictureUrl);
                             if (userProfile && userProfile.profilePictureUrl) {
                                 updateNavbarProfilePicture(userProfile.profilePictureUrl);
+                                // Také zavolat globální funkci pro jistotu
+                                if (typeof window.updateNavbarAvatar === 'function') {
+                                    setTimeout(() => {
+                                        window.updateNavbarAvatar(userProfile.profilePictureUrl);
+                                    }, 100);
+                                }
                             } else {
                                 updateNavbarProfilePicture(null);
+                                if (typeof window.updateNavbarAvatar === 'function') {
+                                    setTimeout(() => {
+                                        window.updateNavbarAvatar(null);
+                                    }, 100);
+                                }
                             }
                         }
                     }, (error) => {
@@ -1577,7 +1602,14 @@ Prosím kontaktujte podporu.
                 }
                 
                 // Aktualizovat navbar
+                console.log('🖼️ Aktualizuji navbar s URL:', downloadURL);
                 updateNavbarProfilePicture(downloadURL);
+                
+                // Také zavolat globální funkci pro jistotu
+                if (typeof window.updateNavbarAvatar === 'function') {
+                    console.log('🔄 Volám window.updateNavbarAvatar');
+                    window.updateNavbarAvatar(downloadURL);
+                }
                 
                 showMessage('✅ Profilový obrázek byl úspěšně nahrán', 'success');
                 

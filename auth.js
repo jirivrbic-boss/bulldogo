@@ -668,7 +668,21 @@ function updateUI(user) {
                     }
                     
                     // Zobrazit profilový obrázek v navbaru
-                    updateNavbarAvatar(userProfile?.profilePictureUrl);
+                    console.log('📸 Načtený profil uživatele:', userProfile);
+                    console.log('🖼️ URL profilového obrázku:', userProfile?.profilePictureUrl);
+                    
+                    // Aktualizovat navbar avatar - zkusit několikrát pro jistotu
+                    const updateAvatar = () => {
+                        updateNavbarAvatar(userProfile?.profilePictureUrl);
+                    };
+                    
+                    // Okamžitě
+                    updateAvatar();
+                    
+                    // Po krátkém zpoždění (pro případ, že se DOM ještě nenačetl)
+                    setTimeout(updateAvatar, 100);
+                    setTimeout(updateAvatar, 500);
+                    setTimeout(updateAvatar, 1000);
                     
                     // Zobrazit zůstatek
                     const balanceAmount = document.querySelector('.balance-amount');
@@ -2184,28 +2198,85 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Funkce pro aktualizaci profilového obrázku v navbaru
 function updateNavbarAvatar(profilePictureUrl) {
-    const userAvatarElements = document.querySelectorAll('.user-avatar');
+    console.log('🖼️ updateNavbarAvatar volána s URL:', profilePictureUrl);
+    
+    // Najít všechny .user-avatar elementy v navbaru (různé selektory pro jistotu)
+    let userAvatarElements = document.querySelectorAll('.user-profile-section .user-avatar');
     if (userAvatarElements.length === 0) {
-        console.log('⚠️ Žádné .user-avatar elementy nenalezeny');
+        userAvatarElements = document.querySelectorAll('.btn-profile .user-avatar');
+    }
+    if (userAvatarElements.length === 0) {
+        userAvatarElements = document.querySelectorAll('.user-avatar');
+    }
+    
+    console.log('🔍 Nalezeno .user-avatar elementů:', userAvatarElements.length);
+    
+    if (userAvatarElements.length === 0) {
+        console.log('⚠️ Žádné .user-avatar elementy nenalezeny, zkouším znovu za 500ms...');
+        // Zkusit znovu po chvíli, pokud se DOM ještě nenačetl
+        setTimeout(() => {
+            let retryElements = document.querySelectorAll('.user-profile-section .user-avatar');
+            if (retryElements.length === 0) {
+                retryElements = document.querySelectorAll('.btn-profile .user-avatar');
+            }
+            if (retryElements.length === 0) {
+                retryElements = document.querySelectorAll('.user-avatar');
+            }
+            if (retryElements.length > 0) {
+                console.log('✅ Nalezeno při opakovaném hledání:', retryElements.length);
+                updateNavbarAvatar(profilePictureUrl);
+            } else {
+                console.error('❌ Stále nenalezeny .user-avatar elementy');
+            }
+        }, 500);
         return;
     }
     
-    userAvatarElements.forEach(avatar => {
-        if (profilePictureUrl) {
+    userAvatarElements.forEach((avatar, index) => {
+        console.log(`🔄 Aktualizuji avatar ${index + 1}/${userAvatarElements.length}`, avatar);
+        
+        if (profilePictureUrl && profilePictureUrl.trim() !== '') {
             // Pokud má uživatel profilový obrázek, zobrazit ho
             let img = avatar.querySelector('img');
             if (!img) {
+                console.log('📷 Vytvářím nový img element');
+                // Skrýt ikonu
                 const icon = avatar.querySelector('i');
-                if (icon) icon.style.display = 'none';
+                if (icon) {
+                    icon.style.display = 'none';
+                    console.log('👤 Ikona skryta');
+                }
+                // Vytvořit img element
                 img = document.createElement('img');
-                img.style.cssText = 'width: 100%; height: 100%; border-radius: 50%; object-fit: cover;';
+                img.style.cssText = 'width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; position: absolute; top: 0; left: 0;';
+                avatar.style.position = 'relative';
                 avatar.appendChild(img);
             }
-            img.src = profilePictureUrl;
+            
+            // Nastavit src a zobrazit
+            if (img.src !== profilePictureUrl) {
+                img.src = profilePictureUrl;
+            }
             img.style.display = 'block';
             img.alt = 'Profilový obrázek';
+            console.log('✅ Profilový obrázek nastaven:', profilePictureUrl);
+            
+            // Přidat error handler pro případ, že se obrázek nenačte
+            img.onerror = () => {
+                console.error('❌ Chyba při načítání profilového obrázku:', profilePictureUrl);
+                img.style.display = 'none';
+                const icon = avatar.querySelector('i');
+                if (icon) {
+                    icon.style.display = 'flex';
+                }
+            };
+            
+            img.onload = () => {
+                console.log('✅ Profilový obrázek úspěšně načten');
+            };
         } else {
             // Pokud nemá profilový obrázek, zobrazit ikonu
+            console.log('👤 Zobrazuji ikonu místo obrázku');
             const icon = avatar.querySelector('i');
             if (icon) {
                 icon.style.display = 'flex';
@@ -2217,7 +2288,10 @@ function updateNavbarAvatar(profilePictureUrl) {
                 avatar.appendChild(newIcon);
             }
             const img = avatar.querySelector('img');
-            if (img) img.style.display = 'none';
+            if (img) {
+                img.style.display = 'none';
+                console.log('🖼️ Existující img skryt');
+            }
         }
     });
 }
