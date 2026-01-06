@@ -4689,93 +4689,26 @@ export const onChatMessageCreated = functions
       const adId = conversationData.listingId;
       const chatUrl = `https://bulldogo.cz/chat.html?conversationId=${conversationId}`;
       
-      // Vytvořit HTML email
-      const emailHTML = `
-<!DOCTYPE html>
-<html lang="cs">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Nová zpráva v chatu - Bulldogo.cz</title>
-</head>
-<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #ffffff;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background: #ffffff;">
-    <tr>
-      <td align="center" style="padding: 40px 20px;">
-        <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width: 600px; width: 100%;">
-          <!-- Logo -->
-          <tr>
-            <td align="center" style="padding-bottom: 30px;">
-              <table role="presentation" cellspacing="0" cellpadding="0">
-                <tr>
-                  <td style="background: linear-gradient(135deg, #f77c00 0%, #fdf002 100%); border-radius: 20px; padding: 15px 25px; box-shadow: 0 10px 40px rgba(247, 124, 0, 0.3);">
-                    <span style="font-size: 32px; font-weight: 900; color: #ffffff; letter-spacing: 2px;">
-                      B<span style="background: linear-gradient(90deg, #ffffff 0%, #ffd700 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">ULLDOGO</span>
-                    </span>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-          
-          <!-- Hlavní karta -->
-          <tr>
-            <td>
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background: #ffffff; border-radius: 24px; box-shadow: 0 25px 80px rgba(0, 0, 0, 0.1); overflow: hidden; border: 1px solid #f0f0f0;">
-                <!-- Header -->
-                <tr>
-                  <td style="background: linear-gradient(135deg, #f77c00 0%, #fdf002 100%); padding: 30px; text-align: center;">
-                    <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">💬 Nová zpráva v chatu</h1>
-                  </td>
-                </tr>
-                
-                <!-- Obsah -->
-                <tr>
-                  <td style="padding: 40px 30px;">
-                    <p style="margin: 0 0 20px 0; font-size: 16px; color: #111827; line-height: 1.6;">
-                      Ahoj <strong>${recipientName}</strong>,
-                    </p>
-                    <p style="margin: 0 0 20px 0; font-size: 16px; color: #111827; line-height: 1.6;">
-                      <strong>${senderName}</strong> vám poslal${senderName.endsWith('a') ? 'a' : ''} novou zprávu${adId ? ` ohledně inzerátu "${adTitle}"` : ''}.
-                    </p>
-                    
-                    <!-- Zpráva -->
-                    <div style="background: #f8f9fa; border-left: 4px solid #f77c00; padding: 20px; margin: 20px 0; border-radius: 8px;">
-                      <p style="margin: 0; font-size: 15px; color: #374151; line-height: 1.6; white-space: pre-wrap;">${messageText}</p>
-                    </div>
-                    
-                    <!-- Tlačítko -->
-                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
-                      <tr>
-                        <td align="center" style="padding-top: 20px;">
-                          <a href="${chatUrl}" style="display: inline-block; background: linear-gradient(135deg, #f77c00 0%, #fdf002 100%); color: #ffffff; text-decoration: none; padding: 16px 32px; border-radius: 12px; font-weight: 700; font-size: 16px; box-shadow: 0 4px 16px rgba(247, 124, 0, 0.3);">
-                            Otevřít chat
-                          </a>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-          
-          <!-- Footer -->
-          <tr>
-            <td align="center" style="padding-top: 30px;">
-              <p style="margin: 0; font-size: 13px; color: #6b7280;">
-                Tento email jste obdrželi, protože máte zapnutá upozornění na nové zprávy v chatu.<br>
-                Můžete je vypnout v <a href="https://bulldogo.cz/profile-settings.html" style="color: #f77c00; text-decoration: none;">nastavení</a>.
-              </p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>
+      // Vytvořit HTML email pomocí univerzální šablony
+      const content = `
+        <p style="margin: 0 0 20px 0; font-size: 16px; color: #111827; line-height: 1.6;">
+          <strong>${senderName}</strong> vám poslal${senderName.endsWith('a') ? 'a' : ''} novou zprávu${adId ? ` ohledně inzerátu "${adTitle}"` : ''}.
+        </p>
+        
+        <!-- Zpráva -->
+        <div style="background: #f8f9fa; border-left: 4px solid #f77c00; padding: 20px; margin: 20px 0; border-radius: 8px;">
+          <p style="margin: 0; font-size: 15px; color: #374151; line-height: 1.6; white-space: pre-wrap;">${messageText}</p>
+        </div>
       `;
+      
+      const emailHTML = generateEmailTemplate({
+        title: "💬 Nová zpráva v chatu",
+        userName: recipientName,
+        content,
+        buttonText: "Otevřít chat",
+        buttonUrl: chatUrl,
+        footerText: `Tento email jste obdrželi, protože máte zapnutá upozornění na nové zprávy v chatu. Můžete je vypnout v <a href="https://bulldogo.cz/profile-settings.html" style="color: #f77c00; text-decoration: none;">nastavení</a>.`
+      });
       
       // Odeslat email
       functions.logger.info("Attempting to send email", {
