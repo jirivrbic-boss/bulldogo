@@ -4463,3 +4463,207 @@ export const createBillingPortalSession = functions
     });
   });
 
+/**
+ * Firestore trigger: Odešle email upozornění při nové zprávě v chatu
+ * Spouští se automaticky při vytvoření nové zprávy v messages kolekci
+ */
+export const onChatMessageCreated = functions
+  .region("europe-west1")
+  .firestore
+  .document("conversations/{conversationId}/messages/{messageId}")
+  .onCreate(async (snap, context) => {
+    const db = admin.firestore();
+    const messageData = snap.data();
+    const conversationId = context.params.conversationId;
+    
+    try {
+      // Získat data zprávy
+      const senderId = messageData.senderId;
+      if (!senderId) {
+        functions.logger.warn("Message without senderId", { messageId: snap.id });
+        return;
+      }
+      
+      // Přeskočit systémové zprávy
+      if (messageData.isAdInfo) {
+        return;
+      }
+      
+      // Získat konverzaci
+      const conversationRef = db.doc(`conversations/${conversationId}`);
+      const conversationSnap = await conversationRef.get();
+      
+      if (!conversationSnap.exists) {
+        functions.logger.warn("Conversation not found", { conversationId });
+        return;
+      }
+      
+      const conversationData = conversationSnap.data() as AnyObj;
+      const participants = conversationData.participants || [];
+      
+      // Najít příjemce (ten, který není odesílatel)
+      const recipientId = participants.find((uid: string) => uid !== senderId);
+      if (!recipientId) {
+        functions.logger.warn("No recipient found", { conversationId, senderId, participants });
+        return;
+      }
+      
+      // Zkontrolovat nastavení upozornění příjemce
+      const recipientProfileRef = db.doc(`users/${recipientId}/profile/profile`);
+      const recipientProfileSnap = await recipientProfileRef.get();
+      
+      if (!recipientProfileSnap.exists) {
+        functions.logger.warn("Recipient profile not found", { recipientId });
+        return;
+      }
+      
+      const recipientProfile = recipientProfileSnap.data() as AnyObj;
+      
+      // Pokud má uživatel vypnuté upozornění, nepokračovat
+      if (recipientProfile.chatNotifications === false) {
+        functions.logger.info("Chat notifications disabled for user", { recipientId });
+        return;
+      }
+      
+      // Získat email příjemce
+      const recipientUser = await admin.auth().getUser(recipientId);
+      const recipientEmail = recipientUser.email;
+      
+      if (!recipientEmail) {
+        functions.logger.warn("Recipient has no email", { recipientId });
+        return;
+      }
+      
+      // Získat jméno příjemce
+      const recipientName = await getUserNameFromProfile(recipientId);
+      
+      // Získat jméno odesílatele
+      const senderName = await getUserNameFromProfile(senderId);
+      
+      // Získat text zprávy (nebo placeholder pro obrázky)
+      const messageText = messageData.text || (messageData.images && messageData.images.length > 0 
+        ? `📷 ${messageData.images.length} obrázek${messageData.images.length > 1 ? 'ů' : ''}` 
+        : 'Nová zpráva');
+      
+      // Získat název inzerátu, pokud existuje
+      const adTitle = conversationData.listingTitle || 'inzerát';
+      const adId = conversationData.listingId;
+      const chatUrl = `https://bulldogo.cz/chat.html?conversationId=${conversationId}`;
+      
+      // Vytvořit HTML email
+      const emailHTML = `
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nová zpráva v chatu - Bulldogo.cz</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #ffffff;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background: #ffffff;">
+    <tr>
+      <td align="center" style="padding: 40px 20px;">
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width: 600px; width: 100%;">
+          <!-- Logo -->
+          <tr>
+            <td align="center" style="padding-bottom: 30px;">
+              <table role="presentation" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td style="background: linear-gradient(135deg, #f77c00 0%, #fdf002 100%); border-radius: 20px; padding: 15px 25px; box-shadow: 0 10px 40px rgba(247, 124, 0, 0.3);">
+                    <span style="font-size: 32px; font-weight: 900; color: #ffffff; letter-spacing: 2px;">
+                      B<span style="background: linear-gradient(90deg, #ffffff 0%, #ffd700 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">ULLDOGO</span>
+                    </span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          
+          <!-- Hlavní karta -->
+          <tr>
+            <td>
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background: #ffffff; border-radius: 24px; box-shadow: 0 25px 80px rgba(0, 0, 0, 0.1); overflow: hidden; border: 1px solid #f0f0f0;">
+                <!-- Header -->
+                <tr>
+                  <td style="background: linear-gradient(135deg, #f77c00 0%, #fdf002 100%); padding: 30px; text-align: center;">
+                    <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">💬 Nová zpráva v chatu</h1>
+                  </td>
+                </tr>
+                
+                <!-- Obsah -->
+                <tr>
+                  <td style="padding: 40px 30px;">
+                    <p style="margin: 0 0 20px 0; font-size: 16px; color: #111827; line-height: 1.6;">
+                      Ahoj <strong>${recipientName}</strong>,
+                    </p>
+                    <p style="margin: 0 0 20px 0; font-size: 16px; color: #111827; line-height: 1.6;">
+                      <strong>${senderName}</strong> vám poslal${senderName.endsWith('a') ? 'a' : ''} novou zprávu${adId ? ` ohledně inzerátu "${adTitle}"` : ''}.
+                    </p>
+                    
+                    <!-- Zpráva -->
+                    <div style="background: #f8f9fa; border-left: 4px solid #f77c00; padding: 20px; margin: 20px 0; border-radius: 8px;">
+                      <p style="margin: 0; font-size: 15px; color: #374151; line-height: 1.6; white-space: pre-wrap;">${messageText}</p>
+                    </div>
+                    
+                    <!-- Tlačítko -->
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                      <tr>
+                        <td align="center" style="padding-top: 20px;">
+                          <a href="${chatUrl}" style="display: inline-block; background: linear-gradient(135deg, #f77c00 0%, #fdf002 100%); color: #ffffff; text-decoration: none; padding: 16px 32px; border-radius: 12px; font-weight: 700; font-size: 16px; box-shadow: 0 4px 16px rgba(247, 124, 0, 0.3);">
+                            Otevřít chat
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td align="center" style="padding-top: 30px;">
+              <p style="margin: 0; font-size: 13px; color: #6b7280;">
+                Tento email jste obdrželi, protože máte zapnutá upozornění na nové zprávy v chatu.<br>
+                Můžete je vypnout v <a href="https://bulldogo.cz/profile-settings.html" style="color: #f77c00; text-decoration: none;">nastavení</a>.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+      `;
+      
+      // Odeslat email
+      await smtpTransporter.sendMail({
+        from: {
+          name: "BULLDOGO",
+          address: "info@bulldogo.cz",
+        },
+        to: recipientEmail,
+        subject: `💬 Nová zpráva od ${senderName}${adId ? ` - ${adTitle}` : ''}`,
+        html: emailHTML,
+        text: `Ahoj ${recipientName},\n\n${senderName} vám poslal${senderName.endsWith('a') ? 'a' : ''} novou zprávu${adId ? ` ohledně inzerátu "${adTitle}"` : ''}:\n\n${messageText}\n\nOtevřít chat: ${chatUrl}\n\nTento email jste obdrželi, protože máte zapnutá upozornění na nové zprávy v chatu. Můžete je vypnout v nastavení: https://bulldogo.cz/profile-settings.html`,
+      });
+      
+      functions.logger.info("📧 Email upozornění na novou zprávu odeslán", {
+        recipientId,
+        recipientEmail,
+        senderId,
+        conversationId,
+      });
+      
+    } catch (error: any) {
+      functions.logger.error("❌ Chyba při odesílání emailu upozornění na novou zprávu", {
+        error: error?.message,
+        stack: error?.stack,
+        conversationId,
+        messageId: snap.id,
+      });
+    }
+  });
+
