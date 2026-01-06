@@ -4475,17 +4475,26 @@ export const onChatMessageCreated = functions
     const db = admin.firestore();
     const messageData = snap.data();
     const conversationId = context.params.conversationId;
+    const messageId = snap.id;
+    
+    functions.logger.info("📨 onChatMessageCreated triggered", {
+      conversationId,
+      messageId,
+      hasSenderId: !!messageData.senderId,
+      isAdInfo: !!messageData.isAdInfo,
+    });
     
     try {
       // Získat data zprávy
       const senderId = messageData.senderId;
       if (!senderId) {
-        functions.logger.warn("Message without senderId", { messageId: snap.id });
+        functions.logger.warn("Message without senderId", { messageId });
         return;
       }
       
       // Přeskočit systémové zprávy
       if (messageData.isAdInfo) {
+        functions.logger.info("Skipping system message (isAdInfo)", { messageId });
         return;
       }
       
@@ -4501,12 +4510,20 @@ export const onChatMessageCreated = functions
       const conversationData = conversationSnap.data() as AnyObj;
       const participants = conversationData.participants || [];
       
+      functions.logger.info("Conversation data loaded", {
+        conversationId,
+        participants,
+        senderId,
+      });
+      
       // Najít příjemce (ten, který není odesílatel)
       const recipientId = participants.find((uid: string) => uid !== senderId);
       if (!recipientId) {
         functions.logger.warn("No recipient found", { conversationId, senderId, participants });
         return;
       }
+      
+      functions.logger.info("Recipient found", { recipientId });
       
       // Zkontrolovat nastavení upozornění příjemce
       const recipientProfileRef = db.doc(`users/${recipientId}/profile/profile`);
@@ -4519,20 +4536,42 @@ export const onChatMessageCreated = functions
       
       const recipientProfile = recipientProfileSnap.data() as AnyObj;
       
+      functions.logger.info("Recipient profile loaded", {
+        recipientId,
+        chatNotifications: recipientProfile.chatNotifications,
+      });
+      
       // Pokud má uživatel vypnuté upozornění, nepokračovat
+      // Výchozí hodnota je true (pokud není explicitně false)
       if (recipientProfile.chatNotifications === false) {
         functions.logger.info("Chat notifications disabled for user", { recipientId });
         return;
       }
       
-      // Získat email příjemce
-      const recipientUser = await admin.auth().getUser(recipientId);
-      const recipientEmail = recipientUser.email;
+      // Získat email příjemce - zkusit z profilu, pak z auth
+      let recipientEmail: string | undefined = recipientProfile.email;
       
       if (!recipientEmail) {
-        functions.logger.warn("Recipient has no email", { recipientId });
+        try {
+          const recipientUser = await admin.auth().getUser(recipientId);
+          recipientEmail = recipientUser.email;
+        } catch (authError: any) {
+          functions.logger.error("Error getting recipient user from auth", {
+            recipientId,
+            error: authError?.message,
+          });
+        }
+      }
+      
+      if (!recipientEmail) {
+        functions.logger.warn("Recipient has no email", { 
+          recipientId,
+          profileEmail: recipientProfile.email,
+        });
         return;
       }
+      
+      functions.logger.info("Recipient email obtained", { recipientId, recipientEmail });
       
       // Získat jméno příjemce
       const recipientName = await getUserNameFromProfile(recipientId);
@@ -4639,23 +4678,40 @@ export const onChatMessageCreated = functions
       `;
       
       // Odeslat email
-      await smtpTransporter.sendMail({
-        from: {
-          name: "BULLDOGO",
-          address: "info@bulldogo.cz",
-        },
-        to: recipientEmail,
-        subject: `💬 Nová zpráva od ${senderName}${adId ? ` - ${adTitle}` : ''}`,
-        html: emailHTML,
-        text: `Ahoj ${recipientName},\n\n${senderName} vám poslal${senderName.endsWith('a') ? 'a' : ''} novou zprávu${adId ? ` ohledně inzerátu "${adTitle}"` : ''}:\n\n${messageText}\n\nOtevřít chat: ${chatUrl}\n\nTento email jste obdrželi, protože máte zapnutá upozornění na nové zprávy v chatu. Můžete je vypnout v nastavení: https://bulldogo.cz/profile-settings.html`,
-      });
-      
-      functions.logger.info("📧 Email upozornění na novou zprávu odeslán", {
+      functions.logger.info("Attempting to send email", {
         recipientId,
         recipientEmail,
         senderId,
+        senderName,
         conversationId,
       });
+      
+      try {
+        await smtpTransporter.sendMail({
+          from: {
+            name: "BULLDOGO",
+            address: "info@bulldogo.cz",
+          },
+          to: recipientEmail,
+          subject: `💬 Nová zpráva od ${senderName}${adId ? ` - ${adTitle}` : ''}`,
+          html: emailHTML,
+          text: `Ahoj ${recipientName},\n\n${senderName} vám poslal${senderName.endsWith('a') ? 'a' : ''} novou zprávu${adId ? ` ohledně inzerátu "${adTitle}"` : ''}:\n\n${messageText}\n\nOtevřít chat: ${chatUrl}\n\nTento email jste obdrželi, protože máte zapnutá upozornění na nové zprávy v chatu. Můžete je vypnout v nastavení: https://bulldogo.cz/profile-settings.html`,
+        });
+        
+        functions.logger.info("📧 Email upozornění na novou zprávu odeslán", {
+          recipientId,
+          recipientEmail,
+          senderId,
+          conversationId,
+        });
+      } catch (emailError: any) {
+        functions.logger.error("❌ Chyba při odesílání emailu", {
+          error: emailError?.message,
+          stack: emailError?.stack,
+          recipientEmail,
+        });
+        throw emailError;
+      }
       
     } catch (error: any) {
       functions.logger.error("❌ Chyba při odesílání emailu upozornění na novou zprávu", {
