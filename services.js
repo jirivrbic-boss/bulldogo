@@ -262,6 +262,22 @@ async function setupRealtimeListener() {
                 }
             });
             
+            // Kontrola expirace topování před řazením
+            const now = new Date();
+            allServices.forEach(service => {
+                if (service.isTop && service.topExpiresAt) {
+                    const expiresAt = service.topExpiresAt.toDate ? service.topExpiresAt.toDate() : new Date(service.topExpiresAt);
+                    if (now > expiresAt) {
+                        // Topování vypršelo - nastavit na false
+                        service.isTop = false;
+                        // Asynchronně aktualizovat v databázi
+                        updateExpiredTopAd(service.id, service.userId).catch(err => {
+                            console.warn('⚠️ Nepodařilo se aktualizovat expirovaný TOP inzerát:', service.id, err);
+                        });
+                    }
+                }
+            });
+            
             // Seřadit: TOP inzeráty podle data přidání (createdAt) - nejnovější první, pak klasické podle createdAt
             allServices.sort((a, b) => {
                 // TOP mají přednost
@@ -407,6 +423,25 @@ async function checkAndExpireTopAdsInServices() {
     }
 }
 
+// Funkce pro aktualizaci expirovaného topování
+async function updateExpiredTopAd(adId, userId) {
+    if (!adId || !userId || !window.firebaseDb) {
+        return;
+    }
+    
+    try {
+        const { doc, updateDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        const adRef = doc(window.firebaseDb, 'users', userId, 'inzeraty', adId);
+        await updateDoc(adRef, {
+            isTop: false,
+            topExpiredAt: serverTimestamp()
+        });
+        console.log('✅ Topování deaktivováno pro inzerát:', adId);
+    } catch (error) {
+        console.warn('⚠️ Nepodařilo se deaktivovat topování:', adId, error);
+    }
+}
+
 // Alternativní metoda načítání inzerátů bez collectionGroup
 async function tryAlternativeLoadMethod() {
     try {
@@ -453,6 +488,22 @@ async function tryAlternativeLoadMethod() {
             });
             
             await Promise.all(loadPromises);
+            
+            // Kontrola expirace topování před řazením
+            const now = new Date();
+            services.forEach(service => {
+                if (service.isTop && service.topExpiresAt) {
+                    const expiresAt = service.topExpiresAt.toDate ? service.topExpiresAt.toDate() : new Date(service.topExpiresAt);
+                    if (now > expiresAt) {
+                        // Topování vypršelo - nastavit na false
+                        service.isTop = false;
+                        // Asynchronně aktualizovat v databázi
+                        updateExpiredTopAd(service.id, service.userId).catch(err => {
+                            console.warn('⚠️ Nepodařilo se aktualizovat expirovaný TOP inzerát:', service.id, err);
+                        });
+                    }
+                }
+            });
             
             // Seřadit: TOP inzeráty podle data přidání (createdAt) - nejnovější první, pak klasické podle createdAt
             services.sort((a, b) => {
@@ -902,9 +953,24 @@ function goToPage(page) {
 
 // Vytvoření karty inzerátu
 function createAdCard(service, showActions = true) {
+    // Kontrola expirace topování - pokud vypršelo, nastavit isTop na false
+    let isTop = service.isTop === true;
+    if (isTop && service.topExpiresAt) {
+        const expiresAt = service.topExpiresAt.toDate ? service.topExpiresAt.toDate() : new Date(service.topExpiresAt);
+        const now = new Date();
+        if (now > expiresAt) {
+            // Topování vypršelo - nastavit na false
+            isTop = false;
+            // Asynchronně aktualizovat v databázi (neblokovat renderování)
+            updateExpiredTopAd(service.id, service.userId).catch(err => {
+                console.warn('⚠️ Nepodařilo se aktualizovat expirovaný TOP inzerát:', service.id, err);
+            });
+        }
+    }
+    
     // Základní styly pro všechny karty - stejné pro všechny lokace
     const baseCardStyle = 'width: 100% !important; max-width: 100% !important; min-width: 0 !important; text-align: left !important; box-sizing: border-box !important; display: block !important;';
-    const topStyle = service.isTop 
+    const topStyle = isTop 
         ? `style="${baseCardStyle} border: 3px solid #ff8a00 !important; box-shadow: 0 8px 28px rgba(255, 138, 0, 0.6), 0 0 0 2px rgba(255, 138, 0, 0.4) !important;"`
         : `style="${baseCardStyle}"`;
     
@@ -1020,7 +1086,7 @@ function createAdCard(service, showActions = true) {
     const escapedLocation = formattedLocation.replace(/"/g, '&quot;');
     
     return `
-        <article class="ad-card${service.isTop ? ' is-top' : ''}" data-category="${service.category || ''}" data-status="${status}" data-location="${escapedLocation}" ${topStyle}>
+        <article class="ad-card${isTop ? ' is-top' : ''}" data-category="${service.category || ''}" data-status="${status}" data-location="${escapedLocation}" ${topStyle}>
             <div class="ad-thumb" style="width: 100% !important; aspect-ratio: 4 / 3 !important; height: auto !important; display: block !important; overflow: hidden !important;">
                 ${imageHtml}
             </div>
@@ -1030,7 +1096,7 @@ function createAdCard(service, showActions = true) {
                 ${formattedPrice ? `<div class="ad-price" style="text-align: left !important; display: block !important; margin: 0 0 6px 0 !important;">${formattedPrice}</div>` : ''}
                 <div class="ad-location" data-location-text="${escapedLocation}" style="${adLocationStyle}">${formattedLocation}</div>
             </div>
-            ${service.isTop ? `
+            ${isTop ? `
             <div class="ad-badge-top"><i class="fas fa-fire"></i> TOP</div>
             <div class="ad-flames" aria-hidden="true"></div>
             ` : ''}
@@ -1359,6 +1425,22 @@ function filterServices() {
         return;
     }
 
+    // Kontrola expirace topování před filtrováním
+    const now = new Date();
+    allServices.forEach(service => {
+        if (service.isTop && service.topExpiresAt) {
+            const expiresAt = service.topExpiresAt.toDate ? service.topExpiresAt.toDate() : new Date(service.topExpiresAt);
+            if (now > expiresAt) {
+                // Topování vypršelo - nastavit na false
+                service.isTop = false;
+                // Asynchronně aktualizovat v databázi
+                updateExpiredTopAd(service.id, service.userId).catch(err => {
+                    console.warn('⚠️ Nepodařilo se aktualizovat expirovaný TOP inzerát:', service.id, err);
+                });
+            }
+        }
+    });
+    
     let filteredAds = allServices.filter((service) => {
         const title = normalize(service?.title || '');
         const desc = normalize(service?.description || '');

@@ -26,7 +26,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onChatMessageCreated = exports.createBillingPortalSession = exports.stripeInvoiceWebhook = exports.setAdminStatus = exports.deleteUserAuth = exports.sendWelcomeEmail = exports.sendNewMessageEmail = exports.sendProfileChangeEmail = exports.onPlanCancelled = exports.forceCheckExpiredPlans = exports.enforceExpiredPlanAds = exports.paymentReturn = exports.gopayNotification = exports.checkPayment = exports.createPayment = exports.cleanupInactiveUsers = exports.reportAd = exports.sendInactivityWarningEmails = exports.validateICO = void 0;
+exports.expireTopAds = exports.onChatMessageCreated = exports.createBillingPortalSession = exports.stripeInvoiceWebhook = exports.setAdminStatus = exports.deleteUserAuth = exports.sendWelcomeEmail = exports.sendNewMessageEmail = exports.sendProfileChangeEmail = exports.onPlanCancelled = exports.forceCheckExpiredPlans = exports.enforceExpiredPlanAds = exports.paymentReturn = exports.gopayNotification = exports.checkPayment = exports.createPayment = exports.cleanupInactiveUsers = exports.reportAd = exports.sendInactivityWarningEmails = exports.validateICO = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const axios_1 = __importDefault(require("axios"));
@@ -4388,6 +4388,77 @@ exports.onChatMessageCreated = functions
             stack: error === null || error === void 0 ? void 0 : error.stack,
             conversationId,
             messageId: snap.id,
+        });
+    }
+});
+/**
+ * Scheduled job: Automaticky deaktivuje vypršené topování inzerátů
+ * Spouští se každou hodinu
+ */
+exports.expireTopAds = functions
+    .region("europe-west1")
+    .pubsub.schedule("0 * * * *") // Každou hodinu
+    .timeZone("Europe/Prague")
+    .onRun(async () => {
+    const db = admin.firestore();
+    const now = new Date();
+    let expiredCount = 0;
+    let processedCount = 0;
+    try {
+        functions.logger.info("🕒 Spouštím kontrolu expirace topování inzerátů", {
+            timestamp: now.toISOString(),
+        });
+        // Projít všechny uživatele
+        const usersSnapshot = await db.collection("users").get();
+        for (const userDoc of usersSnapshot.docs) {
+            const userId = userDoc.id;
+            const userAdsRef = db.collection(`users/${userId}/inzeraty`);
+            const userAdsSnapshot = await userAdsRef.get();
+            for (const adDoc of userAdsSnapshot.docs) {
+                processedCount++;
+                const adData = adDoc.data();
+                // Kontrola zda je TOP a má čas expirace
+                if (adData.isTop && adData.topExpiresAt) {
+                    const expiresAt = adData.topExpiresAt.toDate
+                        ? adData.topExpiresAt.toDate()
+                        : new Date(adData.topExpiresAt);
+                    if (now > expiresAt) {
+                        // TOP vypršel - zrušit TOP status
+                        try {
+                            await adDoc.ref.update({
+                                isTop: false,
+                                topExpiredAt: admin.firestore.FieldValue.serverTimestamp(),
+                            });
+                            expiredCount++;
+                            functions.logger.info("✅ Topování deaktivováno", {
+                                userId,
+                                adId: adDoc.id,
+                                expiredAt: expiresAt.toISOString(),
+                            });
+                        }
+                        catch (updateError) {
+                            functions.logger.error("❌ Chyba při deaktivaci topování", {
+                                userId,
+                                adId: adDoc.id,
+                                error: updateError === null || updateError === void 0 ? void 0 : updateError.message,
+                            });
+                        }
+                    }
+                }
+            }
+        }
+        functions.logger.info("🕒 Kontrola expirace topování dokončena", {
+            processedCount,
+            expiredCount,
+            timestamp: now.toISOString(),
+        });
+    }
+    catch (error) {
+        functions.logger.error("❌ Chyba při kontrole expirace topování", {
+            error: error === null || error === void 0 ? void 0 : error.message,
+            stack: error === null || error === void 0 ? void 0 : error.stack,
+            processedCount,
+            expiredCount,
         });
     }
 });

@@ -4723,3 +4723,82 @@ export const onChatMessageCreated = functions
     }
   });
 
+/**
+ * Scheduled job: Automaticky deaktivuje vypršené topování inzerátů
+ * Spouští se každou hodinu
+ */
+export const expireTopAds = functions
+  .region("europe-west1")
+  .pubsub.schedule("0 * * * *") // Každou hodinu
+  .timeZone("Europe/Prague")
+  .onRun(async () => {
+    const db = admin.firestore();
+    const now = new Date();
+    let expiredCount = 0;
+    let processedCount = 0;
+    
+    try {
+      functions.logger.info("🕒 Spouštím kontrolu expirace topování inzerátů", {
+        timestamp: now.toISOString(),
+      });
+      
+      // Projít všechny uživatele
+      const usersSnapshot = await db.collection("users").get();
+      
+      for (const userDoc of usersSnapshot.docs) {
+        const userId = userDoc.id;
+        const userAdsRef = db.collection(`users/${userId}/inzeraty`);
+        const userAdsSnapshot = await userAdsRef.get();
+        
+        for (const adDoc of userAdsSnapshot.docs) {
+          processedCount++;
+          const adData = adDoc.data();
+          
+          // Kontrola zda je TOP a má čas expirace
+          if (adData.isTop && adData.topExpiresAt) {
+            const expiresAt = adData.topExpiresAt.toDate 
+              ? adData.topExpiresAt.toDate() 
+              : new Date(adData.topExpiresAt);
+            
+            if (now > expiresAt) {
+              // TOP vypršel - zrušit TOP status
+              try {
+                await adDoc.ref.update({
+                  isTop: false,
+                  topExpiredAt: admin.firestore.FieldValue.serverTimestamp(),
+                });
+                expiredCount++;
+                
+                functions.logger.info("✅ Topování deaktivováno", {
+                  userId,
+                  adId: adDoc.id,
+                  expiredAt: expiresAt.toISOString(),
+                });
+              } catch (updateError: any) {
+                functions.logger.error("❌ Chyba při deaktivaci topování", {
+                  userId,
+                  adId: adDoc.id,
+                  error: updateError?.message,
+                });
+              }
+            }
+          }
+        }
+      }
+      
+      functions.logger.info("🕒 Kontrola expirace topování dokončena", {
+        processedCount,
+        expiredCount,
+        timestamp: now.toISOString(),
+      });
+      
+    } catch (error: any) {
+      functions.logger.error("❌ Chyba při kontrole expirace topování", {
+        error: error?.message,
+        stack: error?.stack,
+        processedCount,
+        expiredCount,
+      });
+    }
+  });
+
