@@ -962,23 +962,9 @@
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
 }
 
-/* Speciální pravidlo pro #servicesGrid - zajistit stejné formátování jako na "Mé inzeráty" */
-#servicesGrid:has(> .ad-card:only-child) {
-    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-}
-
-#servicesGrid.ads-grid:has(> .ad-card:only-child) {
-    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-}
-
 /* Desktop: 4 sloupce */
 @media (min-width: 1200px) {
     .ads-grid {
-        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-    }
-    
-    /* Zajistit, že i jeden inzerát má stejnou strukturu na desktopu */
-    #servicesGrid:has(> .ad-card:only-child) {
         grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
     }
 }
@@ -988,21 +974,11 @@
     .ads-grid {
         grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
     }
-    
-    /* Zajistit, že i jeden inzerát má stejnou strukturu na tabletu */
-    #servicesGrid:has(> .ad-card:only-child) {
-        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    }
 }
 
 /* Mobil: 1 sloupec */
 @media (max-width: 767px) {
     .ads-grid {
-        grid-template-columns: 1fr !important;
-    }
-    
-    /* Na mobilu je jeden sloupec vždy */
-    #servicesGrid:has(> .ad-card:only-child) {
         grid-template-columns: 1fr !important;
     }
 }
@@ -1013,23 +989,6 @@
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
-}
-
-/* Speciální pravidlo pro #servicesGrid - zajistit stejné formátování jako na "Mé inzeráty" */
-#servicesGrid > .ad-card {
-    grid-column: span 1 !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    box-sizing: border-box !important;
-}
-
-#servicesGrid > .ad-card:only-child {
-    grid-column: 1 / 2 !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    box-sizing: border-box !important;
 }
 
 /* Zajistit, že i jeden inzerát má stejnou velikost jako když jich je více */
@@ -16407,22 +16366,6 @@ body.chat-page .message.other .message-content { margin-right: auto !important; 
 
 /* Ads Grid for Admin - POUZE pokud není použito na stránce služeb */
 /* Admin grid - stejný jako hlavní grid */
-/* #servicesGrid má stejné CSS jako .ads-grid - použít stejná pravidla */
-#servicesGrid {
-    display: grid !important;
-    gap: 24px !important;
-    max-width: 1600px !important;
-    margin: 0 auto !important;
-    width: 100% !important;
-    justify-content: start !important;
-    align-items: stretch !important;
-    grid-auto-flow: row !important;
-    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-    contain: layout style !important;
-    min-height: 0 !important;
-    overflow: visible !important;
-}
-
 .ads-grid:not(#servicesGrid) {
     display: grid !important;
     gap: 24px !important;
@@ -16438,10 +16381,6 @@ body.chat-page .message.other .message-content { margin-right: auto !important; 
 
 /* Desktop: 4 sloupce */
 @media (min-width: 1200px) {
-    #servicesGrid {
-        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-    }
-    
     .ads-grid:not(#servicesGrid) {
         grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
     }
@@ -16449,10 +16388,6 @@ body.chat-page .message.other .message-content { margin-right: auto !important; 
 
 /* Tablet: 3 sloupce */
 @media (min-width: 768px) and (max-width: 1199px) {
-    #servicesGrid {
-        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    }
-    
     .ads-grid:not(#servicesGrid) {
         grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
     }
@@ -16460,10 +16395,6 @@ body.chat-page .message.other .message-content { margin-right: auto !important; 
 
 /* Mobil: 1 sloupec */
 @media (max-width: 767px) {
-    #servicesGrid {
-        grid-template-columns: 1fr !important;
-    }
-    
     .ads-grid:not(#servicesGrid) {
         grid-template-columns: 1fr !important;
     }

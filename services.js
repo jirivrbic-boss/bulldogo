@@ -861,9 +861,9 @@ function displayServices(list) {
         const currentHeight = grid.offsetHeight;
         if (currentHeight > 0) {
             grid.style.minHeight = currentHeight + 'px';
-        }
-        
-        grid.innerHTML = finalServices.map(service => createAdCard(service, showActions)).join('');
+    }
+
+    grid.innerHTML = finalServices.map(service => createAdCard(service, showActions)).join('');
         
         // Po renderování odstranit min-height
         requestAnimationFrame(() => {
@@ -968,10 +968,11 @@ function createAdCard(service, showActions = true) {
         }
     }
     
-    // Top style - stejně jako na "Mé inzeráty"
+    // Základní styly pro všechny karty - stejné pro všechny lokace
+    const baseCardStyle = 'width: 100% !important; max-width: 100% !important; min-width: 0 !important; text-align: left !important; box-sizing: border-box !important; display: block !important;';
     const topStyle = isTop 
-        ? 'style="border: 3px solid #ff8a00 !important; box-shadow: 0 8px 28px rgba(255, 138, 0, 0.6), 0 0 0 2px rgba(255, 138, 0, 0.4) !important;"'
-        : '';
+        ? `style="${baseCardStyle} border: 3px solid #ff8a00 !important; box-shadow: 0 8px 28px rgba(255, 138, 0, 0.6), 0 0 0 2px rgba(255, 138, 0, 0.4) !important;"`
+        : `style="${baseCardStyle}"`;
     
     // Formátování ceny - pokud je jen číslo, přidat Kč
     let formattedPrice = service.price || '';
@@ -1012,22 +1013,89 @@ function createAdCard(service, showActions = true) {
         imageUrl = '/fotky/vychozi-inzerat.png';
     }
     
-    // Získat formátovanou lokaci - stejně jako v my-ads.js
-    const formattedLocation = getLocationName(service.location || '') || 'Neuvedeno';
-    const categoryName = getCategoryName(service.category || '') || service.category || 'Neuvedeno';
+    const escapedImageUrl = imageUrl.replace(/"/g, '&quot;');
+    const defaultImageUrl = '/fotky/vychozi-inzerat.png';
+    const escapedDefaultUrl = defaultImageUrl.replace(/"/g, '&quot;');
     
-    // Jednoduchý obrázek - stejně jako v my-ads.js
-    const imageHtml = `<img src="${imageUrl}" alt="Inzerát" loading="lazy" decoding="async">`;
+    // Optimalizace obrázků - přidat fetchpriority pro první viditelné
+    // Zjistit, zda je to první obrázek v seznamu (pro fetchpriority)
+    const isFirstVisible = typeof createAdCard.firstIndex === 'undefined';
+    if (isFirstVisible) createAdCard.firstIndex = 0;
+    const isPriorityImage = createAdCard.firstIndex < 3; // První 3 obrázky mají vysokou prioritu
+    createAdCard.firstIndex++;
+    
+    // Použít WebP pouze pro lokální obrázky (ze složky /fotky/)
+    // Pro obrázky z Firebase Storage nepoužívat WebP, protože neexistují
+    const isLocalImage = imageUrl.startsWith('/fotky/') || imageUrl.startsWith('./fotky/');
+    
+    // Optimalizovat Firebase Storage URL - přidat parametry pro rychlejší načítání a resize
+    let optimizedImageUrl = escapedImageUrl;
+    if (!isLocalImage && imageUrl.includes('firebasestorage.googleapis.com')) {
+        // Přidat parametry pro optimalizaci
+        const urlObj = new URL(imageUrl);
+        const params = new URLSearchParams(urlObj.search);
+        
+        // Přidat alt=media pokud chybí
+        if (!params.has('alt')) {
+            params.set('alt', 'media');
+        }
+        
+        // Přidat parametry pro resize - optimalizovat velikost pro karty (400x300 = 4:3)
+        // Použít token= parametry pro lepší cachování
+        if (!params.has('token')) {
+            // Token se přidá automaticky Firebase Storage, ale můžeme přidat resize parametry
+        }
+        
+        // Sestavit novou URL
+        urlObj.search = params.toString();
+        optimizedImageUrl = urlObj.toString().replace(/"/g, '&quot;');
+    }
+    
+    // Atributy pro optimalizaci
+    const loadingAttr = isPriorityImage ? 'eager' : 'lazy';
+    const fetchPriorityAttr = isPriorityImage ? ' fetchpriority="high"' : '';
+    const widthHeightAttr = ' width="400" height="300"'; // Standardní rozměry pro karty (4:3)
+    
+    // Přidat placeholder pro smooth loading - oranžový spinner místo shimmer efektu
+    const placeholderStyle = 'background: #f8f9fa; position: relative;';
+    
+    let imageHtml;
+    if (isLocalImage) {
+        const webpUrl = imageUrl.replace(/\.(png|jpg|jpeg|PNG|JPG|JPEG)(\?.*)?$/, '.webp$2');
+        const escapedWebpUrl = webpUrl.replace(/"/g, '&quot;');
+        imageHtml = `
+                <picture>
+                    <source srcset="${escapedWebpUrl}" type="image/webp">
+                    <img src="${escapedImageUrl}" alt="Inzerát" loading="${loadingAttr}" decoding="async"${fetchPriorityAttr}${widthHeightAttr} style="${placeholderStyle}" onload="this.classList.add('loaded'); this.style.background='transparent';" onerror="this.onerror=null; this.src='${escapedDefaultUrl}'; this.classList.add('loaded'); this.style.background='transparent';">
+                </picture>
+            `;
+    } else {
+        // Pro Firebase Storage obrázky použít optimalizovanou URL s retry mechanismem včetně _200x200 varianty
+        imageHtml = `<img src="${optimizedImageUrl}" alt="Inzerát" loading="${loadingAttr}" decoding="async"${fetchPriorityAttr}${widthHeightAttr} style="${placeholderStyle}" onload="this.classList.add('loaded'); this.style.background='transparent';" onerror="if(this.dataset.retry === '0') { this.dataset.retry='1'; const parts = this.src.split('?'); const baseUrl = parts[0]; const params = parts[1] || ''; const newUrl = baseUrl.replace('_preview.jpg', '_preview_200x200.jpg').replace('.jpg', '_200x200.jpg'); this.src = newUrl + (params ? '?' + params : ''); } else if(this.dataset.retry === '1') { this.dataset.retry='2'; this.src=this.src.split('?')[0] + '?alt=media'; } else { this.onerror=null; this.src='${escapedDefaultUrl}'; this.classList.add('loaded'); this.style.background='transparent'; }" data-retry="0">`;
+    }
+    
+    // Získat formátovanou lokaci - STEJNĚ jako u ostatních krajů
+    const formattedLocation = getLocationName(service.location || '') || 'Neuvedeno';
+    
+    // Styly pro ad-body - STEJNÉ pro všechny lokace
+    const adBodyStyle = 'width: 100% !important; max-width: 100% !important; min-width: 0 !important; text-align: left !important; box-sizing: border-box !important; margin: 0 !important; padding: 12px 14px 90px !important; position: relative !important; display: block !important;';
+    
+    // Styly pro ad-location - STEJNÉ pro všechny lokace
+    const adLocationStyle = 'width: 100% !important; max-width: 100% !important; min-width: 0 !important; text-align: left !important; box-sizing: border-box !important; margin: 0 !important; padding: 0 !important; word-wrap: break-word !important; overflow-wrap: break-word !important; white-space: normal !important; display: block !important; font-size: 0.85rem !important; color: #6b7280 !important;';
+    
+    const escapedLocation = formattedLocation.replace(/"/g, '&quot;');
     
     return `
-        <article class="ad-card${isTop ? ' is-top' : ''}" ${topStyle}>
-            <div class="ad-thumb">
+        <article class="ad-card${isTop ? ' is-top' : ''}" data-category="${service.category || ''}" data-status="${status}" data-location="${escapedLocation}" ${topStyle}>
+            <div class="ad-thumb" style="width: 100% !important; aspect-ratio: 4 / 3 !important; height: auto !important; display: block !important; overflow: hidden !important;">
                 ${imageHtml}
             </div>
-            <div class="ad-body">
-                <h3 class="ad-title">${service.title || 'Bez názvu'}</h3>
-                <div class="ad-meta"><span>${formattedLocation}</span> • <span>${categoryName}</span></div>
-                ${formattedPrice ? `<div class="ad-price">${formattedPrice}</div>` : ''}
+            <div class="ad-body" data-location="${escapedLocation}" style="${adBodyStyle}">
+                <div class="ad-meta" style="text-align: left !important; display: block !important; margin: 0 0 6px 0 !important;"><span>${getCategoryName(service.category || '')}</span></div>
+                <h3 class="ad-title" style="text-align: left !important; margin: 0 0 6px 0 !important; font-size: 1rem !important; color: #111827 !important; display: block !important; word-wrap: break-word !important; overflow-wrap: break-word !important;">${service.title || 'Bez názvu'}</h3>
+                ${formattedPrice ? `<div class="ad-price" style="text-align: left !important; display: block !important; margin: 0 0 6px 0 !important;">${formattedPrice}</div>` : ''}
+                <div class="ad-location" data-location-text="${escapedLocation}" style="${adLocationStyle}">${formattedLocation}</div>
+            </div>
             ${isTop ? `
             <div class="ad-badge-top"><i class="fas fa-fire"></i> TOP</div>
             <div class="ad-flames" aria-hidden="true"></div>
@@ -1372,7 +1440,7 @@ function filterServices() {
             }
         }
     });
-    
+
     let filteredAds = allServices.filter((service) => {
         const title = normalize(service?.title || '');
         const desc = normalize(service?.description || '');
