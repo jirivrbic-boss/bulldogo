@@ -962,9 +962,23 @@
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
 }
 
+/* Speciální pravidlo pro #servicesGrid - zajistit stejné formátování jako na "Mé inzeráty" */
+#servicesGrid:has(> .ad-card:only-child) {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+
+#servicesGrid.ads-grid:has(> .ad-card:only-child) {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+
 /* Desktop: 4 sloupce */
 @media (min-width: 1200px) {
     .ads-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    }
+    
+    /* Zajistit, že i jeden inzerát má stejnou strukturu na desktopu */
+    #servicesGrid:has(> .ad-card:only-child) {
         grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
     }
 }
@@ -974,11 +988,21 @@
     .ads-grid {
         grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
     }
+    
+    /* Zajistit, že i jeden inzerát má stejnou strukturu na tabletu */
+    #servicesGrid:has(> .ad-card:only-child) {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    }
 }
 
 /* Mobil: 1 sloupec */
 @media (max-width: 767px) {
     .ads-grid {
+        grid-template-columns: 1fr !important;
+    }
+    
+    /* Na mobilu je jeden sloupec vždy */
+    #servicesGrid:has(> .ad-card:only-child) {
         grid-template-columns: 1fr !important;
     }
 }
@@ -989,6 +1013,23 @@
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
+}
+
+/* Speciální pravidlo pro #servicesGrid - zajistit stejné formátování jako na "Mé inzeráty" */
+#servicesGrid > .ad-card {
+    grid-column: span 1 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+}
+
+#servicesGrid > .ad-card:only-child {
+    grid-column: 1 / 2 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
 }
 
 /* Zajistit, že i jeden inzerát má stejnou velikost jako když jich je více */
