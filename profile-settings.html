@@ -247,6 +247,13 @@
                             <input type="text" id="lastName" value="" class="form-input" placeholder="Zadejte vaše příjmení">
                         </div>
                         <div class="form-group">
+                            <label for="birthDate">Datum narození</label>
+                            <input type="date" id="birthDate" value="" class="form-input" placeholder="Datum narození" readonly style="background-color: #f3f4f6; cursor: not-allowed;">
+                            <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">
+                                Datum narození nelze změnit po registraci
+                            </div>
+                        </div>
+                        <div class="form-group">
                             <label for="city">Město</label>
                             <input type="text" id="city" value="" class="form-input" placeholder="Zadejte vaše město">
                         </div>
@@ -537,6 +544,7 @@
                     lastName: lastName,
                     name: `${firstName} ${lastName}`.trim(), // Zachovat i složené jméno pro kompatibilitu
                     // Email a telefon se už neukládají zde - mění se v sekci "Změna emailu a telefonního čísla" s heslem
+                    // Datum narození se neukládá zde - je read-only a nelze ho změnit po registraci
                     city: cityEl ? cityEl.value : '',
                     bio: bioText,
                     updatedAt: new Date()
@@ -977,12 +985,29 @@
                 document.getElementById('newPhone').value = '+420';
                 document.getElementById('currentPasswordForChange').value = '';
 
-                // Aktualizovat zobrazení aktuálních hodnot
+                // Aktualizovat zobrazení aktuálních hodnot (ale ne resetovat pole, která uživatel právě upravuje)
+                // Přidat pole do ochranného seznamu, aby se neresetovala
+                ['newEmail', 'confirmEmail', 'newPhone', 'currentPasswordForChange'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el && el.value.trim()) {
+                        editedFields.add(id);
+                    }
+                });
+                
                 await updateFormFields(await loadUserProfile());
                 
-                // Resetovat flagy po úspěšném uložení
-                isUserEditing = false;
-                editedFields.clear();
+                // Resetovat flagy po úspěšném uložení (ale pouze pokud pole jsou prázdná)
+                setTimeout(() => {
+                    ['newEmail', 'confirmEmail', 'newPhone', 'currentPasswordForChange'].forEach(id => {
+                        const el = document.getElementById(id);
+                        if (el && !el.value.trim()) {
+                            editedFields.delete(id);
+                        }
+                    });
+                    if (editedFields.size === 0) {
+                        isUserEditing = false;
+                    }
+                }, 100);
 
                 showMessage('✅ Změny byly úspěšně uloženy!', 'success');
             } catch (error) {
@@ -2052,7 +2077,11 @@
                             const isEditing = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.tagName === 'SELECT');
                             
                             // Neaktualizovat, pokud uživatel právě upravuje formulář nebo má upravená pole
-                            if (!isEditing && !isUserEditing && editedFields.size === 0) {
+                            // Také neaktualizovat pole pro změnu hesla/emailu, pokud jsou právě upravována
+                            const passwordAndEmailFields = ['currentPassword', 'newPassword', 'confirmPassword', 'currentPasswordForChange', 'newEmail', 'confirmEmail'];
+                            const isEditingPasswordOrEmail = activeElement && passwordAndEmailFields.includes(activeElement.id);
+                            
+                            if (!isEditing && !isUserEditing && editedFields.size === 0 && !isEditingPasswordOrEmail) {
                                 updateFormFields(userProfile);
                             }
                         }
@@ -2166,6 +2195,34 @@
                 'city': userProfile?.city || '',
                 'bio': userProfile?.bio || ''
             };
+            
+            // Datum narození - prefilled a read-only (nelze změnit po registraci)
+            const birthDateEl = document.getElementById('birthDate');
+            if (birthDateEl) {
+                const birthDate = userProfile?.birthDate || '';
+                if (birthDate) {
+                    // Formátovat datum pro input type="date" (YYYY-MM-DD)
+                    let formattedDate = '';
+                    if (birthDate instanceof Date) {
+                        formattedDate = birthDate.toISOString().split('T')[0];
+                    } else if (typeof birthDate === 'string') {
+                        // Pokud je to timestamp nebo jiný formát
+                        const date = new Date(birthDate);
+                        if (!isNaN(date.getTime())) {
+                            formattedDate = date.toISOString().split('T')[0];
+                        } else {
+                            // Zkusit parsovat jako YYYY-MM-DD
+                            formattedDate = birthDate.split('T')[0];
+                        }
+                    }
+                    if (formattedDate) {
+                        birthDateEl.value = formattedDate;
+                        birthDateEl.readOnly = true;
+                        birthDateEl.style.backgroundColor = '#f3f4f6';
+                        birthDateEl.style.cursor = 'not-allowed';
+                    }
+                }
+            }
 
             Object.entries(personalFields).forEach(([fieldId, value]) => {
                 const element = document.getElementById(fieldId);
@@ -2275,13 +2332,25 @@
                 }
             });
             
-            // Hesla - NIKDY neprefilled (zůstávají prázdná)
-            const passwordFields = ['currentPassword', 'newPassword', 'confirmPassword'];
+            // Hesla a email/heslo pro změnu - NIKDY neprefilled (zůstávají prázdná)
+            // Ale pouze pokud je pole prázdné nebo uživatel právě neupravuje
+            const passwordFields = ['currentPassword', 'newPassword', 'confirmPassword', 'currentPasswordForChange', 'newEmail', 'confirmEmail'];
             passwordFields.forEach(fieldId => {
                 const element = document.getElementById(fieldId);
                 if (element) {
-                    element.value = ''; // Vždy prázdné
-                    element.placeholder = 'Zadejte heslo';
+                    // Neaktualizovat pole, která uživatel právě upravuje nebo která mají hodnotu
+                    const isCurrentlyEditing = document.activeElement === element;
+                    const wasEdited = editedFields.has(fieldId);
+                    const currentValue = element.value.trim();
+                    
+                    // Aktualizovat pouze pokud pole není právě upravováno, není označeno jako upravené a je prázdné
+                    if (!isCurrentlyEditing && !wasEdited && !currentValue) {
+                        element.value = ''; // Vždy prázdné
+                        element.placeholder = fieldId === 'newEmail' ? 'Zadejte nový email' : 
+                                             fieldId === 'confirmEmail' ? 'Zadejte nový email znovu' :
+                                             fieldId === 'currentPasswordForChange' ? 'Zadejte současné heslo' :
+                                             'Zadejte heslo';
+                    }
                 }
             });
             

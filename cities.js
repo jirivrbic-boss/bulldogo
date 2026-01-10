@@ -1,8 +1,7 @@
-// Czech and Slovak cities for location autocomplete
+// Czech cities for location autocomplete
 const CITIES_CZ_SK = [
-  // Base major cities (CZ + SK)
+  // Base major cities (CZ)
   'Praha', 'Brno', 'Ostrava', 'Plzeň', 'Liberec', 'Olomouc', 'Hradec Králové', 'Ústí nad Labem', 'Pardubice', 'Zlín',
-  'Bratislava', 'Košice', 'Prešov', 'Žilina', 'Nitra', 'Banská Bystrica', 'Trnava', 'Martin', 'Trenčín', 'Poprad',
   // CZ extended list provided by user
   'Abertamy','Adamov','Andělská Hora','Aš',
   'Bakov nad Jizerou','Bavorov','Bečov nad Teplou','Bechyně','Bělá nad Radbuzou','Bělá pod Bezdězem','Bělčice','Benátky nad Jizerou','Benešov','Benešov nad Ploučnicí','Beroun','Bezdružice','Bílina','Bílovec','Blansko','Blatná','Blovice','Blšany','Bohumín','Bohušovice nad Ohří','Bochov','Bojkovice','Bor','Borohrádek','Borovany','Boskovice','Boží Dar','Brandýs nad Labem-Stará Boleslav','Brandýs nad Orlicí','Brno','Broumov','Brtnice','Brumov-Bylnice','Bruntál','Brušperk','Břeclav','Březnice','Březová','Březová nad Svitavou','Břidličná','Bučovice','Budišov nad Budišovkou','Budyně nad Ohří','Buštěhrad','Bystré','Bystřice','Bystřice nad Pernštejnem','Bystřice pod Hostýnem','Bzenec',

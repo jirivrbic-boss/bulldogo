@@ -453,9 +453,8 @@ function getRegionCode(input) {
     if (!val) return '';
     // Pokud už je to kód, vrať bez změny
     const validCodes = [
-        'Kdekoliv', 'CelaCeskaRepublika', 'CelaSlovenskaRepublika',
-        'Praha','Stredocesky','Jihocesky','Plzensky','Karlovarsky','Ustecky','Liberecky','Kralovehradecky','Pardubicky','Vysocina','Jihomoravsky','Olomoucky','Zlinsky','Moravskoslezsky',
-        'Bratislavsky','Trnavsky','Trenciansky','Nitriansky','Zilinsky','Banskobystricky','Presovsky','Kosicky'
+        'Kdekoliv', 'CelaCeskaRepublika',
+        'Praha','Stredocesky','Jihocesky','Plzensky','Karlovarsky','Ustecky','Liberecky','Kralovehradecky','Pardubicky','Vysocina','Jihomoravsky','Olomoucky','Zlinsky','Moravskoslezsky'
     ];
     if (validCodes.includes(val)) return val;
     
@@ -465,8 +464,6 @@ function getRegionCode(input) {
         'celá česká republika': 'CelaCeskaRepublika',
         'celá čr': 'CelaCeskaRepublika',
         'celaceskarepublika': 'CelaCeskaRepublika',
-        'celá slovenská republika': 'CelaSlovenskaRepublika',
-        'celaslovenskarepublika': 'CelaSlovenskaRepublika',
         'hlavní město praha': 'Praha',
         'praha': 'Praha',
         'středočeský kraj': 'Stredocesky',
@@ -517,7 +514,6 @@ function getLocationName(location) {
     const locations = {
         'Kdekoliv': 'Kdekoliv',
         'CelaCeskaRepublika': 'Celá Česká republika',
-        'CelaSlovenskaRepublika': 'Celá Slovenská republika',
         'Praha': 'Hlavní město Praha',
         'Stredocesky': 'Středočeský kraj',
         'Jihocesky': 'Jihočeský kraj',
@@ -579,12 +575,6 @@ function filterAds() {
                                normalizedFormatted === 'celá česká republika' ||
                                normalizedFormatted === 'celá čr' ||
                                locCode === 'CelaCeskaRepublika';
-            } else if (regionFilter === 'CelaSlovenskaRepublika') {
-                matchesRegion = serviceLoc === 'CelaSlovenskaRepublika' || 
-                               serviceLoc === 'Celá Slovenská republika' ||
-                               loc === 'Celá Slovenská republika' ||
-                               loc === 'CelaSlovenskaRepublika' ||
-                               serviceLocFormatted === 'Celá Slovenská republika';
             } else if (regionCode) {
                 matchesRegion = (locCode && locCode === regionCode) || 
                                (loc === regionFilterFormatted) ||

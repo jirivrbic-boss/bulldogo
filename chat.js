@@ -59,10 +59,8 @@ function getLocationName(location) {
     const locations = {
         'Kdekoliv': 'Kdekoliv',
         'CelaCeskaRepublika': 'Celá ČR',
-        'CelaSlovenskaRepublika': 'Celá Slovenská republika',
         'Celá Česká republika': 'Celá ČR',
         'Celá ČR': 'Celá ČR',
-        'Celá Slovenská republika': 'Celá Slovenská republika',
         'Praha': 'Hlavní město Praha',
         'Stredocesky': 'Středočeský kraj',
         'Jihocesky': 'Jihočeský kraj',
@@ -76,15 +74,7 @@ function getLocationName(location) {
         'Jihomoravsky': 'Jihomoravský kraj',
         'Olomoucky': 'Olomoucký kraj',
         'Zlinsky': 'Zlínský kraj',
-        'Moravskoslezsky': 'Moravskoslezský kraj',
-        'Bratislavsky': 'Bratislavský kraj',
-        'Trnavsky': 'Trnavský kraj',
-        'Trenciansky': 'Trenčianský kraj',
-        'Nitriansky': 'Nitriansky kraj',
-        'Zilinsky': 'Žilinský kraj',
-        'Banskobystricky': 'Banskobystrický kraj',
-        'Presovsky': 'Prešovský kraj',
-        'Kosicky': 'Košický kraj'
+        'Moravskoslezsky': 'Moravskoslezský kraj'
     };
     
     // Zkusit najít přesnou shodu
