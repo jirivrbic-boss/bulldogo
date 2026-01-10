@@ -988,15 +988,45 @@
                 // Aktualizovat zobrazení aktuálních hodnot (ale ne resetovat pole, která uživatel právě upravuje)
                 // Přidat pole do ochranného seznamu, aby se neresetovala
                 ['newEmail', 'confirmEmail', 'newPhone', 'currentPasswordForChange'].forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el && el.value.trim()) {
-                        editedFields.add(id);
-                    }
+                    editedFields.delete(id); // Odstranit z editedFields, protože jsme je vyčistili
                 });
                 
-                await updateFormFields(await loadUserProfile());
+                // Aktualizovat zobrazení aktuálních hodnot (ale NE resetovat pole pro změnu hesla/emailu/telefonu)
+                // Pouze aktualizovat zobrazení (currentEmailDisplay, currentPhoneDisplay) a ostatní pole
+                try {
+                    const userProfile = await loadUserProfile();
+                    if (userProfile) {
+                        // Aktualizovat pouze zobrazení aktuálních hodnot, ne inputy pro změnu
+                        const authEmail = (window.firebaseAuth?.currentUser?.email || '').toString().trim();
+                        const profileEmail = (userProfile?.email || '').toString().trim();
+                        const emailValue = profileEmail || authEmail || '';
+                        
+                        let phoneValue = userProfile?.phone || '';
+                        if (phoneValue && phoneValue.startsWith('+420') && phoneValue.length > 4) {
+                            const digits = phoneValue.slice(4).replace(/\D/g, '');
+                            if (digits.length >= 9) {
+                                const formatted = `+420 ${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`.trim();
+                                phoneValue = formatted;
+                            }
+                        }
+                        
+                        const currentEmailDisplay = document.getElementById('currentEmailDisplay');
+                        const currentPhoneDisplay = document.getElementById('currentPhoneDisplay');
+                        if (currentEmailDisplay) {
+                            currentEmailDisplay.textContent = emailValue || 'Není nastaven';
+                        }
+                        if (currentPhoneDisplay) {
+                            currentPhoneDisplay.textContent = phoneValue || 'Není nastaven';
+                        }
+                        
+                        // Aktualizovat ostatní pole (ale ne pole pro změnu hesla/emailu/telefonu)
+                        updateFormFields(userProfile);
+                    }
+                } catch (error) {
+                    console.error('❌ Chyba při aktualizaci zobrazení:', error);
+                }
                 
-                // Resetovat flagy po úspěšném uložení (ale pouze pokud pole jsou prázdná)
+                // Resetovat flagy po úspěšném uložení
                 setTimeout(() => {
                     ['newEmail', 'confirmEmail', 'newPhone', 'currentPasswordForChange'].forEach(id => {
                         const el = document.getElementById(id);
@@ -1307,55 +1337,68 @@
             try {
                 const { getDoc, doc, collection, getDocs, query, where } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
                 
-                // 1. Kontrola předplatného
-                const profileRef = doc(window.firebaseDb, 'users', currentUser.uid, 'profile', 'profile');
-                const profileSnap = await getDoc(profileRef);
-                
                 let hasActiveSubscription = false;
                 let subscriptionExpiresAt = null;
                 
-                if (profileSnap.exists()) {
-                    const profile = profileSnap.data();
-                    const plan = profile.plan;
-                    const planPeriodEnd = profile.planPeriodEnd;
+                // 1. Kontrola předplatného
+                try {
+                    const profileRef = doc(window.firebaseDb, 'users', currentUser.uid, 'profile', 'profile');
+                    const profileSnap = await getDoc(profileRef);
                     
-                    // Kontrola aktivního předplatného - musí být hobby nebo business, musí mít planPeriodEnd,
-                    // a musí ještě nevypršet (planPeriodEnd >= now)
-                    // Poznámka: planCancelAt znamená, že předplatné bylo zrušeno, ale běží až do planPeriodEnd,
-                    // takže i zrušené předplatné je považováno za aktivní, dokud nevyprší
-                    if (plan && (plan === 'hobby' || plan === 'business') && planPeriodEnd) {
-                        const endDate = planPeriodEnd.toDate ? planPeriodEnd.toDate() : new Date(planPeriodEnd);
-                        const now = new Date();
+                    if (profileSnap.exists()) {
+                        const profile = profileSnap.data();
+                        const plan = profile.plan;
+                        const planPeriodEnd = profile.planPeriodEnd;
                         
-                        // Předplatné je aktivní, pokud ještě nevypršelo (bez ohledu na planCancelAt)
-                        if (endDate >= now) {
-                            hasActiveSubscription = true;
-                            subscriptionExpiresAt = endDate;
+                        // Kontrola aktivního předplatného - musí být hobby nebo business, musí mít planPeriodEnd,
+                        // a musí ještě nevypršet (planPeriodEnd >= now)
+                        // Poznámka: planCancelAt znamená, že předplatné bylo zrušeno, ale běží až do planPeriodEnd,
+                        // takže i zrušené předplatné je považováno za aktivní, dokud nevyprší
+                        if (plan && (plan === 'hobby' || plan === 'business') && planPeriodEnd) {
+                            const endDate = planPeriodEnd.toDate ? planPeriodEnd.toDate() : new Date(planPeriodEnd);
+                            const now = new Date();
+                            
+                            // Předplatné je aktivní, pokud ještě nevypršelo (bez ohledu na planCancelAt)
+                            if (endDate >= now) {
+                                hasActiveSubscription = true;
+                                subscriptionExpiresAt = endDate;
+                            }
                         }
                     }
+                } catch (profileCheckError) {
+                    // Pokud nemáme oprávnění ke čtení profilu, logujeme chybu
+                    console.error('❌ Chyba při kontrole profilu:', profileCheckError);
+                    // Předpokládáme, že předplatné neexistuje, pokud nemůžeme zkontrolovat
                 }
                 
                 // 2. Kontrola topování inzerátů
                 let hasActiveTop = false;
                 let topExpiresAt = null;
                 
-                const servicesRef = collection(window.firebaseDb, 'services');
-                const userServicesQuery = query(servicesRef, where('userId', '==', currentUser.uid));
-                const userServicesSnap = await getDocs(userServicesQuery);
-                
-                const now = new Date();
-                userServicesSnap.forEach(doc => {
-                    const serviceData = doc.data();
-                    if (serviceData.isTop === true && serviceData.topExpiresAt) {
-                        const expiresAt = serviceData.topExpiresAt.toDate ? serviceData.topExpiresAt.toDate() : new Date(serviceData.topExpiresAt);
-                        if (expiresAt >= now) {
-                            hasActiveTop = true;
-                            if (!topExpiresAt || expiresAt > topExpiresAt) {
-                                topExpiresAt = expiresAt;
+                try {
+                    const servicesRef = collection(window.firebaseDb, 'services');
+                    const userServicesQuery = query(servicesRef, where('userId', '==', currentUser.uid));
+                    const userServicesSnap = await getDocs(userServicesQuery);
+                    
+                    const now = new Date();
+                    userServicesSnap.forEach(doc => {
+                        const serviceData = doc.data();
+                        if (serviceData.isTop === true && serviceData.topExpiresAt) {
+                            const expiresAt = serviceData.topExpiresAt.toDate ? serviceData.topExpiresAt.toDate() : new Date(serviceData.topExpiresAt);
+                            if (expiresAt >= now) {
+                                hasActiveTop = true;
+                                if (!topExpiresAt || expiresAt > topExpiresAt) {
+                                    topExpiresAt = expiresAt;
+                                }
                             }
                         }
-                    }
-                });
+                    });
+                } catch (topCheckError) {
+                    // Pokud nemáme oprávnění ke čtení services, přeskočíme kontrolu topování
+                    // Logujeme chybu, ale nepovažujeme to za kritickou chybu
+                    console.warn('⚠️ Nelze zkontrolovat topování inzerátů:', topCheckError);
+                    // hasActiveTop zůstane false
+                }
                 
                 // ODSTRANIT LOADING MODAL PŘED ZOBRAZENÍM WARNING MODALU
                 if (loadingModal && loadingModal.parentNode) {
@@ -1468,10 +1511,13 @@
                 if (loadingModal && loadingModal.parentNode) {
                     loadingModal.remove();
                 }
-                // Při chybě zobrazit upozornění a NEBOUT pokračovat s mazáním účtu
-                // Zobrazit upozornění, že kontrola selhala
-                showMessage('❌ Chyba při kontrole předplatného. Zkuste to prosím znovu později, nebo kontaktujte podporu.', 'error');
-                return;
+                
+                // Pokud byla alespoň jedna kontrola úspěšná (předplatné nebo topování bylo zjištěno),
+                // zobrazíme upozornění, jinak pokračujeme s mazáním
+                // Pokud kontrola selže kvůli oprávněním, předpokládáme, že předplatné/topování neexistuje
+                // a povolíme mazání (aby uživatel nebyl blokován kvůli technickým problémům)
+                // Logujeme pouze varování
+                console.warn('⚠️ Kontrola předplatného/topování selhala, ale pokračujeme s mazáním:', error);
             }
             
             // ODSTRANIT LOADING MODAL PŘED ZOBRAZENÍM DELETE MODALU
@@ -1749,44 +1795,57 @@
                 
                 try {
                     // 1. Kontrola předplatného
-                    const profileRef = doc(window.firebaseDb, 'users', currentUser.uid, 'profile', 'profile');
-                    const profileSnap = await getDoc(profileRef);
-                    
-                    if (profileSnap.exists()) {
-                        const profile = profileSnap.data();
-                        const plan = profile.plan;
-                        const planPeriodEnd = profile.planPeriodEnd;
+                    try {
+                        const profileRef = doc(window.firebaseDb, 'users', currentUser.uid, 'profile', 'profile');
+                        const profileSnap = await getDoc(profileRef);
                         
-                        // Kontrola aktivního předplatného - jednoduchá kontrola: pokud má planPeriodEnd v budoucnosti,
-                        // pak je předplatné aktivní (bez ohledu na planCancelAt, protože zrušené předplatné běží až do endDate)
-                        if (plan && (plan === 'hobby' || plan === 'business') && planPeriodEnd) {
-                            const endDate = planPeriodEnd.toDate ? planPeriodEnd.toDate() : new Date(planPeriodEnd);
+                        if (profileSnap.exists()) {
+                            const profile = profileSnap.data();
+                            const plan = profile.plan;
+                            const planPeriodEnd = profile.planPeriodEnd;
                             
-                            // Předplatné je aktivní, pokud ještě nevypršelo
-                            if (endDate >= now) {
-                                hasActiveSubscription = true;
-                                subscriptionExpiresAt = endDate;
-                            }
-                        }
-                    }
-                    
-                    // 2. Kontrola topování inzerátů
-                    const servicesRef = collection(window.firebaseDb, 'services');
-                    const userServicesQuery = query(servicesRef, where('userId', '==', currentUser.uid));
-                    const userServicesSnap = await getDocs(userServicesQuery);
-                    
-                    userServicesSnap.forEach(doc => {
-                        const serviceData = doc.data();
-                        if (serviceData.isTop === true && serviceData.topExpiresAt) {
-                            const expiresAt = serviceData.topExpiresAt.toDate ? serviceData.topExpiresAt.toDate() : new Date(serviceData.topExpiresAt);
-                            if (expiresAt >= now) {
-                                hasActiveTop = true;
-                                if (!topExpiresAt || expiresAt > topExpiresAt) {
-                                    topExpiresAt = expiresAt;
+                            // Kontrola aktivního předplatného - jednoduchá kontrola: pokud má planPeriodEnd v budoucnosti,
+                            // pak je předplatné aktivní (bez ohledu na planCancelAt, protože zrušené předplatné běží až do endDate)
+                            if (plan && (plan === 'hobby' || plan === 'business') && planPeriodEnd) {
+                                const endDate = planPeriodEnd.toDate ? planPeriodEnd.toDate() : new Date(planPeriodEnd);
+                                
+                                // Předplatné je aktivní, pokud ještě nevypršelo
+                                if (endDate >= now) {
+                                    hasActiveSubscription = true;
+                                    subscriptionExpiresAt = endDate;
                                 }
                             }
                         }
-                    });
+                    } catch (profileCheckError) {
+                        // Pokud nemáme oprávnění ke čtení profilu, logujeme chybu
+                        console.warn('⚠️ Nelze zkontrolovat profil při druhé kontrole:', profileCheckError);
+                        // Předpokládáme, že předplatné neexistuje, pokud nemůžeme zkontrolovat
+                    }
+                    
+                    // 2. Kontrola topování inzerátů
+                    try {
+                        const servicesRef = collection(window.firebaseDb, 'services');
+                        const userServicesQuery = query(servicesRef, where('userId', '==', currentUser.uid));
+                        const userServicesSnap = await getDocs(userServicesQuery);
+                        
+                        userServicesSnap.forEach(doc => {
+                            const serviceData = doc.data();
+                            if (serviceData.isTop === true && serviceData.topExpiresAt) {
+                                const expiresAt = serviceData.topExpiresAt.toDate ? serviceData.topExpiresAt.toDate() : new Date(serviceData.topExpiresAt);
+                                if (expiresAt >= now) {
+                                    hasActiveTop = true;
+                                    if (!topExpiresAt || expiresAt > topExpiresAt) {
+                                        topExpiresAt = expiresAt;
+                                    }
+                                }
+                            }
+                        });
+                    } catch (topCheckError) {
+                        // Pokud nemáme oprávnění ke čtení services, přeskočíme kontrolu topování
+                        // Logujeme chybu, ale nepovažujeme to za kritickou chybu
+                        console.warn('⚠️ Nelze zkontrolovat topování inzerátů:', topCheckError);
+                        // hasActiveTop zůstane false
+                    }
                     
                     // Pokud je aktivní předplatné nebo topování, ZASTAVIT mazání a zobrazit upozornění
                     if (hasActiveSubscription || hasActiveTop) {
@@ -1809,11 +1868,10 @@
                         return;
                     }
                 } catch (checkError) {
-                    console.error('❌ Chyba při dodatečné kontrole předplatného:', checkError);
-                    // Pokud kontrola selže, NEBOUT smazat účet - je to bezpečnější
-                    closeFinalDeleteModal();
-                    showMessage('❌ Chyba při kontrole předplatného. Zkuste to prosím znovu později, nebo kontaktujte podporu.', 'error');
-                    return;
+                    console.warn('⚠️ Chyba při dodatečné kontrole předplatného:', checkError);
+                    // Pokud kontrola selže kvůli oprávněním, předpokládáme, že předplatné/topování neexistuje
+                    // a pokračujeme s mazáním (aby uživatel nebyl blokován kvůli technickým problémům)
+                    // Logujeme pouze varování, ale neblokujeme mazání
                 }
 
                 // Zavřít modal a zobrazit loading
@@ -2363,11 +2421,17 @@
                             const isEditing = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.tagName === 'SELECT');
                             
                             // Neaktualizovat, pokud uživatel právě upravuje formulář nebo má upravená pole
-                            // Také neaktualizovat pole pro změnu hesla/emailu, pokud jsou právě upravována
-                            const passwordAndEmailFields = ['currentPassword', 'newPassword', 'confirmPassword', 'currentPasswordForChange', 'newEmail', 'confirmEmail'];
+                            // Také neaktualizovat pole pro změnu hesla/emailu/telefonu, pokud jsou právě upravována
+                            const passwordAndEmailFields = ['currentPassword', 'newPassword', 'confirmPassword', 'currentPasswordForChange', 'newEmail', 'confirmEmail', 'newPhone'];
                             const isEditingPasswordOrEmail = activeElement && passwordAndEmailFields.includes(activeElement.id);
                             
-                            if (!isEditing && !isUserEditing && editedFields.size === 0 && !isEditingPasswordOrEmail) {
+                            // Neaktualizovat také pokud má pole hodnotu (uživatel je právě upravuje)
+                            const hasValueInPasswordFields = passwordAndEmailFields.some(fieldId => {
+                                const el = document.getElementById(fieldId);
+                                return el && el.value.trim();
+                            });
+                            
+                            if (!isEditing && !isUserEditing && editedFields.size === 0 && !isEditingPasswordOrEmail && !hasValueInPasswordFields) {
                                 updateFormFields(userProfile);
                             }
                         }
@@ -2618,9 +2682,9 @@
                 }
             });
             
-            // Hesla a email/heslo pro změnu - NIKDY neprefilled (zůstávají prázdná)
+            // Hesla a email/heslo/telefon pro změnu - NIKDY neprefilled (zůstávají prázdná nebo s výchozí hodnotou)
             // Ale pouze pokud je pole prázdné nebo uživatel právě neupravuje
-            const passwordFields = ['currentPassword', 'newPassword', 'confirmPassword', 'currentPasswordForChange', 'newEmail', 'confirmEmail'];
+            const passwordFields = ['currentPassword', 'newPassword', 'confirmPassword', 'currentPasswordForChange', 'newEmail', 'confirmEmail', 'newPhone'];
             passwordFields.forEach(fieldId => {
                 const element = document.getElementById(fieldId);
                 if (element) {
@@ -2629,12 +2693,20 @@
                     const wasEdited = editedFields.has(fieldId);
                     const currentValue = element.value.trim();
                     
-                    // Aktualizovat pouze pokud pole není právě upravováno, není označeno jako upravené a je prázdné
-                    if (!isCurrentlyEditing && !wasEdited && !currentValue) {
-                        element.value = ''; // Vždy prázdné
+                    // Speciální případ pro newPhone - má výchozí hodnotu '+420'
+                    const isDefaultPhone = fieldId === 'newPhone' && (currentValue === '+420' || !currentValue);
+                    
+                    // Aktualizovat pouze pokud pole není právě upravováno, není označeno jako upravené a je prázdné nebo má výchozí hodnotu
+                    if (!isCurrentlyEditing && !wasEdited && (!currentValue || isDefaultPhone)) {
+                        if (fieldId === 'newPhone') {
+                            element.value = '+420'; // Výchozí hodnota pro telefon
+                        } else {
+                            element.value = ''; // Vždy prázdné pro ostatní
+                        }
                         element.placeholder = fieldId === 'newEmail' ? 'Zadejte nový email' : 
                                              fieldId === 'confirmEmail' ? 'Zadejte nový email znovu' :
                                              fieldId === 'currentPasswordForChange' ? 'Zadejte současné heslo' :
+                                             fieldId === 'newPhone' ? 'Zadejte nové telefonní číslo' :
                                              'Zadejte heslo';
                     }
                 }

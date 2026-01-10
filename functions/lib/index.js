@@ -2122,17 +2122,39 @@ function generateEmailTemplate(options) {
   <title>${title} - Bulldogo.cz</title>
   <!--[if mso]>
   <style type="text/css">
-    body, table { background-color: #ffffff !important; }
-    .email-body { background-color: #ffffff !important; }
-    .email-container { background-color: #ffffff !important; }
-    .email-card { background-color: #ffffff !important; }
+    body, table { background-color: #000000 !important; }
+    .email-body { background-color: #000000 !important; }
+    .email-container { background-color: #000000 !important; }
+    .email-card { background-color: #1a1a1a !important; }
   </style>
   <![endif]-->
   <style>
+    /* Výchozí tmavý režim - emaily budou mít tmavé pozadí */
+    .email-body { background-color: #000000 !important; }
+    .email-container { background-color: #000000 !important; }
+    .email-card { background-color: #1a1a1a !important; border-color: #404040 !important; }
+    .email-text { color: #e5e5e5 !important; }
+    .email-text-strong { color: #ffffff !important; }
+    .email-footer { color: #b0b0b0 !important; }
+    .email-footer-link { color: #f77c00 !important; }
+    .email-footer-muted { color: #6b7280 !important; }
+    
+    /* Světlý režim - pouze pokud uživatel explicitně preferuje světlý režim */
+    @media (prefers-color-scheme: light) {
+      .email-body { background-color: #ffffff !important; }
+      .email-container { background-color: #ffffff !important; }
+      .email-card { background-color: #ffffff !important; border-color: #e5e7eb !important; }
+      .email-text { color: #1a1a2e !important; }
+      .email-text-strong { color: #1a1a2e !important; }
+      .email-footer { color: #6b7280 !important; }
+      .email-footer-link { color: #f77c00 !important; }
+      .email-footer-muted { color: #9ca3af !important; }
+    }
+    
     @media (prefers-color-scheme: dark) {
-      .email-body { background-color: #1a1a1a !important; }
-      .email-container { background-color: #1a1a1a !important; }
-      .email-card { background-color: #2d2d2d !important; border-color: #404040 !important; }
+      .email-body { background-color: #000000 !important; }
+      .email-container { background-color: #000000 !important; }
+      .email-card { background-color: #1a1a1a !important; border-color: #404040 !important; }
       .email-text { color: #e5e5e5 !important; }
       .email-text-strong { color: #ffffff !important; }
       .email-footer { color: #b0b0b0 !important; }
@@ -2187,9 +2209,10 @@ function generateEmailTemplate(options) {
         color: #b0b0b0 !important; 
       }
     }
-    [data-ogsc] .email-body { background-color: #1a1a1a !important; }
-    [data-ogsc] .email-container { background-color: #1a1a1a !important; }
-    [data-ogsc] .email-card { background-color: #2d2d2d !important; border-color: #404040 !important; }
+    /* Outlook dark mode support */
+    [data-ogsc] .email-body { background-color: #000000 !important; }
+    [data-ogsc] .email-container { background-color: #000000 !important; }
+    [data-ogsc] .email-card { background-color: #1a1a1a !important; border-color: #404040 !important; }
     [data-ogsc] .email-text { color: #e5e5e5 !important; }
     [data-ogsc] .email-text-strong { color: #ffffff !important; }
     [data-ogsc] .email-footer { color: #b0b0b0 !important; }
@@ -2240,8 +2263,8 @@ function generateEmailTemplate(options) {
     }
   </style>
 </head>
-<body class="email-body" style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #ffffff;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" class="email-container" style="background: #ffffff;">
+<body class="email-body" style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #000000;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" class="email-container" style="background: #000000;">
     <tr>
       <td align="center" style="padding: 40px 20px;">
         <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width: 600px; width: 100%;">
@@ -2263,7 +2286,7 @@ function generateEmailTemplate(options) {
           <!-- Hlavní karta -->
           <tr>
             <td>
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" class="email-card" style="background: #ffffff; border-radius: 24px; box-shadow: 0 25px 80px rgba(0, 0, 0, 0.1); overflow: hidden; border: 1px solid #f0f0f0;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" class="email-card" style="background: #1a1a1a; border-radius: 24px; box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5); overflow: hidden; border: 1px solid #404040;">
                 <!-- Header -->
                 <tr>
                   <td style="background: linear-gradient(135deg, #f77c00 0%, #fdf002 100%); padding: 30px; text-align: center;">
@@ -2274,10 +2297,10 @@ function generateEmailTemplate(options) {
                 <!-- Obsah -->
                 <tr>
                   <td style="padding: 40px 30px;">
-                    <p class="email-text" style="margin: 0 0 20px 0; font-size: 16px; color: #111827; line-height: 1.6;">
-                      Ahoj <strong class="email-text-strong" style="color: #111827;">${userName}</strong>,
+                    <p class="email-text" style="margin: 0 0 20px 0; font-size: 16px; color: #e5e5e5; line-height: 1.6;">
+                      Ahoj <strong class="email-text-strong" style="color: #ffffff;">${userName}</strong>,
                     </p>
-                    <div class="email-text" style="font-size: 16px; color: #111827; line-height: 1.6;">
+                    <div class="email-text" style="font-size: 16px; color: #e5e5e5; line-height: 1.6;">
                       ${content}
                     </div>
                     ${buttonText && buttonUrl ? `
@@ -2302,16 +2325,16 @@ function generateEmailTemplate(options) {
           <tr>
             <td align="center" style="padding-top: 30px;">
               ${footerText ? `
-              <p class="email-footer" style="margin: 0 0 10px 0; font-size: 13px; color: #6b7280; line-height: 1.6;">
+              <p class="email-footer" style="margin: 0 0 10px 0; font-size: 13px; color: #b0b0b0; line-height: 1.6;">
                 ${footerText}
               </p>
               ` : ''}
-              <p class="email-footer" style="margin: 0; font-size: 13px; color: #6b7280;">
+              <p class="email-footer" style="margin: 0; font-size: 13px; color: #b0b0b0;">
                 <a href="https://bulldogo.cz" class="email-footer-link" style="color: #f77c00; text-decoration: none;">bulldogo.cz</a> &nbsp;|&nbsp;
                 <a href="mailto:support@bulldogo.cz" class="email-footer-link" style="color: #f77c00; text-decoration: none;">support@bulldogo.cz</a> &nbsp;|&nbsp;
                 <a href="tel:+420605121023" class="email-footer-link" style="color: #f77c00; text-decoration: none;">+420 605 121 023</a>
               </p>
-              <p class="email-footer-muted" style="margin: 10px 0 0 0; font-size: 12px; color: #9ca3af;">
+              <p class="email-footer-muted" style="margin: 10px 0 0 0; font-size: 12px; color: #6b7280;">
                 © 2026 BULLDOGO. Všechna práva vyhrazena.
               </p>
             </td>
