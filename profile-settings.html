@@ -1319,9 +1319,16 @@
                     const plan = profile.plan;
                     const planPeriodEnd = profile.planPeriodEnd;
                     
+                    // Kontrola aktivního předplatného - musí být hobby nebo business, musí mít planPeriodEnd,
+                    // a musí ještě nevypršet (planPeriodEnd >= now)
+                    // Poznámka: planCancelAt znamená, že předplatné bylo zrušeno, ale běží až do planPeriodEnd,
+                    // takže i zrušené předplatné je považováno za aktivní, dokud nevyprší
                     if (plan && (plan === 'hobby' || plan === 'business') && planPeriodEnd) {
                         const endDate = planPeriodEnd.toDate ? planPeriodEnd.toDate() : new Date(planPeriodEnd);
-                        if (endDate >= new Date()) {
+                        const now = new Date();
+                        
+                        // Předplatné je aktivní, pokud ještě nevypršelo (bez ohledu na planCancelAt)
+                        if (endDate >= now) {
                             hasActiveSubscription = true;
                             subscriptionExpiresAt = endDate;
                         }
@@ -1461,7 +1468,10 @@
                 if (loadingModal && loadingModal.parentNode) {
                     loadingModal.remove();
                 }
-                // Při chybě pokračovat s mazáním účtu (aby uživatel nebyl blokován kvůli technickému problému)
+                // Při chybě zobrazit upozornění a NEBOUT pokračovat s mazáním účtu
+                // Zobrazit upozornění, že kontrola selhala
+                showMessage('❌ Chyba při kontrole předplatného. Zkuste to prosím znovu později, nebo kontaktujte podporu.', 'error');
+                return;
             }
             
             // ODSTRANIT LOADING MODAL PŘED ZOBRAZENÍM DELETE MODALU
@@ -1728,6 +1738,84 @@
                     return;
                 }
 
+                // DODATEČNÁ KONTROLA PŘED MAZÁNÍM - zabránit smazání, i když by někdo obešel první kontrolu
+                const { getDoc, doc, collection, getDocs, query, where } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                
+                let hasActiveSubscription = false;
+                let hasActiveTop = false;
+                let subscriptionExpiresAt = null;
+                let topExpiresAt = null;
+                const now = new Date();
+                
+                try {
+                    // 1. Kontrola předplatného
+                    const profileRef = doc(window.firebaseDb, 'users', currentUser.uid, 'profile', 'profile');
+                    const profileSnap = await getDoc(profileRef);
+                    
+                    if (profileSnap.exists()) {
+                        const profile = profileSnap.data();
+                        const plan = profile.plan;
+                        const planPeriodEnd = profile.planPeriodEnd;
+                        
+                        // Kontrola aktivního předplatného - jednoduchá kontrola: pokud má planPeriodEnd v budoucnosti,
+                        // pak je předplatné aktivní (bez ohledu na planCancelAt, protože zrušené předplatné běží až do endDate)
+                        if (plan && (plan === 'hobby' || plan === 'business') && planPeriodEnd) {
+                            const endDate = planPeriodEnd.toDate ? planPeriodEnd.toDate() : new Date(planPeriodEnd);
+                            
+                            // Předplatné je aktivní, pokud ještě nevypršelo
+                            if (endDate >= now) {
+                                hasActiveSubscription = true;
+                                subscriptionExpiresAt = endDate;
+                            }
+                        }
+                    }
+                    
+                    // 2. Kontrola topování inzerátů
+                    const servicesRef = collection(window.firebaseDb, 'services');
+                    const userServicesQuery = query(servicesRef, where('userId', '==', currentUser.uid));
+                    const userServicesSnap = await getDocs(userServicesQuery);
+                    
+                    userServicesSnap.forEach(doc => {
+                        const serviceData = doc.data();
+                        if (serviceData.isTop === true && serviceData.topExpiresAt) {
+                            const expiresAt = serviceData.topExpiresAt.toDate ? serviceData.topExpiresAt.toDate() : new Date(serviceData.topExpiresAt);
+                            if (expiresAt >= now) {
+                                hasActiveTop = true;
+                                if (!topExpiresAt || expiresAt > topExpiresAt) {
+                                    topExpiresAt = expiresAt;
+                                }
+                            }
+                        }
+                    });
+                    
+                    // Pokud je aktivní předplatné nebo topování, ZASTAVIT mazání a zobrazit upozornění
+                    if (hasActiveSubscription || hasActiveTop) {
+                        closeFinalDeleteModal();
+                        
+                        let warningMessage = '';
+                        if (hasActiveSubscription && hasActiveTop) {
+                            const subscriptionDate = subscriptionExpiresAt.toLocaleDateString('cs-CZ');
+                            const topDate = topExpiresAt.toLocaleDateString('cs-CZ');
+                            warningMessage = `Nemůžete smazat účet, dokud běží aktivní předplatné (vyprší ${subscriptionDate}) nebo topování inzerátů (vyprší ${topDate}).`;
+                        } else if (hasActiveSubscription) {
+                            const subscriptionDate = subscriptionExpiresAt.toLocaleDateString('cs-CZ');
+                            warningMessage = `Nemůžete smazat účet, dokud běží aktivní předplatné (vyprší ${subscriptionDate}).`;
+                        } else if (hasActiveTop) {
+                            const topDate = topExpiresAt.toLocaleDateString('cs-CZ');
+                            warningMessage = `Nemůžete smazat účet, dokud běží topování inzerátů (vyprší ${topDate}).`;
+                        }
+                        
+                        showMessage(`⚠️ ${warningMessage} Zrušte předplatné a počkejte na jeho vypršení.`, 'error');
+                        return;
+                    }
+                } catch (checkError) {
+                    console.error('❌ Chyba při dodatečné kontrole předplatného:', checkError);
+                    // Pokud kontrola selže, NEBOUT smazat účet - je to bezpečnější
+                    closeFinalDeleteModal();
+                    showMessage('❌ Chyba při kontrole předplatného. Zkuste to prosím znovu později, nebo kontaktujte podporu.', 'error');
+                    return;
+                }
+
                 // Zavřít modal a zobrazit loading
                 closeFinalDeleteModal();
                 
@@ -1753,14 +1841,9 @@
                 `;
                 document.body.appendChild(loadingModal);
 
-                // Import Firebase functions
+                // Import dalších Firebase functions
                 const { 
-                    deleteDoc, 
-                    doc, 
-                    collection, 
-                    getDocs, 
-                    query, 
-                    where
+                    deleteDoc
                 } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
 
                 console.log('🗑️ Začínám mazání účtu pro uživatele:', currentUser.uid);
