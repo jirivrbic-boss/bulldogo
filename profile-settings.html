@@ -240,11 +240,17 @@
                     <div class="settings-form">
                         <div class="form-group">
                             <label for="firstName">Křestní jméno</label>
-                            <input type="text" id="firstName" value="" class="form-input" placeholder="Zadejte vaše křestní jméno">
+                            <input type="text" id="firstName" value="" class="form-input" placeholder="Zadejte vaše křestní jméno" readonly style="background-color: #f3f4f6; cursor: not-allowed;">
+                            <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">
+                                Jméno nelze změnit po registraci
+                            </div>
                         </div>
                         <div class="form-group">
                             <label for="lastName">Příjmení</label>
-                            <input type="text" id="lastName" value="" class="form-input" placeholder="Zadejte vaše příjmení">
+                            <input type="text" id="lastName" value="" class="form-input" placeholder="Zadejte vaše příjmení" readonly style="background-color: #f3f4f6; cursor: not-allowed;">
+                            <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">
+                                Příjmení nelze změnit po registraci
+                            </div>
                         </div>
                         <div class="form-group">
                             <label for="birthDate">Datum narození</label>
@@ -521,13 +527,10 @@
                 }
 
                 // Získat hodnoty z formuláře (email a telefon se už neukládají zde)
-                const firstNameEl = document.getElementById('firstName');
-                const lastNameEl = document.getElementById('lastName');
+                // Jméno a příjmení se neukládají - jsou read-only a nelze je změnit po registraci
                 const cityEl = document.getElementById('city');
                 const bioEl = document.getElementById('bio');
                 
-                const firstName = firstNameEl ? firstNameEl.value : '';
-                const lastName = lastNameEl ? lastNameEl.value : '';
                 const bioText = bioEl ? bioEl.value : '';
                 
                 // Kontrola zakázaných slov
@@ -540,9 +543,7 @@
                 }
                 
                 const personalData = {
-                    firstName: firstName,
-                    lastName: lastName,
-                    name: `${firstName} ${lastName}`.trim(), // Zachovat i složené jméno pro kompatibilitu
+                    // Jméno a příjmení se neukládají - jsou read-only a nelze je změnit po registraci
                     // Email a telefon se už neukládají zde - mění se v sekci "Změna emailu a telefonního čísla" s heslem
                     // Datum narození se neukládá zde - je read-only a nelze ho změnit po registraci
                     city: cityEl ? cityEl.value : '',
@@ -2189,9 +2190,23 @@
             applyUserTypeToSettingsUI(resolvedType);
             
             // Osobní informace - vždy prefilled (bez emailu a telefonu)
+            // Jméno a příjmení jsou read-only - nelze změnit po registraci
+            const firstNameEl = document.getElementById('firstName');
+            const lastNameEl = document.getElementById('lastName');
+            if (firstNameEl && userProfile?.firstName) {
+                firstNameEl.value = userProfile.firstName;
+                firstNameEl.readOnly = true;
+                firstNameEl.style.backgroundColor = '#f3f4f6';
+                firstNameEl.style.cursor = 'not-allowed';
+            }
+            if (lastNameEl && userProfile?.lastName) {
+                lastNameEl.value = userProfile.lastName;
+                lastNameEl.readOnly = true;
+                lastNameEl.style.backgroundColor = '#f3f4f6';
+                lastNameEl.style.cursor = 'not-allowed';
+            }
+            
             const personalFields = {
-                'firstName': userProfile?.firstName || '',
-                'lastName': userProfile?.lastName || '',
                 'city': userProfile?.city || '',
                 'bio': userProfile?.bio || ''
             };
