@@ -634,11 +634,32 @@
         
         const reader = new FileReader();
         reader.onload = function(e) {
+            // Zobrazit loading spinner
+            const cropLoading = document.getElementById('cropLoading');
+            if (cropLoading) {
+                cropLoading.style.display = 'flex';
+                cropLoading.style.alignItems = 'center';
+                cropLoading.style.justifyContent = 'center';
+                cropLoading.style.position = 'absolute';
+                cropLoading.style.top = '50%';
+                cropLoading.style.left = '50%';
+                cropLoading.style.transform = 'translate(-50%, -50%)';
+                cropLoading.style.zIndex = '10';
+            }
+            
             // Nejdřív zobrazit modal
             modal.style.display = 'flex';
             
+            // Resetovat display na none pro obrázek
+            cropImage.style.display = 'none';
+            
             // Nastavit src a počkat na načtení obrázku
             cropImage.onload = function() {
+                // Skrýt loading spinner
+                if (cropLoading) {
+                    cropLoading.style.display = 'none';
+                }
+                cropImage.style.display = 'block';
                 // Zajistit, že předchozí instance je zničena
                 if (cropperInstance) {
                     cropperInstance.destroy();

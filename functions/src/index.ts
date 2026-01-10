@@ -811,25 +811,25 @@ function generateReportEmailForAdminHTML(
       <p style="margin: 0 0 4px 0; font-size: 18px; font-weight: 700; color: #111827;">${adTitle}</p>
       <p style="margin: 0 0 8px 0; font-size: 13px; color: #9ca3af;">ID: ${adId}</p>
       <p style="margin: 0;"><a href="https://bulldogo.cz/ad-detail.html?id=${adId}" style="color: #f77c00; text-decoration: none;">Zobrazit inzerát →</a></p>
-    </div>
-    
+              </div>
+              
     <div style="background: #f8f9fa; border-left: 4px solid #f77c00; padding: 20px; margin: 20px 0; border-radius: 8px;">
       <p style="margin: 0 0 8px 0; font-size: 13px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">👤 Majitel inzerátu</p>
       <p style="margin: 0 0 4px 0; font-size: 15px; color: #111827;"><strong>Jméno:</strong> ${adOwnerName}</p>
       <p style="margin: 0; font-size: 14px; color: #374151;"><strong>Email:</strong> <a href="mailto:${adOwnerEmail}" style="color: #f77c00;">${adOwnerEmail || "Neznámý"}</a></p>
-    </div>
-    
+              </div>
+              
     <div style="background: #f8f9fa; border-left: 4px solid #f77c00; padding: 20px; margin: 20px 0; border-radius: 8px;">
       <p style="margin: 0 0 8px 0; font-size: 13px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">🔔 Nahlašovatel</p>
       <p style="margin: 0 0 4px 0; font-size: 15px; color: #111827;"><strong>Jméno:</strong> ${reporterName}</p>
       <p style="margin: 0; font-size: 14px; color: #374151;"><strong>Email:</strong> <a href="mailto:${reporterEmail}" style="color: #f77c00;">${reporterEmail || "Nepřihlášený"}</a></p>
-    </div>
-    
+              </div>
+              
     <div style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 20px; margin: 20px 0; border-radius: 8px;">
       <p style="margin: 0 0 8px 0; font-size: 13px; color: #92400e; text-transform: uppercase; letter-spacing: 0.5px;">⚠️ Důvod nahlášení</p>
       <p style="margin: 0; font-size: 16px; font-weight: 600; color: #92400e;">${reasonLabel}</p>
       ${description ? `<p style="margin: 12px 0 0 0; font-size: 14px; color: #78716c; border-top: 1px solid #fde68a; padding-top: 12px;">${description}</p>` : ""}
-    </div>
+              </div>
   `;
   
   return generateEmailTemplate({
@@ -964,31 +964,31 @@ function generateAccountDeletedEmailHTML(userName: string): string {
   const content = `
     <p style="margin: 0 0 20px 0; font-size: 16px; color: #111827; line-height: 1.6;">
       Váš účet na Bulldogo.cz byl z důvodu dlouhodobé neaktivity <strong>trvale smazán</strong>.
-    </p>
+                    </p>
     
     <div style="background: #f8f9fa; border-left: 4px solid #f77c00; padding: 20px; margin: 20px 0; border-radius: 8px;">
       <p style="margin: 0 0 12px 0; font-size: 15px; color: #111827; font-weight: 600;">Co bylo smazáno:</p>
       <ul style="margin: 0; padding-left: 20px; color: #374151; font-size: 14px; line-height: 1.8;">
-        <li>Váš profil a osobní údaje</li>
-        <li>Všechny vaše inzeráty</li>
-        <li>Recenze a hodnocení</li>
-        <li>Zprávy a konverzace</li>
-      </ul>
+                            <li>Váš profil a osobní údaje</li>
+                            <li>Všechny vaše inzeráty</li>
+                            <li>Recenze a hodnocení</li>
+                            <li>Zprávy a konverzace</li>
+                          </ul>
     </div>
     
     <div style="background: #fef2f2; border-left: 4px solid #ef4444; padding: 20px; margin: 20px 0; border-radius: 8px;">
       <p style="margin: 0; font-size: 15px; color: #991b1b; line-height: 1.6;">
         <strong>⚠️ Tato akce je nevratná.</strong> Data již nelze obnovit.
-      </p>
+                          </p>
     </div>
     
     <div style="background: #fff8eb; border-left: 4px solid #f59e0b; padding: 20px; margin: 20px 0; border-radius: 8px;">
       <p style="margin: 0 0 10px 0; font-size: 16px; color: #92400e; font-weight: 600;">
         🧡 Děkujeme, že jste byli součástí Bulldogo!
-      </p>
+                          </p>
       <p style="margin: 0; font-size: 14px; color: #b45309; line-height: 1.6;">
-        Pokud se rozhodnete vrátit, budeme rádi. Můžete si kdykoliv vytvořit nový účet.
-      </p>
+                            Pokud se rozhodnete vrátit, budeme rádi. Můžete si kdykoliv vytvořit nový účet.
+                          </p>
     </div>
   `;
   

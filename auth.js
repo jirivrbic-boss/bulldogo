@@ -1346,6 +1346,25 @@ function showAuthModal(type = 'login') {
     // Pokud modal neexistuje, vytvoř ho dynamicky
     if (!modal) {
         modal = createAuthModal();
+    } else {
+        // Pokud modal už existuje, zkontrolovat, zda má správné event listenery
+        // Pokud ne, znovu je nastavit
+        const authForm = modal.querySelector('#authForm');
+        if (authForm && !authForm.hasAttribute('data-listener-set')) {
+            // Event listenery nejsou nastaveny, nastavit je
+            setTimeout(() => {
+                try { 
+                    setupEventListeners(); 
+                } catch (e) { 
+                    console.warn('setupEventListeners failed in showAuthModal', e); 
+                }
+            }, 50);
+        }
+        
+        // Zajistit, že jsou nastaveny event listenery pro modal
+        if (!authModalEventsSetup) {
+            setupAuthModalEvents();
+        }
     }
     
     const modalTitle = modal.querySelector('.modal-title');

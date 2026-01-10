@@ -240,17 +240,11 @@
                     <div class="settings-form">
                         <div class="form-group">
                             <label for="firstName">Křestní jméno</label>
-                            <input type="text" id="firstName" value="" class="form-input" placeholder="Zadejte vaše křestní jméno" readonly style="background-color: #f3f4f6; cursor: not-allowed;">
-                            <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">
-                                Jméno nelze změnit po registraci
-                            </div>
+                            <input type="text" id="firstName" value="" class="form-input" placeholder="Zadejte vaše křestní jméno">
                         </div>
                         <div class="form-group">
                             <label for="lastName">Příjmení</label>
-                            <input type="text" id="lastName" value="" class="form-input" placeholder="Zadejte vaše příjmení" readonly style="background-color: #f3f4f6; cursor: not-allowed;">
-                            <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">
-                                Příjmení nelze změnit po registraci
-                            </div>
+                            <input type="text" id="lastName" value="" class="form-input" placeholder="Zadejte vaše příjmení">
                         </div>
                         <div class="form-group">
                             <label for="birthDate">Datum narození</label>
@@ -527,10 +521,13 @@
                 }
 
                 // Získat hodnoty z formuláře (email a telefon se už neukládají zde)
-                // Jméno a příjmení se neukládají - jsou read-only a nelze je změnit po registraci
+                const firstNameEl = document.getElementById('firstName');
+                const lastNameEl = document.getElementById('lastName');
                 const cityEl = document.getElementById('city');
                 const bioEl = document.getElementById('bio');
                 
+                const firstName = firstNameEl ? firstNameEl.value : '';
+                const lastName = lastNameEl ? lastNameEl.value : '';
                 const bioText = bioEl ? bioEl.value : '';
                 
                 // Kontrola zakázaných slov
@@ -543,7 +540,9 @@
                 }
                 
                 const personalData = {
-                    // Jméno a příjmení se neukládají - jsou read-only a nelze je změnit po registraci
+                    firstName: firstName,
+                    lastName: lastName,
+                    name: `${firstName} ${lastName}`.trim(), // Zachovat i složené jméno pro kompatibilitu
                     // Email a telefon se už neukládají zde - mění se v sekci "Změna emailu a telefonního čísla" s heslem
                     // Datum narození se neukládá zde - je read-only a nelze ho změnit po registraci
                     city: cityEl ? cityEl.value : '',
@@ -1279,7 +1278,165 @@
 
         // Delete account function
         async function deleteAccount() {
-            // Vytvořit modal pro potvrzení smazání účtu
+            const currentUser = window.firebaseAuth.currentUser;
+            if (!currentUser) {
+                showMessage('❌ Uživatel není přihlášen.', 'error');
+                return;
+            }
+
+            // Kontrola předplatného a topování před smazáním účtu
+            try {
+                const { getDoc, doc, collection, getDocs, query, where } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                
+                // 1. Kontrola předplatného
+                const profileRef = doc(window.firebaseDb, 'users', currentUser.uid, 'profile', 'profile');
+                const profileSnap = await getDoc(profileRef);
+                
+                let hasActiveSubscription = false;
+                let subscriptionExpiresAt = null;
+                
+                if (profileSnap.exists()) {
+                    const profile = profileSnap.data();
+                    const plan = profile.plan;
+                    const planPeriodEnd = profile.planPeriodEnd;
+                    
+                    if (plan && (plan === 'hobby' || plan === 'business') && planPeriodEnd) {
+                        const endDate = planPeriodEnd.toDate ? planPeriodEnd.toDate() : new Date(planPeriodEnd);
+                        if (endDate >= new Date()) {
+                            hasActiveSubscription = true;
+                            subscriptionExpiresAt = endDate;
+                        }
+                    }
+                }
+                
+                // 2. Kontrola topování inzerátů
+                let hasActiveTop = false;
+                let topExpiresAt = null;
+                
+                const servicesRef = collection(window.firebaseDb, 'services');
+                const userServicesQuery = query(servicesRef, where('userId', '==', currentUser.uid));
+                const userServicesSnap = await getDocs(userServicesQuery);
+                
+                const now = new Date();
+                userServicesSnap.forEach(doc => {
+                    const serviceData = doc.data();
+                    if (serviceData.isTop === true && serviceData.topExpiresAt) {
+                        const expiresAt = serviceData.topExpiresAt.toDate ? serviceData.topExpiresAt.toDate() : new Date(serviceData.topExpiresAt);
+                        if (expiresAt >= now) {
+                            hasActiveTop = true;
+                            if (!topExpiresAt || expiresAt > topExpiresAt) {
+                                topExpiresAt = expiresAt;
+                            }
+                        }
+                    }
+                });
+                
+                // Pokud běží předplatné nebo topování, zobrazit upozornění
+                if (hasActiveSubscription || hasActiveTop) {
+                    const warningModal = document.createElement('div');
+                    warningModal.className = 'modal';
+                    warningModal.id = 'deleteAccountWarningModal';
+                    warningModal.style.display = 'flex';
+                    
+                    let warningText = '';
+                    if (hasActiveSubscription && hasActiveTop) {
+                        const subscriptionDate = subscriptionExpiresAt.toLocaleDateString('cs-CZ');
+                        const topDate = topExpiresAt.toLocaleDateString('cs-CZ');
+                        warningText = `
+                            <p style="font-size: clamp(1rem, 3vw, 1.1rem); font-weight: 600; color: #1a1a2e; margin-bottom: 1rem; line-height: 1.6;">
+                                Nemůžete smazat účet, dokud běží aktivní předplatné nebo topování inzerátů.
+                            </p>
+                            <ul style="list-style: none; padding: 0; margin: 0 0 1.5rem 0;">
+                                <li style="padding: 0.5rem 0; font-size: clamp(0.9rem, 2.5vw, 1rem); color: #4b5563; display: flex; align-items: start; gap: 0.5rem;">
+                                    <i class="fas fa-calendar-check" style="color: #f77c00; margin-top: 0.2rem; flex-shrink: 0;"></i>
+                                    <span>Aktivní předplatné vyprší: <strong>${subscriptionDate}</strong></span>
+                                </li>
+                                <li style="padding: 0.5rem 0; font-size: clamp(0.9rem, 2.5vw, 1rem); color: #4b5563; display: flex; align-items: start; gap: 0.5rem;">
+                                    <i class="fas fa-fire" style="color: #ff8a00; margin-top: 0.2rem; flex-shrink: 0;"></i>
+                                    <span>Topování inzerátů vyprší: <strong>${topDate}</strong></span>
+                                </li>
+                            </ul>
+                            <p style="font-size: clamp(0.9rem, 2.5vw, 1rem); color: #374151; margin-bottom: 1rem; line-height: 1.6;">
+                                Účet můžete smazat až po vypršení předplatného a topování. Zrušte předplatné a počkejte na jeho vypršení.
+                            </p>
+                        `;
+                    } else if (hasActiveSubscription) {
+                        const subscriptionDate = subscriptionExpiresAt.toLocaleDateString('cs-CZ');
+                        warningText = `
+                            <p style="font-size: clamp(1rem, 3vw, 1.1rem); font-weight: 600; color: #1a1a2e; margin-bottom: 1rem; line-height: 1.6;">
+                                Nemůžete smazat účet, dokud běží aktivní předplatné.
+                            </p>
+                            <p style="font-size: clamp(0.9rem, 2.5vw, 1rem); color: #4b5563; margin-bottom: 1rem; line-height: 1.6;">
+                                <i class="fas fa-calendar-check" style="color: #f77c00; margin-right: 0.5rem;"></i>
+                                Aktivní předplatné vyprší: <strong>${subscriptionDate}</strong>
+                            </p>
+                            <p style="font-size: clamp(0.9rem, 2.5vw, 1rem); color: #374151; margin-bottom: 1rem; line-height: 1.6;">
+                                Účet můžete smazat až po vypršení předplatného. Zrušte předplatné a počkejte na jeho vypršení.
+                            </p>
+                        `;
+                    } else if (hasActiveTop) {
+                        const topDate = topExpiresAt.toLocaleDateString('cs-CZ');
+                        warningText = `
+                            <p style="font-size: clamp(1rem, 3vw, 1.1rem); font-weight: 600; color: #1a1a2e; margin-bottom: 1rem; line-height: 1.6;">
+                                Nemůžete smazat účet, dokud běží topování inzerátů.
+                            </p>
+                            <p style="font-size: clamp(0.9rem, 2.5vw, 1rem); color: #4b5563; margin-bottom: 1rem; line-height: 1.6;">
+                                <i class="fas fa-fire" style="color: #ff8a00; margin-right: 0.5rem;"></i>
+                                Topování inzerátů vyprší: <strong>${topDate}</strong>
+                            </p>
+                            <p style="font-size: clamp(0.9rem, 2.5vw, 1rem); color: #374151; margin-bottom: 1rem; line-height: 1.6;">
+                                Účet můžete smazat až po vypršení topování. Počkejte na vypršení topování.
+                            </p>
+                        `;
+                    }
+                    
+                    warningModal.innerHTML = `
+                        <div class="modal-content" style="max-width: 600px; width: 90%;">
+                            <div class="modal-header" style="background: linear-gradient(135deg, rgba(247, 124, 0, 0.1) 0%, rgba(255, 138, 0, 0.1) 100%); border-bottom: 2px solid #f77c00;">
+                                <h2 style="color: #f77c00; font-weight: 800; font-size: clamp(1.2rem, 4vw, 1.5rem);">⚠️ UPOZORNĚNÍ ⚠️</h2>
+                                <button class="close" onclick="closeDeleteWarningModal()" style="font-size: 1.8rem; color: #6b7280;">&times;</button>
+                            </div>
+                            <div class="modal-body" style="padding: 2rem; max-height: 70vh; overflow-y: auto;">
+                                ${warningText}
+                                <div style="background: #FFF7ED; border-left: 4px solid #f77c00; padding: 1rem; margin-bottom: 1.5rem; border-radius: 8px;">
+                                    <p style="font-size: clamp(0.9rem, 2.5vw, 1rem); color: #92400E; font-weight: 700; margin: 0; line-height: 1.5;">
+                                        Zrušte předplatné a počkejte na jeho vypršení, poté budete moci účet smazat.
+                                    </p>
+                                </div>
+                                <div style="display: flex; gap: 1rem; flex-wrap: wrap; justify-content: flex-end;">
+                                    <button onclick="closeDeleteWarningModal()" class="btn-save" style="background: #f77c00; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: clamp(0.9rem, 2.5vw, 1rem); font-weight: 600; cursor: pointer; transition: all 0.2s;">
+                                        Zrušit
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    document.body.appendChild(warningModal);
+                    
+                    // Zavřít při kliknutí na overlay
+                    warningModal.addEventListener('click', (e) => {
+                        if (e.target === warningModal) {
+                            closeDeleteWarningModal();
+                        }
+                    });
+                    
+                    // Zavřít při stisknutí Escape
+                    const handleEscape = (e) => {
+                        if (e.key === 'Escape') {
+                            closeDeleteWarningModal();
+                            document.removeEventListener('keydown', handleEscape);
+                        }
+                    };
+                    document.addEventListener('keydown', handleEscape);
+                    
+                    return;
+                }
+            } catch (error) {
+                console.error('❌ Chyba při kontrole předplatného a topování:', error);
+                // Při chybě pokračovat s mazáním účtu (aby uživatel nebyl blokován kvůli technickému problému)
+            }
+            
+            // Vytvořit modal pro potvrzení smazání účtu (pokud neběží předplatné ani topování)
             const deleteModal = document.createElement('div');
             deleteModal.className = 'modal';
             deleteModal.id = 'deleteAccountModal';
@@ -1369,6 +1526,17 @@
             document.addEventListener('keydown', handleEscape);
         }
 
+        // Funkce pro zavření modalu upozornění
+        function closeDeleteWarningModal() {
+            const modal = document.getElementById('deleteAccountWarningModal');
+            if (modal) {
+                modal.style.animation = 'modalSlideOut 0.3s ease-out';
+                setTimeout(() => {
+                    modal.remove();
+                }, 300);
+            }
+        }
+        
         // Funkce pro zavření modalu
         function closeDeleteModal() {
             const modal = document.getElementById('deleteAccountModal');
@@ -1813,6 +1981,7 @@
         window.changePassword = changePassword;
         window.deleteAccount = deleteAccount;
         window.closeDeleteModal = closeDeleteModal;
+        window.closeDeleteWarningModal = closeDeleteWarningModal;
         window.confirmDeleteAccount = confirmDeleteAccount;
         window.closeFinalDeleteModal = closeFinalDeleteModal;
         window.executeDeleteAccount = executeDeleteAccount;
@@ -2190,23 +2359,9 @@
             applyUserTypeToSettingsUI(resolvedType);
             
             // Osobní informace - vždy prefilled (bez emailu a telefonu)
-            // Jméno a příjmení jsou read-only - nelze změnit po registraci
-            const firstNameEl = document.getElementById('firstName');
-            const lastNameEl = document.getElementById('lastName');
-            if (firstNameEl && userProfile?.firstName) {
-                firstNameEl.value = userProfile.firstName;
-                firstNameEl.readOnly = true;
-                firstNameEl.style.backgroundColor = '#f3f4f6';
-                firstNameEl.style.cursor = 'not-allowed';
-            }
-            if (lastNameEl && userProfile?.lastName) {
-                lastNameEl.value = userProfile.lastName;
-                lastNameEl.readOnly = true;
-                lastNameEl.style.backgroundColor = '#f3f4f6';
-                lastNameEl.style.cursor = 'not-allowed';
-            }
-            
             const personalFields = {
+                'firstName': userProfile?.firstName || '',
+                'lastName': userProfile?.lastName || '',
                 'city': userProfile?.city || '',
                 'bio': userProfile?.bio || ''
             };
@@ -2448,8 +2603,11 @@
                                 <span class="close" onclick="closeAvatarCrop()">&times;</span>
                             </div>
                             <div class="modal-body" style="padding: 1rem;">
-                                <div id="cropArea" style="width:320px;height:320px;margin:0 auto;position:relative;overflow:hidden;background:#f3f4f6;border-radius:12px;border:1px solid #e5e7eb;">
-                                    <img id="cropImage" alt="Crop" style="position:absolute; left:0; top:0; transform-origin: top left; user-select:none; -webkit-user-drag:none;">
+                                <div id="cropArea" style="width:320px;height:320px;max-width:90vw;max-height:90vw;margin:0 auto;position:relative;overflow:hidden;background:#f3f4f6;border-radius:12px;border:1px solid #e5e7eb;">
+                                    <div id="avatarCropLoading" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); z-index:10;">
+                                        <i class="fas fa-spinner fa-spin" style="font-size: 3rem; color: #f77c00;"></i>
+                                    </div>
+                                    <img id="cropImage" alt="Crop" style="position:absolute; left:0; top:0; transform-origin: top left; user-select:none; -webkit-user-drag:none; opacity:0; will-change:transform;" onload="this.style.opacity='1'; document.getElementById('avatarCropLoading')?.style.setProperty('display', 'none', 'important');">
                                 </div>
                                 <div style="margin-top:12px;">
                                     <input id="cropZoom" type="range" min="1" max="3" step="0.01" value="1" style="width:100%;">
@@ -2471,30 +2629,64 @@
                 const area = modal.querySelector('#cropArea');
                 const img = modal.querySelector('#cropImage');
                 const zoom = modal.querySelector('#cropZoom');
+                const cropLoading = modal.querySelector('#avatarCropLoading');
                 
                 // Naplnit stav
                 __avatarCrop.areaEl = area;
                 __avatarCrop.imgEl = img;
                 __avatarCrop.zoomEl = zoom;
                 
+                // Zobrazit loading spinner
+                if (cropLoading) {
+                    cropLoading.style.display = 'block';
+                }
+                img.style.opacity = '0';
+                
+                // Zobrazit modal
+                modal.style.display = 'flex';
+                
                 // Načíst obrázek
                 if (__avatarCrop.objectUrl) URL.revokeObjectURL(__avatarCrop.objectUrl);
                 __avatarCrop.objectUrl = URL.createObjectURL(file);
                 img.src = __avatarCrop.objectUrl;
                 img.onload = () => {
-                    const aw = area.clientWidth;
-                    const ah = area.clientHeight;
-                    const iw = img.naturalWidth;
-                    const ih = img.naturalHeight;
-                    __avatarCrop.naturalWidth = iw;
-                    __avatarCrop.naturalHeight = ih;
-                    // Fit-cover pro čtverec
-                    const scale = Math.max(aw / iw, ah / ih);
-                    __avatarCrop.baseScale = scale;
-                    __avatarCrop.scale = scale;
-                    __avatarCrop.offsetX = (aw - iw * scale) / 2;
-                    __avatarCrop.offsetY = (ah - ih * scale) / 2;
-                    applyCropTransform();
+                    // Skrýt loading spinner
+                    if (cropLoading) {
+                        cropLoading.style.display = 'none';
+                    }
+                    img.style.opacity = '1';
+                    
+                    // Zajistit, že máme správné rozměry area po načtení
+                    const updateCropArea = () => {
+                        // Nastavit cropArea na čtverec s responsive velikostí
+                        const maxSize = Math.min(window.innerWidth * 0.9, window.innerHeight * 0.5, 400);
+                        area.style.width = maxSize + 'px';
+                        area.style.height = maxSize + 'px';
+                        
+                        const aw = area.clientWidth || maxSize;
+                        const ah = area.clientHeight || maxSize;
+                        const iw = img.naturalWidth;
+                        const ih = img.naturalHeight;
+                        
+                        __avatarCrop.naturalWidth = iw;
+                        __avatarCrop.naturalHeight = ih;
+                        
+                        // Fit-cover pro čtverec - zajistit, aby obrázek pokryl celou oblast
+                        const scale = Math.max(aw / iw, ah / ih);
+                        __avatarCrop.baseScale = scale;
+                        __avatarCrop.scale = scale;
+                        
+                        // Centrovat obrázek
+                        __avatarCrop.offsetX = (aw - iw * scale) / 2;
+                        __avatarCrop.offsetY = (ah - ih * scale) / 2;
+                        
+                        applyCropTransform();
+                    };
+                    
+                    // Počkat na další frame, aby area měla správné rozměry
+                    requestAnimationFrame(() => {
+                        updateCropArea();
+                    });
                 };
                 
                 // Drag to move
@@ -2536,6 +2728,38 @@
                     applyCropTransform();
                 };
                 
+                // Zajistit, aby se po změně velikosti okna přepočítaly rozměry
+                const handleResize = () => {
+                    if (!__avatarCrop.areaEl || !__avatarCrop.imgEl) return;
+                    const maxSize = Math.min(window.innerWidth * 0.9, window.innerHeight * 0.5, 400);
+                    __avatarCrop.areaEl.style.width = maxSize + 'px';
+                    __avatarCrop.areaEl.style.height = maxSize + 'px';
+                    
+                    const aw = __avatarCrop.areaEl.clientWidth;
+                    const ah = __avatarCrop.areaEl.clientHeight;
+                    const iw = __avatarCrop.naturalWidth;
+                    const ih = __avatarCrop.naturalHeight;
+                    
+                    // Přepočítat scale, aby obrázek stále pokrýval oblast
+                    const newBaseScale = Math.max(aw / iw, ah / ih);
+                    const zoomValue = __avatarCrop.scale / __avatarCrop.baseScale;
+                    __avatarCrop.baseScale = newBaseScale;
+                    __avatarCrop.scale = newBaseScale * zoomValue;
+                    
+                    clampOffsets();
+                    applyCropTransform();
+                };
+                
+                window.addEventListener('resize', handleResize);
+                
+                // Uložit funkci pro odstranění listeneru
+                if (!window.__avatarCropResizeHandler) {
+                    window.__avatarCropResizeHandler = handleResize;
+                } else {
+                    window.removeEventListener('resize', window.__avatarCropResizeHandler);
+                    window.__avatarCropResizeHandler = handleResize;
+                }
+                
                 modal.style.display = 'flex';
             } catch (e) {
                 console.error('openAvatarCrop error', e);
@@ -2550,19 +2774,27 @@
                 URL.revokeObjectURL(__avatarCrop.objectUrl);
                 __avatarCrop.objectUrl = '';
             }
+            // Odstranit resize listener
+            if (window.__avatarCropResizeHandler) {
+                window.removeEventListener('resize', window.__avatarCropResizeHandler);
+                window.__avatarCropResizeHandler = null;
+            }
         }
         
         function clampOffsets() {
-            const aw = __avatarCrop.areaEl?.clientWidth || 320;
-            const ah = __avatarCrop.areaEl?.clientHeight || 320;
+            if (!__avatarCrop.areaEl) return;
+            const aw = __avatarCrop.areaEl.clientWidth || 320;
+            const ah = __avatarCrop.areaEl.clientHeight || 320;
             const w = __avatarCrop.naturalWidth * __avatarCrop.scale;
             const h = __avatarCrop.naturalHeight * __avatarCrop.scale;
+            
             // Zajistit, aby obraz pokrýval výřez – tzn. horní/levý offset nesmí být větší než 0
-            // a pravý/dolní nesmí „odjet“ (offset >= aw - w, ah - h)
+            // a pravý/dolní nesmí „odjet" (offset >= aw - w, ah - h)
             const minX = Math.min(0, aw - w);
             const minY = Math.min(0, ah - h);
             const maxX = Math.max(0, aw - w);
             const maxY = Math.max(0, ah - h);
+            
             __avatarCrop.offsetX = Math.min(Math.max(__avatarCrop.offsetX, minX), maxX);
             __avatarCrop.offsetY = Math.min(Math.max(__avatarCrop.offsetY, minY), maxY);
         }
@@ -2575,8 +2807,13 @@
         
         async function confirmAvatarCrop() {
             try {
-                const aw = __avatarCrop.areaEl?.clientWidth || 320;
-                const ah = __avatarCrop.areaEl?.clientHeight || 320;
+                if (!__avatarCrop.areaEl || !__avatarCrop.imgEl) {
+                    showMessage('Chyba při ořezávání fotky', 'error');
+                    return;
+                }
+                
+                const aw = __avatarCrop.areaEl.clientWidth || 320;
+                const ah = __avatarCrop.areaEl.clientHeight || 320;
                 const scale = __avatarCrop.scale;
                 const iw = __avatarCrop.naturalWidth;
                 const ih = __avatarCrop.naturalHeight;

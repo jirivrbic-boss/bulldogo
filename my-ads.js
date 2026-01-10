@@ -362,7 +362,7 @@ function createAdCard(ad) {
     return `
         <article class="ad-card${ad.isTop ? ' is-top' : ''}" ${topStyle}>
             <div class="ad-thumb">
-                <img src="${imageUrl}" alt="Inzerát" loading="lazy" decoding="async" onload="this.classList.add('loaded');" onerror="this.classList.add('loaded'); this.onerror=null; this.src='fotky/team.jpg';">
+                <img src="${imageUrl}" alt="Inzerát" loading="lazy" decoding="async">
             </div>
             <div class="ad-body">
                 <h3 class="ad-title">${ad.title}</h3>

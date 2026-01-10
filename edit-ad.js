@@ -759,34 +759,63 @@
         
         const reader = new FileReader();
         reader.onload = function(e) {
-            cropImage.src = e.target.result;
-            modal.style.display = 'flex';
-            
-            // Inicializovat cropper s fixním poměrem 4:3
-            if (cropperInstance) {
-                cropperInstance.destroy();
+            // Zobrazit loading spinner
+            const cropLoading = document.getElementById('cropLoading');
+            if (cropLoading) {
+                cropLoading.style.display = 'flex';
+                cropLoading.style.alignItems = 'center';
+                cropLoading.style.justifyContent = 'center';
+                cropLoading.style.position = 'absolute';
+                cropLoading.style.top = '50%';
+                cropLoading.style.left = '50%';
+                cropLoading.style.transform = 'translate(-50%, -50%)';
+                cropLoading.style.zIndex = '10';
             }
             
-            cropperInstance = new Cropper(cropImage, {
-                aspectRatio: 4 / 3,
-                viewMode: 1,
-                dragMode: 'move',
-                autoCropArea: 0.8,
-                restore: false,
-                guides: true,
-                center: true,
-                highlight: false,
-                cropBoxMovable: true,
-                cropBoxResizable: true,
-                toggleDragModeOnDblclick: false,
-                responsive: true,
-                minContainerWidth: 300,
-                minContainerHeight: 225,
-                ready: function() {
-                    // Rámeček se automaticky zobrazí s poměrem 4:3
-                    console.log('✅ Cropper initialized with 4:3 aspect ratio');
+            modal.style.display = 'flex';
+            
+            // Resetovat display na none pro obrázek
+            cropImage.style.display = 'none';
+            
+            // Nastavit src a počkat na načtení obrázku
+            cropImage.onload = function() {
+                // Skrýt loading spinner
+                if (cropLoading) {
+                    cropLoading.style.display = 'none';
                 }
-            });
+                cropImage.style.display = 'block';
+                
+                // Inicializovat cropper s fixním poměrem 4:3
+                if (cropperInstance) {
+                    cropperInstance.destroy();
+                }
+                
+                setTimeout(() => {
+                    cropperInstance = new Cropper(cropImage, {
+                        aspectRatio: 4 / 3,
+                        viewMode: 1,
+                        dragMode: 'move',
+                        autoCropArea: 0.8,
+                        restore: false,
+                        guides: true,
+                        center: true,
+                        highlight: false,
+                        cropBoxMovable: true,
+                        cropBoxResizable: true,
+                        toggleDragModeOnDblclick: false,
+                        responsive: true,
+                        minContainerWidth: 300,
+                        minContainerHeight: 225,
+                        ready: function() {
+                            // Rámeček se automaticky zobrazí s poměrem 4:3
+                            console.log('✅ Cropper initialized with 4:3 aspect ratio');
+                        }
+                    });
+                }, 100);
+            };
+            
+            // Nastavit src až po registraci onload handleru
+            cropImage.src = e.target.result;
         };
         reader.readAsDataURL(file);
     };
