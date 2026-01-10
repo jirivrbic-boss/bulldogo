@@ -1284,6 +1284,25 @@
                 return;
             }
 
+            // ZOBRAZIT LOADING NEJDŘÍV - před jakoukoli kontrolou
+            const loadingModal = document.createElement('div');
+            loadingModal.className = 'modal';
+            loadingModal.id = 'deleteAccountLoadingCheck';
+            loadingModal.style.display = 'flex';
+            loadingModal.innerHTML = `
+                <div class="modal-content" style="max-width: 400px; width: 90%;">
+                    <div class="modal-body" style="padding: 2rem; text-align: center;">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">
+                            <i class="fas fa-spinner fa-spin" style="color: #f77c00;"></i>
+                        </div>
+                        <p style="font-size: clamp(1rem, 3vw, 1.1rem); font-weight: 600; color: #1a1a2e; margin-bottom: 0.5rem;">
+                            Kontroluji...
+                        </p>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(loadingModal);
+
             // Kontrola předplatného a topování před smazáním účtu
             try {
                 const { getDoc, doc, collection, getDocs, query, where } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
@@ -1330,6 +1349,11 @@
                         }
                     }
                 });
+                
+                // ODSTRANIT LOADING MODAL PŘED ZOBRAZENÍM WARNING MODALU
+                if (loadingModal && loadingModal.parentNode) {
+                    loadingModal.remove();
+                }
                 
                 // Pokud běží předplatné nebo topování, zobrazit upozornění
                 if (hasActiveSubscription || hasActiveTop) {
@@ -1433,7 +1457,16 @@
                 }
             } catch (error) {
                 console.error('❌ Chyba při kontrole předplatného a topování:', error);
+                // ODSTRANIT LOADING MODAL při chybě
+                if (loadingModal && loadingModal.parentNode) {
+                    loadingModal.remove();
+                }
                 // Při chybě pokračovat s mazáním účtu (aby uživatel nebyl blokován kvůli technickému problému)
+            }
+            
+            // ODSTRANIT LOADING MODAL PŘED ZOBRAZENÍM DELETE MODALU
+            if (loadingModal && loadingModal.parentNode) {
+                loadingModal.remove();
             }
             
             // Vytvořit modal pro potvrzení smazání účtu (pokud neběží předplatné ani topování)
@@ -2603,11 +2636,11 @@
                                 <span class="close" onclick="closeAvatarCrop()">&times;</span>
                             </div>
                             <div class="modal-body" style="padding: 1rem;">
-                                <div id="cropArea" style="width:320px;height:320px;max-width:90vw;max-height:90vw;margin:0 auto;position:relative;overflow:hidden;background:#f3f4f6;border-radius:12px;border:1px solid #e5e7eb;">
+                                <div id="cropArea" style="width:320px;height:320px;max-width:90vw;max-height:90vw;min-width:280px;min-height:280px;margin:0 auto;position:relative;overflow:hidden;background:#f3f4f6;border-radius:12px;border:1px solid #e5e7eb;">
                                     <div id="avatarCropLoading" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); z-index:10;">
                                         <i class="fas fa-spinner fa-spin" style="font-size: 3rem; color: #f77c00;"></i>
                                     </div>
-                                    <img id="cropImage" alt="Crop" style="position:absolute; left:0; top:0; transform-origin: top left; user-select:none; -webkit-user-drag:none; opacity:0; will-change:transform;" onload="this.style.opacity='1'; document.getElementById('avatarCropLoading')?.style.setProperty('display', 'none', 'important');">
+                                    <img id="cropImage" alt="Crop" style="position:absolute; left:0; top:0; width:100%; height:100%; object-fit:cover; transform-origin: top left; user-select:none; -webkit-user-drag:none; opacity:0; will-change:transform;" onload="this.style.opacity='1'; document.getElementById('avatarCropLoading')?.style.setProperty('display', 'none', 'important');">
                                 </div>
                                 <div style="margin-top:12px;">
                                     <input id="cropZoom" type="range" min="1" max="3" step="0.01" value="1" style="width:100%;">
@@ -2659,12 +2692,19 @@
                     // Zajistit, že máme správné rozměry area po načtení
                     const updateCropArea = () => {
                         // Nastavit cropArea na čtverec s responsive velikostí
-                        const maxSize = Math.min(window.innerWidth * 0.9, window.innerHeight * 0.5, 400);
-                        area.style.width = maxSize + 'px';
-                        area.style.height = maxSize + 'px';
+                        // Na mobilu použít větší velikost, aby vyplnila okno
+                        const isMobile = window.innerWidth <= 768;
+                        const maxSize = isMobile 
+                            ? Math.min(window.innerWidth * 0.85, window.innerHeight * 0.6, 500)
+                            : Math.min(window.innerWidth * 0.9, window.innerHeight * 0.5, 400);
+                        const minSize = isMobile ? 280 : 320;
+                        const finalSize = Math.max(maxSize, minSize);
                         
-                        const aw = area.clientWidth || maxSize;
-                        const ah = area.clientHeight || maxSize;
+                        area.style.width = finalSize + 'px';
+                        area.style.height = finalSize + 'px';
+                        
+                        const aw = area.clientWidth || finalSize;
+                        const ah = area.clientHeight || finalSize;
                         const iw = img.naturalWidth;
                         const ih = img.naturalHeight;
                         
@@ -2679,6 +2719,11 @@
                         // Centrovat obrázek
                         __avatarCrop.offsetX = (aw - iw * scale) / 2;
                         __avatarCrop.offsetY = (ah - ih * scale) / 2;
+                        
+                        // Nastavit velikost obrázku, aby vyplnil oblast
+                        img.style.width = (iw * scale) + 'px';
+                        img.style.height = (ih * scale) + 'px';
+                        img.style.objectFit = 'cover';
                         
                         applyCropTransform();
                     };
@@ -2731,9 +2776,15 @@
                 // Zajistit, aby se po změně velikosti okna přepočítaly rozměry
                 const handleResize = () => {
                     if (!__avatarCrop.areaEl || !__avatarCrop.imgEl) return;
-                    const maxSize = Math.min(window.innerWidth * 0.9, window.innerHeight * 0.5, 400);
-                    __avatarCrop.areaEl.style.width = maxSize + 'px';
-                    __avatarCrop.areaEl.style.height = maxSize + 'px';
+                    const isMobile = window.innerWidth <= 768;
+                    const maxSize = isMobile 
+                        ? Math.min(window.innerWidth * 0.85, window.innerHeight * 0.6, 500)
+                        : Math.min(window.innerWidth * 0.9, window.innerHeight * 0.5, 400);
+                    const minSize = isMobile ? 280 : 320;
+                    const finalSize = Math.max(maxSize, minSize);
+                    
+                    __avatarCrop.areaEl.style.width = finalSize + 'px';
+                    __avatarCrop.areaEl.style.height = finalSize + 'px';
                     
                     const aw = __avatarCrop.areaEl.clientWidth;
                     const ah = __avatarCrop.areaEl.clientHeight;
@@ -2745,6 +2796,10 @@
                     const zoomValue = __avatarCrop.scale / __avatarCrop.baseScale;
                     __avatarCrop.baseScale = newBaseScale;
                     __avatarCrop.scale = newBaseScale * zoomValue;
+                    
+                    // Aktualizovat velikost obrázku
+                    __avatarCrop.imgEl.style.width = (iw * newBaseScale) + 'px';
+                    __avatarCrop.imgEl.style.height = (ih * newBaseScale) + 'px';
                     
                     clampOffsets();
                     applyCropTransform();
@@ -2802,7 +2857,10 @@
         function applyCropTransform() {
             const img = __avatarCrop.imgEl;
             if (!img) return;
-            img.style.transform = `translate(${__avatarCrop.offsetX}px, ${__avatarCrop.offsetY}px) scale(${__avatarCrop.scale})`;
+            // Použít scale transform, ale zachovat velikost obrázku
+            const baseScale = __avatarCrop.baseScale || 1;
+            const zoomScale = __avatarCrop.scale / baseScale;
+            img.style.transform = `translate(${__avatarCrop.offsetX}px, ${__avatarCrop.offsetY}px) scale(${zoomScale})`;
         }
         
         async function confirmAvatarCrop() {
