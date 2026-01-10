@@ -993,10 +993,32 @@
 
 /* Zajistit, že i jeden inzerát má stejnou velikost jako když jich je více */
 .ads-grid > .ad-card:only-child {
-    grid-column: 1 / 2 !important; /* Zabere jen první sloupec */
+    grid-column: span 1 !important; /* Zabere jen jeden sloupec, stejně jako ostatní */
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
+    /* Zajistit, že má stejnou velikost jako ostatní karty */
+    min-height: auto !important;
+    height: auto !important;
+}
+
+/* Zajistit, že grid má vždy stejnou strukturu, i když je jen jeden výsledek */
+#servicesGrid:has(> .ad-card:only-child) {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+
+/* Tablet: 3 sloupce i pro jeden výsledek */
+@media (min-width: 768px) and (max-width: 1199px) {
+    #servicesGrid:has(> .ad-card:only-child) {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    }
+}
+
+/* Mobil: 1 sloupec i pro jeden výsledek */
+@media (max-width: 767px) {
+    #servicesGrid:has(> .ad-card:only-child) {
+        grid-template-columns: 1fr !important;
+    }
 }
 
 /* Zajistit, že loading zabere všechny sloupce */

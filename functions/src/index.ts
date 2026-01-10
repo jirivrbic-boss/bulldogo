@@ -186,8 +186,8 @@ function generateInactivityWarningEmailHTML(userName: string, deletionDate: Date
   const formattedDate = formatDateCzech(deletionDate);
   
   const content = `
-    <p class="text-primary" style="margin: 0 0 20px 0; font-size: 16px; color: #111827; line-height: 1.6;">
-      Všimli jsme si, že jste se na Bulldogo.cz dlouho nepřihlásili. Váš účet bude z důvodu neaktivity automaticky smazán dne <strong class="text-strong" style="color: #111827;">${formattedDate}</strong>.
+    <p class="text-primary" style="margin: 0 0 20px 0; font-size: 16px; line-height: 1.6;">
+      Všimli jsme si, že jste se na Bulldogo.cz dlouho nepřihlásili. Váš účet bude z důvodu neaktivity automaticky smazán dne <strong class="text-strong">${formattedDate}</strong>.
     </p>
     
     <div class="alert-warning" style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 20px; margin: 20px 0; border-radius: 8px;">
@@ -808,21 +808,21 @@ function generateReportEmailForAdminHTML(
   const content = `
     <div class="alert-info" style="background: #f8f9fa; border-left: 4px solid #f77c00; padding: 20px; margin: 20px 0; border-radius: 8px;">
       <p class="text-secondary" style="margin: 0 0 8px 0; font-size: 13px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">📋 Nahlášený inzerát</p>
-      <p class="text-primary" style="margin: 0 0 4px 0; font-size: 18px; font-weight: 700; color: #111827;">${adTitle}</p>
-      <p class="text-secondary" style="margin: 0 0 8px 0; font-size: 13px; color: #9ca3af;">ID: ${adId}</p>
+      <p class="text-primary" style="margin: 0 0 4px 0; font-size: 18px; font-weight: 700;">${adTitle}</p>
+      <p class="text-secondary" style="margin: 0 0 8px 0; font-size: 13px;">ID: ${adId}</p>
       <p style="margin: 0;"><a href="https://bulldogo.cz/ad-detail.html?id=${adId}" style="color: #f77c00; text-decoration: none;">Zobrazit inzerát →</a></p>
               </div>
               
     <div class="alert-info" style="background: #f8f9fa; border-left: 4px solid #f77c00; padding: 20px; margin: 20px 0; border-radius: 8px;">
-      <p class="text-secondary" style="margin: 0 0 8px 0; font-size: 13px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">👤 Majitel inzerátu</p>
-      <p class="text-primary" style="margin: 0 0 4px 0; font-size: 15px; color: #111827;"><strong class="text-strong" style="color: #111827;">Jméno:</strong> ${adOwnerName}</p>
-      <p class="alert-info-text" style="margin: 0; font-size: 14px; color: #374151;"><strong class="text-strong" style="color: #374151;">Email:</strong> <a href="mailto:${adOwnerEmail}" style="color: #f77c00;">${adOwnerEmail || "Neznámý"}</a></p>
+      <p class="text-secondary" style="margin: 0 0 8px 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">👤 Majitel inzerátu</p>
+      <p class="text-primary" style="margin: 0 0 4px 0; font-size: 15px;"><strong class="text-strong">Jméno:</strong> ${adOwnerName}</p>
+      <p class="alert-info-text" style="margin: 0; font-size: 14px;"><strong class="text-strong">Email:</strong> <a href="mailto:${adOwnerEmail}" style="color: #f77c00;">${adOwnerEmail || "Neznámý"}</a></p>
               </div>
               
     <div class="alert-info" style="background: #f8f9fa; border-left: 4px solid #f77c00; padding: 20px; margin: 20px 0; border-radius: 8px;">
-      <p class="text-secondary" style="margin: 0 0 8px 0; font-size: 13px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">🔔 Nahlašovatel</p>
-      <p class="text-primary" style="margin: 0 0 4px 0; font-size: 15px; color: #111827;"><strong class="text-strong" style="color: #111827;">Jméno:</strong> ${reporterName}</p>
-      <p class="alert-info-text" style="margin: 0; font-size: 14px; color: #374151;"><strong class="text-strong" style="color: #374151;">Email:</strong> <a href="mailto:${reporterEmail}" style="color: #f77c00;">${reporterEmail || "Nepřihlášený"}</a></p>
+      <p class="text-secondary" style="margin: 0 0 8px 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">🔔 Nahlašovatel</p>
+      <p class="text-primary" style="margin: 0 0 4px 0; font-size: 15px;"><strong class="text-strong">Jméno:</strong> ${reporterName}</p>
+      <p class="alert-info-text" style="margin: 0; font-size: 14px;"><strong class="text-strong">Email:</strong> <a href="mailto:${reporterEmail}" style="color: #f77c00;">${reporterEmail || "Nepřihlášený"}</a></p>
               </div>
               
     <div class="alert-warning" style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 20px; margin: 20px 0; border-radius: 8px;">
@@ -962,13 +962,13 @@ export const reportAd = functions.region("europe-west1").https.onRequest(async (
  */
 function generateAccountDeletedEmailHTML(userName: string): string {
   const content = `
-    <p class="text-primary" style="margin: 0 0 20px 0; font-size: 16px; color: #111827; line-height: 1.6;">
-      Váš účet na Bulldogo.cz byl z důvodu dlouhodobé neaktivity <strong class="text-strong" style="color: #111827;">trvale smazán</strong>.
+    <p class="text-primary" style="margin: 0 0 20px 0; font-size: 16px; line-height: 1.6;">
+      Váš účet na Bulldogo.cz byl z důvodu dlouhodobé neaktivity <strong class="text-strong">trvale smazán</strong>.
                     </p>
     
     <div class="alert-info" style="background: #f8f9fa; border-left: 4px solid #f77c00; padding: 20px; margin: 20px 0; border-radius: 8px;">
-      <p class="text-primary" style="margin: 0 0 12px 0; font-size: 15px; color: #111827; font-weight: 600;">Co bylo smazáno:</p>
-      <ul class="alert-info-text" style="margin: 0; padding-left: 20px; color: #374151; font-size: 14px; line-height: 1.8;">
+      <p class="text-primary" style="margin: 0 0 12px 0; font-size: 15px; font-weight: 600;">Co bylo smazáno:</p>
+      <ul class="alert-info-text" style="margin: 0; padding-left: 20px; font-size: 14px; line-height: 1.8;">
                             <li>Váš profil a osobní údaje</li>
                             <li>Všechny vaše inzeráty</li>
                             <li>Recenze a hodnocení</li>
@@ -2358,44 +2358,138 @@ function generateEmailTemplate(options: {
   <title>${title} - Bulldogo.cz</title>
   <!--[if mso]>
   <style type="text/css">
-    body, table { background-color: #000000 !important; }
-    .email-body { background-color: #000000 !important; }
-    .email-container { background-color: #000000 !important; }
-    .email-card { background-color: #1a1a1a !important; }
+    body, table { background-color: #f5f5f5 !important; }
+    .email-body { background-color: #f5f5f5 !important; }
+    .email-container { background-color: #f5f5f5 !important; }
+    .email-card { background-color: #ffffff !important; }
+    .email-text { color: #1a1a1a !important; }
+    .email-text-strong { color: #000000 !important; }
   </style>
   <![endif]-->
   <style>
-    /* Výchozí tmavý režim - emaily budou mít tmavé pozadí */
-    .email-body { background-color: #000000 !important; }
-    .email-container { background-color: #000000 !important; }
-    .email-card { background-color: #1a1a1a !important; border-color: #404040 !important; }
-    .email-text { color: #e5e5e5 !important; }
-    .email-text-strong { color: #ffffff !important; }
-    .email-footer { color: #b0b0b0 !important; }
+    /* Výchozí světlý režim - lepší čitelnost */
+    .email-body { background-color: #f5f5f5 !important; }
+    .email-container { background-color: #f5f5f5 !important; }
+    .email-card { background-color: #ffffff !important; border-color: #e0e0e0 !important; }
+    .email-text { color: #1a1a1a !important; }
+    .email-text-strong { color: #000000 !important; }
+    .email-footer { color: #4a4a4a !important; }
     .email-footer-link { color: #f77c00 !important; }
     .email-footer-muted { color: #6b7280 !important; }
+    h1, h2, h3, h4, h5, h6 { color: #000000 !important; }
+    p { color: #1a1a1a !important; }
+    a { color: #f77c00 !important; }
+    strong { color: #000000 !important; }
+    em { color: #1a1a1a !important; }
     
-    /* Světlý režim - pouze pokud uživatel explicitně preferuje světlý režim */
+    /* Světlý režim - explicitní světlý režim */
     @media (prefers-color-scheme: light) {
-      .email-body { background-color: #ffffff !important; }
-      .email-container { background-color: #ffffff !important; }
-      .email-card { background-color: #ffffff !important; border-color: #e5e7eb !important; }
-      .email-text { color: #1a1a2e !important; }
-      .email-text-strong { color: #1a1a2e !important; }
-      .email-footer { color: #6b7280 !important; }
-      .email-footer-link { color: #f77c00 !important; }
-      .email-footer-muted { color: #9ca3af !important; }
-    }
-    
-    @media (prefers-color-scheme: dark) {
-      .email-body { background-color: #000000 !important; }
-      .email-container { background-color: #000000 !important; }
-      .email-card { background-color: #1a1a1a !important; border-color: #404040 !important; }
-      .email-text { color: #e5e5e5 !important; }
-      .email-text-strong { color: #ffffff !important; }
-      .email-footer { color: #b0b0b0 !important; }
+      .email-body { background-color: #f5f5f5 !important; }
+      .email-container { background-color: #f5f5f5 !important; }
+      .email-card { background-color: #ffffff !important; border-color: #e0e0e0 !important; }
+      .email-text { color: #1a1a1a !important; }
+      .email-text-strong { color: #000000 !important; }
+      .email-footer { color: #4a4a4a !important; }
       .email-footer-link { color: #f77c00 !important; }
       .email-footer-muted { color: #6b7280 !important; }
+      h1, h2, h3, h4, h5, h6 { color: #000000 !important; }
+      p { color: #1a1a1a !important; }
+      a { color: #f77c00 !important; }
+      strong { color: #000000 !important; }
+      em { color: #1a1a1a !important; }
+    }
+    
+    /* Tmavý režim - tmavé pozadí se světlým textem s vysokým kontrastem */
+    @media (prefers-color-scheme: dark) {
+      .email-body { background-color: #0f0f0f !important; }
+      .email-container { background-color: #0f0f0f !important; }
+      .email-card { background-color: #1f1f1f !important; border-color: #404040 !important; }
+      .email-text { color: #f0f0f0 !important; }
+      .email-text-strong { color: #ffffff !important; }
+      .email-footer { color: #d0d0d0 !important; }
+      .email-footer-link { color: #ff9500 !important; }
+      .email-footer-muted { color: #a0a0a0 !important; }
+      h1, h2, h3, h4, h5, h6 { color: #ffffff !important; }
+      p { color: #f0f0f0 !important; }
+      a { color: #ff9500 !important; }
+      strong { color: #ffffff !important; }
+      em { color: #f0f0f0 !important; }
+      ul, ol, li { color: #f0f0f0 !important; }
+      /* Přepsat všechny inline barvy v tmavém režimu */
+      *[style*="color: #111827"],
+      *[style*="color:#111827"],
+      *[style*="color: #1a1a2e"],
+      *[style*="color:#1a1a2e"],
+      *[style*="color: #1a1a1a"],
+      *[style*="color:#1a1a1a"],
+      *[style*="color: #374151"],
+      *[style*="color:#374151"],
+      *[style*="color: #6b7280"],
+      *[style*="color:#6b7280"],
+      *[style*="color: #9ca3af"],
+      *[style*="color:#9ca3af"],
+      *[style*="color: #718096"],
+      *[style*="color:#718096"] {
+        color: #f0f0f0 !important;
+      }
+      strong[style*="color"],
+      .text-strong[style*="color"],
+      h1[style*="color"],
+      h2[style*="color"],
+      h3[style*="color"],
+      h4[style*="color"],
+      h5[style*="color"],
+      h6[style*="color"] {
+        color: #ffffff !important;
+      }
+      /* Alert boxy v tmavém režimu - světlé barvy */
+      .alert-warning[style*="background: #fffbeb"],
+      .alert-warning[style*="background:#fffbeb"] {
+        background-color: #3d3021 !important;
+        border-left-color: #f59e0b !important;
+      }
+      .alert-warning[style*="background: #fff8eb"],
+      .alert-warning[style*="background:#fff8eb"] {
+        background-color: #3d3021 !important;
+        border-left-color: #f59e0b !important;
+      }
+      .alert-warning-title[style*="color: #92400e"],
+      .alert-warning-title[style*="color:#92400e"],
+      .alert-warning-title[style*="color: #b45309"],
+      .alert-warning-title[style*="color:#b45309"],
+      .alert-warning-text[style*="color: #78350f"],
+      .alert-warning-text[style*="color:#78350f"] {
+        color: #fbbf24 !important;
+      }
+      .alert-success[style*="background: #f0fdf4"],
+      .alert-success[style*="background:#f0fdf4"] {
+        background-color: #1a3d2e !important;
+        border-left-color: #22c55e !important;
+      }
+      .alert-success-title[style*="color: #166534"],
+      .alert-success-title[style*="color:#166534"],
+      .alert-success-text[style*="color: #15803d"],
+      .alert-success-text[style*="color:#15803d"] {
+        color: #86efac !important;
+      }
+      .alert-danger[style*="background: #fef2f2"],
+      .alert-danger[style*="background:#fef2f2"] {
+        background-color: #3d1f1f !important;
+        border-left-color: #ef4444 !important;
+      }
+      .alert-danger-text[style*="color: #991b1b"],
+      .alert-danger-text[style*="color:#991b1b"] {
+        color: #fca5a5 !important;
+      }
+      .alert-info[style*="background: #f8f9fa"],
+      .alert-info[style*="background:#f8f9fa"] {
+        background-color: #2d2d2d !important;
+        border-left-color: #f77c00 !important;
+      }
+      .alert-info-text[style*="color: #374151"],
+      .alert-info-text[style*="color:#374151"] {
+        color: #d1d5db !important;
+      }
       /* Alert boxy - zelené (success) */
       .alert-success { 
         background-color: #1a3d2e !important; 
@@ -2434,26 +2528,40 @@ function generateEmailTemplate(options: {
       .alert-info-text { 
         color: #d1d5db !important; 
       }
-      /* Obecné texty */
-      .text-primary { 
-        color: #e5e5e5 !important; 
-      }
-      .text-strong { 
-        color: #ffffff !important; 
-      }
-      .text-secondary { 
-        color: #b0b0b0 !important; 
-      }
+    /* Obecné texty - vysoký kontrast pro tmavý režim */
+    .text-primary { 
+      color: #f0f0f0 !important; 
     }
-    /* Outlook dark mode support */
-    [data-ogsc] .email-body { background-color: #000000 !important; }
-    [data-ogsc] .email-container { background-color: #000000 !important; }
-    [data-ogsc] .email-card { background-color: #1a1a1a !important; border-color: #404040 !important; }
-    [data-ogsc] .email-text { color: #e5e5e5 !important; }
+    .text-strong { 
+      color: #ffffff !important; 
+      font-weight: 700 !important;
+    }
+    .text-secondary { 
+      color: #d0d0d0 !important; 
+    }
+    /* Přepsat inline barvy pro tmavý režim */
+    .text-primary[style*="color"],
+    .text-strong[style*="color"] {
+      color: #f0f0f0 !important;
+    }
+    strong.text-strong[style*="color"] {
+      color: #ffffff !important;
+    }
+    }
+    /* Outlook dark mode support - vysoký kontrast */
+    [data-ogsc] .email-body { background-color: #0f0f0f !important; }
+    [data-ogsc] .email-container { background-color: #0f0f0f !important; }
+    [data-ogsc] .email-card { background-color: #1f1f1f !important; border-color: #404040 !important; }
+    [data-ogsc] .email-text { color: #f0f0f0 !important; }
     [data-ogsc] .email-text-strong { color: #ffffff !important; }
-    [data-ogsc] .email-footer { color: #b0b0b0 !important; }
-    [data-ogsc] .email-footer-link { color: #f77c00 !important; }
-    [data-ogsc] .email-footer-muted { color: #6b7280 !important; }
+    [data-ogsc] .email-footer { color: #d0d0d0 !important; }
+    [data-ogsc] .email-footer-link { color: #ff9500 !important; }
+    [data-ogsc] .email-footer-muted { color: #a0a0a0 !important; }
+    [data-ogsc] h1, [data-ogsc] h2, [data-ogsc] h3, [data-ogsc] h4, [data-ogsc] h5, [data-ogsc] h6 { color: #ffffff !important; }
+    [data-ogsc] p { color: #f0f0f0 !important; }
+    [data-ogsc] a { color: #ff9500 !important; }
+    [data-ogsc] strong { color: #ffffff !important; }
+    [data-ogsc] em { color: #f0f0f0 !important; }
     [data-ogsc] .alert-success { 
       background-color: #1a3d2e !important; 
       border-left-color: #22c55e !important; 
@@ -2489,18 +2597,97 @@ function generateEmailTemplate(options: {
       color: #d1d5db !important; 
     }
     [data-ogsc] .text-primary { 
-      color: #e5e5e5 !important; 
+      color: #f0f0f0 !important; 
     }
     [data-ogsc] .text-strong { 
       color: #ffffff !important; 
+      font-weight: 700 !important;
     }
     [data-ogsc] .text-secondary { 
-      color: #b0b0b0 !important; 
+      color: #d0d0d0 !important; 
+    }
+    [data-ogsc] h1, [data-ogsc] h2, [data-ogsc] h3, [data-ogsc] h4, [data-ogsc] h5, [data-ogsc] h6 { color: #ffffff !important; }
+    [data-ogsc] p { color: #f0f0f0 !important; }
+    [data-ogsc] a { color: #ff9500 !important; }
+    [data-ogsc] strong { color: #ffffff !important; }
+    [data-ogsc] em { color: #f0f0f0 !important; }
+    [data-ogsc] ul, [data-ogsc] ol, [data-ogsc] li { color: #f0f0f0 !important; }
+    /* Přepsat všechny inline barvy v tmavém režimu pro Outlook */
+    [data-ogsc] *[style*="color: #111827"],
+    [data-ogsc] *[style*="color:#111827"],
+    [data-ogsc] *[style*="color: #1a1a2e"],
+    [data-ogsc] *[style*="color:#1a1a2e"],
+    [data-ogsc] *[style*="color: #1a1a1a"],
+    [data-ogsc] *[style*="color:#1a1a1a"],
+    [data-ogsc] *[style*="color: #374151"],
+    [data-ogsc] *[style*="color:#374151"],
+    [data-ogsc] *[style*="color: #6b7280"],
+    [data-ogsc] *[style*="color:#6b7280"],
+    [data-ogsc] *[style*="color: #9ca3af"],
+    [data-ogsc] *[style*="color:#9ca3af"],
+    [data-ogsc] *[style*="color: #718096"],
+    [data-ogsc] *[style*="color:#718096"] {
+      color: #f0f0f0 !important;
+    }
+    [data-ogsc] strong[style*="color"],
+    [data-ogsc] .text-strong[style*="color"],
+    [data-ogsc] h1[style*="color"],
+    [data-ogsc] h2[style*="color"],
+    [data-ogsc] h3[style*="color"],
+    [data-ogsc] h4[style*="color"],
+    [data-ogsc] h5[style*="color"],
+    [data-ogsc] h6[style*="color"] {
+      color: #ffffff !important;
+    }
+    /* Alert boxy v tmavém režimu pro Outlook */
+    [data-ogsc] .alert-warning[style*="background: #fffbeb"],
+    [data-ogsc] .alert-warning[style*="background:#fffbeb"],
+    [data-ogsc] .alert-warning[style*="background: #fff8eb"],
+    [data-ogsc] .alert-warning[style*="background:#fff8eb"] {
+      background-color: #3d3021 !important;
+      border-left-color: #f59e0b !important;
+    }
+    [data-ogsc] .alert-warning-title[style*="color: #92400e"],
+    [data-ogsc] .alert-warning-title[style*="color:#92400e"],
+    [data-ogsc] .alert-warning-title[style*="color: #b45309"],
+    [data-ogsc] .alert-warning-title[style*="color:#b45309"],
+    [data-ogsc] .alert-warning-text[style*="color: #78350f"],
+    [data-ogsc] .alert-warning-text[style*="color:#78350f"] {
+      color: #fbbf24 !important;
+    }
+    [data-ogsc] .alert-success[style*="background: #f0fdf4"],
+    [data-ogsc] .alert-success[style*="background:#f0fdf4"] {
+      background-color: #1a3d2e !important;
+      border-left-color: #22c55e !important;
+    }
+    [data-ogsc] .alert-success-title[style*="color: #166534"],
+    [data-ogsc] .alert-success-title[style*="color:#166534"],
+    [data-ogsc] .alert-success-text[style*="color: #15803d"],
+    [data-ogsc] .alert-success-text[style*="color:#15803d"] {
+      color: #86efac !important;
+    }
+    [data-ogsc] .alert-danger[style*="background: #fef2f2"],
+    [data-ogsc] .alert-danger[style*="background:#fef2f2"] {
+      background-color: #3d1f1f !important;
+      border-left-color: #ef4444 !important;
+    }
+    [data-ogsc] .alert-danger-text[style*="color: #991b1b"],
+    [data-ogsc] .alert-danger-text[style*="color:#991b1b"] {
+      color: #fca5a5 !important;
+    }
+    [data-ogsc] .alert-info[style*="background: #f8f9fa"],
+    [data-ogsc] .alert-info[style*="background:#f8f9fa"] {
+      background-color: #2d2d2d !important;
+      border-left-color: #f77c00 !important;
+    }
+    [data-ogsc] .alert-info-text[style*="color: #374151"],
+    [data-ogsc] .alert-info-text[style*="color:#374151"] {
+      color: #d1d5db !important;
     }
   </style>
 </head>
-<body class="email-body" style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #000000;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" class="email-container" style="background: #000000;">
+<body class="email-body" style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" class="email-container" style="background: #f5f5f5;">
     <tr>
       <td align="center" style="padding: 40px 20px;">
         <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width: 600px; width: 100%;">
@@ -2522,7 +2709,7 @@ function generateEmailTemplate(options: {
           <!-- Hlavní karta -->
           <tr>
             <td>
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" class="email-card" style="background: #1a1a1a; border-radius: 24px; box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5); overflow: hidden; border: 1px solid #404040;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" class="email-card" style="background: #ffffff; border-radius: 24px; box-shadow: 0 25px 80px rgba(0, 0, 0, 0.15); overflow: hidden; border: 1px solid #e0e0e0;">
                 <!-- Header -->
                 <tr>
                   <td style="background: linear-gradient(135deg, #f77c00 0%, #fdf002 100%); padding: 30px; text-align: center;">
@@ -2532,11 +2719,11 @@ function generateEmailTemplate(options: {
                 
                 <!-- Obsah -->
                 <tr>
-                  <td style="padding: 40px 30px;">
-                    <p class="email-text" style="margin: 0 0 20px 0; font-size: 16px; color: #e5e5e5; line-height: 1.6;">
-                      Ahoj <strong class="email-text-strong" style="color: #ffffff;">${userName}</strong>,
+                  <td style="padding: 40px 30px; background-color: #ffffff;">
+                    <p class="email-text" style="margin: 0 0 20px 0; font-size: 16px; color: #1a1a1a; line-height: 1.6;">
+                      Ahoj <strong class="email-text-strong" style="color: #000000; font-weight: 700;">${userName}</strong>,
                     </p>
-                    <div class="email-text" style="font-size: 16px; color: #e5e5e5; line-height: 1.6;">
+                    <div class="email-text" style="font-size: 16px; color: #1a1a1a; line-height: 1.6;">
                       ${content}
                     </div>
                     ${buttonText && buttonUrl ? `
@@ -2561,14 +2748,14 @@ function generateEmailTemplate(options: {
           <tr>
             <td align="center" style="padding-top: 30px;">
               ${footerText ? `
-              <p class="email-footer" style="margin: 0 0 10px 0; font-size: 13px; color: #b0b0b0; line-height: 1.6;">
+              <p class="email-footer" style="margin: 0 0 10px 0; font-size: 13px; color: #4a4a4a; line-height: 1.6;">
                 ${footerText}
               </p>
               ` : ''}
-              <p class="email-footer" style="margin: 0; font-size: 13px; color: #b0b0b0;">
-                <a href="https://bulldogo.cz" class="email-footer-link" style="color: #f77c00; text-decoration: none;">bulldogo.cz</a> &nbsp;|&nbsp;
-                <a href="mailto:support@bulldogo.cz" class="email-footer-link" style="color: #f77c00; text-decoration: none;">support@bulldogo.cz</a> &nbsp;|&nbsp;
-                <a href="tel:+420605121023" class="email-footer-link" style="color: #f77c00; text-decoration: none;">+420 605 121 023</a>
+              <p class="email-footer" style="margin: 0; font-size: 13px; color: #4a4a4a;">
+                <a href="https://bulldogo.cz" class="email-footer-link" style="color: #f77c00; text-decoration: none; font-weight: 600;">bulldogo.cz</a> &nbsp;|&nbsp;
+                <a href="mailto:support@bulldogo.cz" class="email-footer-link" style="color: #f77c00; text-decoration: none; font-weight: 600;">support@bulldogo.cz</a> &nbsp;|&nbsp;
+                <a href="tel:+420605121023" class="email-footer-link" style="color: #f77c00; text-decoration: none; font-weight: 600;">+420 605 121 023</a>
               </p>
               <p class="email-footer-muted" style="margin: 10px 0 0 0; font-size: 12px; color: #6b7280;">
                 © 2026 BULLDOGO. Všechna práva vyhrazena.

@@ -241,10 +241,16 @@
                         <div class="form-group">
                             <label for="firstName">Křestní jméno</label>
                             <input type="text" id="firstName" value="" class="form-input" placeholder="Zadejte vaše křestní jméno">
+                            <div id="firstNameInfo" style="font-size: 12px; color: #6b7280; margin-top: 4px; display: none;">
+                                Jméno nelze změnit po registraci
+                            </div>
                         </div>
                         <div class="form-group">
                             <label for="lastName">Příjmení</label>
                             <input type="text" id="lastName" value="" class="form-input" placeholder="Zadejte vaše příjmení">
+                            <div id="lastNameInfo" style="font-size: 12px; color: #6b7280; margin-top: 4px; display: none;">
+                                Příjmení nelze změnit po registraci
+                            </div>
                         </div>
                         <div class="form-group">
                             <label for="birthDate">Datum narození</label>
@@ -539,16 +545,37 @@
                     }
                 }
                 
+                // Pro hobby uživatele: pokud jsou jméno nebo příjmení read-only, neukládat je
+                const isHobbyUser = normalizeUserType(window.__profileUserType) === 'person';
+                const firstNameReadOnly = firstNameEl && firstNameEl.readOnly;
+                const lastNameReadOnly = lastNameEl && lastNameEl.readOnly;
+                
                 const personalData = {
-                    firstName: firstName,
-                    lastName: lastName,
-                    name: `${firstName} ${lastName}`.trim(), // Zachovat i složené jméno pro kompatibilitu
+                    // Jméno a příjmení se neukládají, pokud jsou read-only (hobby uživatel s hodnotou z registrace)
                     // Email a telefon se už neukládají zde - mění se v sekci "Změna emailu a telefonního čísla" s heslem
                     // Datum narození se neukládá zde - je read-only a nelze ho změnit po registraci
                     city: cityEl ? cityEl.value : '',
                     bio: bioText,
                     updatedAt: new Date()
                 };
+                
+                // Uložit jméno a příjmení pouze pokud nejsou read-only
+                if (!firstNameReadOnly && firstName) {
+                    personalData.firstName = firstName;
+                    personalData.name = `${firstName} ${lastName || ''}`.trim();
+                } else if (!firstNameReadOnly && !lastNameReadOnly) {
+                    // Pokud nejsou read-only, uložit i když jsou prázdné (pro nové uživatele)
+                    personalData.firstName = firstName;
+                    personalData.lastName = lastName;
+                    personalData.name = `${firstName} ${lastName}`.trim();
+                }
+                
+                if (!lastNameReadOnly && lastName) {
+                    personalData.lastName = lastName;
+                    if (!personalData.name) {
+                        personalData.name = `${firstName || ''} ${lastName}`.trim();
+                    }
+                }
 
                 console.log('💾 Ukládám osobní informace:', personalData);
 
@@ -985,59 +1012,57 @@
                 document.getElementById('newPhone').value = '+420';
                 document.getElementById('currentPasswordForChange').value = '';
 
-                // Aktualizovat zobrazení aktuálních hodnot (ale ne resetovat pole, která uživatel právě upravuje)
-                // Přidat pole do ochranného seznamu, aby se neresetovala
+                // Odstranit z editedFields
                 ['newEmail', 'confirmEmail', 'newPhone', 'currentPasswordForChange'].forEach(id => {
-                    editedFields.delete(id); // Odstranit z editedFields, protože jsme je vyčistili
+                    editedFields.delete(id);
                 });
                 
-                // Aktualizovat zobrazení aktuálních hodnot (ale NE resetovat pole pro změnu hesla/emailu/telefonu)
-                // Pouze aktualizovat zobrazení (currentEmailDisplay, currentPhoneDisplay) a ostatní pole
-                try {
-                    const userProfile = await loadUserProfile();
-                    if (userProfile) {
-                        // Aktualizovat pouze zobrazení aktuálních hodnot, ne inputy pro změnu
+                // Aktualizovat pouze zobrazení aktuálních hodnot (bez volání updateFormFields, aby nedošlo k glitchi)
+                // Pouze aktualizovat zobrazení (currentEmailDisplay, currentPhoneDisplay) asynchronně
+                setTimeout(async () => {
+                    try {
                         const authEmail = (window.firebaseAuth?.currentUser?.email || '').toString().trim();
-                        const profileEmail = (userProfile?.email || '').toString().trim();
-                        const emailValue = profileEmail || authEmail || '';
                         
-                        let phoneValue = userProfile?.phone || '';
-                        if (phoneValue && phoneValue.startsWith('+420') && phoneValue.length > 4) {
-                            const digits = phoneValue.slice(4).replace(/\D/g, '');
-                            if (digits.length >= 9) {
-                                const formatted = `+420 ${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`.trim();
-                                phoneValue = formatted;
+                        // Pro telefon načíst z profilu, ale bez volání celého loadUserProfile
+                        let phoneValue = '';
+                        try {
+                            const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                            const profileRef = doc(window.firebaseDb, currentUser.uid, 'profile', 'profile');
+                            const profileSnap = await getDoc(profileRef);
+                            if (profileSnap.exists()) {
+                                const profileData = profileSnap.data();
+                                phoneValue = profileData?.phone || '';
+                                if (phoneValue && phoneValue.startsWith('+420') && phoneValue.length > 4) {
+                                    const digits = phoneValue.slice(4).replace(/\D/g, '');
+                                    if (digits.length >= 9) {
+                                        const formatted = `+420 ${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`.trim();
+                                        phoneValue = formatted;
+                                    }
+                                }
                             }
+                        } catch (e) {
+                            console.warn('⚠️ Nelze načíst telefon:', e);
                         }
                         
                         const currentEmailDisplay = document.getElementById('currentEmailDisplay');
                         const currentPhoneDisplay = document.getElementById('currentPhoneDisplay');
                         if (currentEmailDisplay) {
-                            currentEmailDisplay.textContent = emailValue || 'Není nastaven';
+                            currentEmailDisplay.textContent = authEmail || 'Není nastaven';
                         }
                         if (currentPhoneDisplay) {
                             currentPhoneDisplay.textContent = phoneValue || 'Není nastaven';
                         }
-                        
-                        // Aktualizovat ostatní pole (ale ne pole pro změnu hesla/emailu/telefonu)
-                        updateFormFields(userProfile);
+                    } catch (error) {
+                        console.error('❌ Chyba při aktualizaci zobrazení:', error);
                     }
-                } catch (error) {
-                    console.error('❌ Chyba při aktualizaci zobrazení:', error);
-                }
+                }, 500);
                 
                 // Resetovat flagy po úspěšném uložení
                 setTimeout(() => {
-                    ['newEmail', 'confirmEmail', 'newPhone', 'currentPasswordForChange'].forEach(id => {
-                        const el = document.getElementById(id);
-                        if (el && !el.value.trim()) {
-                            editedFields.delete(id);
-                        }
-                    });
                     if (editedFields.size === 0) {
                         isUserEditing = false;
                     }
-                }, 100);
+                }, 200);
 
                 showMessage('✅ Změny byly úspěšně uloženy!', 'success');
             } catch (error) {
@@ -1237,6 +1262,18 @@
                 document.getElementById('currentPassword').value = '';
                 document.getElementById('newPassword').value = '';
                 document.getElementById('confirmPassword').value = '';
+                
+                // Odstranit z editedFields
+                ['currentPassword', 'newPassword', 'confirmPassword'].forEach(id => {
+                    editedFields.delete(id);
+                });
+                
+                // Resetovat flagy
+                setTimeout(() => {
+                    if (editedFields.size === 0) {
+                        isUserEditing = false;
+                    }
+                }, 200);
 
                 showMessage('✅ Heslo bylo úspěšně změněno!', 'success');
                 console.log('✅ Heslo úspěšně změněno');
@@ -2431,8 +2468,17 @@
                                 return el && el.value.trim();
                             });
                             
-                            if (!isEditing && !isUserEditing && editedFields.size === 0 && !isEditingPasswordOrEmail && !hasValueInPasswordFields) {
-                                updateFormFields(userProfile);
+                            // Neaktualizovat během změny hesla/emailu (zabránit glitchi)
+                            const isChangingPasswordOrEmail = isUserEditing || editedFields.size > 0 || hasValueInPasswordFields;
+                            
+                            if (!isEditing && !isChangingPasswordOrEmail && !isEditingPasswordOrEmail) {
+                                // Použít requestAnimationFrame pro smooth aktualizaci bez glitchi
+                                requestAnimationFrame(() => {
+                                    // Znovu zkontrolovat podmínky, protože se mohly změnit
+                                    if (!isUserEditing && editedFields.size === 0 && !hasValueInPasswordFields) {
+                                        updateFormFields(userProfile);
+                                    }
+                                });
                             }
                         }
                     }, (error) => {
@@ -2574,9 +2620,36 @@
                 }
             }
 
+            // Kontrola, zda je uživatel hobby (person) - pro hobby uživatele jsou jméno a příjmení read-only
+            const isHobbyUser = normalizeUserType(resolvedType) === 'person';
+            
             Object.entries(personalFields).forEach(([fieldId, value]) => {
                 const element = document.getElementById(fieldId);
                 if (element) {
+                    // Pro hobby uživatele: pokud mají hodnotu jméno nebo příjmení, nastavit jako read-only
+                    if ((fieldId === 'firstName' || fieldId === 'lastName') && isHobbyUser && value) {
+                        element.readOnly = true;
+                        element.style.backgroundColor = '#f3f4f6';
+                        element.style.cursor = 'not-allowed';
+                        
+                        // Zobrazit informační text
+                        const infoEl = document.getElementById(fieldId + 'Info');
+                        if (infoEl) {
+                            infoEl.style.display = 'block';
+                        }
+                    } else if ((fieldId === 'firstName' || fieldId === 'lastName') && isHobbyUser && !value) {
+                        // Pokud hobby uživatel nemá hodnotu, pole není read-only
+                        element.readOnly = false;
+                        element.style.backgroundColor = '';
+                        element.style.cursor = '';
+                        
+                        // Skrýt informační text
+                        const infoEl = document.getElementById(fieldId + 'Info');
+                        if (infoEl) {
+                            infoEl.style.display = 'none';
+                        }
+                    }
+                    
                     // Neaktualizovat pole, která uživatel právě upravuje nebo která mají změněnou hodnotu
                     const isCurrentlyEditing = document.activeElement === element;
                     const wasEdited = editedFields.has(fieldId);
@@ -2584,7 +2657,8 @@
                     const newValue = (value || '').toString().trim();
                     
                     // Aktualizovat pouze pokud pole není právě upravováno a hodnota se změnila
-                    if (!isCurrentlyEditing && !wasEdited && currentValue !== newValue) {
+                    // A pokud není read-only
+                    if (!isCurrentlyEditing && !wasEdited && currentValue !== newValue && !element.readOnly) {
                         element.value = value;
                         element.placeholder = value ? `Aktuální: ${value}` : 'Zadejte hodnotu';
                     } else if (!value && !currentValue) {
