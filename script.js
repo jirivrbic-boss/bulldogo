@@ -1368,7 +1368,7 @@ console.log(`
                 <div class="cookie-banner__text">
                     Používáme cookies pro zajištění funkcí webu a zlepšení služeb. 
                     Před uložením nepovinných cookies potřebujeme váš souhlas. 
-                    Více informací najdete v <a href="https://commission.europa.eu/cookies-policy_en" target="_blank" rel="noopener noreferrer">zásadách EU o cookies</a>.
+                    Více informací najdete v <a href="https://commission.europa.eu/cookies-policy_cs" target="_blank" rel="noopener noreferrer">zásadách EU o cookies</a>.
                 </div>
                 <div class="cookie-banner__actions">
                     <button id="cookieReject" class="btn btn-outline">Odmítnout nepovinné</button>
