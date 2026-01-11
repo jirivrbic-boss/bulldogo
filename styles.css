@@ -1068,9 +1068,6 @@
     overflow: visible !important;
     transition: transform 0.3s ease, box-shadow 0.3s ease !important;
     border: 1px solid #f0f0f0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
     box-sizing: border-box !important;
     display: flex !important; /* Flexbox pro stejnou výšku */
     flex-direction: column !important; /* Vertikální uspořádání */
@@ -1079,13 +1076,20 @@
     visibility: visible !important;
     opacity: 1 !important;
     text-align: left !important;
-    margin: 0 !important;
     padding: 0 !important;
     float: none !important;
     clear: both !important;
     /* Zabraň změně velikosti při filtrování */
     contain: layout style !important;
     will-change: transform !important;
+}
+
+/* Šířka pro ostatní stránky (ne servicesGrid) */
+.ads-grid:not(#servicesGrid) .ad-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
 }
 
 .ad-card:hover {
@@ -7264,8 +7268,8 @@ body.profile-plan-page .plan-info {
         margin: 0 auto !important;
     }
     
-    /* Reset ad-card pro desktop - VŽDY stejné formátování bez ohledu na počet */
-    .ad-card {
+    /* Reset ad-card pro desktop - POUZE pro ostatní stránky, ne servicesGrid */
+    .ads-grid:not(#servicesGrid) .ad-card {
         padding: 0 !important;
         display: flex !important;
         flex-direction: column !important;
@@ -17713,16 +17717,13 @@ html:has(.ad-detail-content) {
 
 /* ===== ZAJISTIT KONZISTENTNÍ FORMÁTOVÁNÍ PRO VŠECHNY LOKACE ===== */
 /* Zajistit, že všechny karty mají stejné formátování bez ohledu na filtr nebo lokaci */
+/* POZOR: Šířka karty je nastavena v media query výše, neupravovat zde! */
 #servicesGrid .ad-card {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
     text-align: left !important;
     box-sizing: border-box !important;
     display: flex !important;
     flex-direction: column !important;
     height: 100% !important;
-    margin: 0 !important;
     padding: 0 !important;
     float: none !important;
     clear: both !important;
@@ -17761,10 +17762,8 @@ html:has(.ad-detail-content) {
 }
 
 /* Zajistit, že grid nezpůsobuje změny formátování */
+/* POZOR: Šířka karty je nastavena v media query výše, neupravovat zde! */
 #servicesGrid.ads-grid .ad-card {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
     text-align: left !important;
     float: none !important;
 }
