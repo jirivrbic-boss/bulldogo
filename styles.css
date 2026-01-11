@@ -940,26 +940,28 @@
     padding: 0 !important;
 }
 
-/* ===== UNIVERZÁLNÍ ŠABLONA PRO VŠECHNY INZERÁTY ===== */
-/* Desktop: grid vždy 4 sloupce, každá karta zabírá přesně 1/4, zarovnáno vlevo */
-
-#servicesGrid.ads-grid {
-    display: grid !important;
-    grid-template-columns: repeat(4, 1fr) !important;
-    gap: 24px !important;
-    max-width: 1600px !important;
-    margin: 0 auto !important;
-    width: 100% !important;
-    justify-items: start !important;
-}
+/* ===== UNIVERZÁLNÍ ŠABLONA PRO VŠECHNY INZERÁTY - DESKTOP ===== */
+/* Fixní řešení: každá karta má přesně 1/4 šířky gridu minus gap */
 
 @media (min-width: 1200px) {
-    #servicesGrid.ads-grid > .ad-card {
-        grid-column: span 1 !important;
+    #servicesGrid.ads-grid {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 24px !important;
+        max-width: 1600px !important;
+        margin: 0 auto !important;
         width: 100% !important;
-        max-width: 100% !important;
-        min-width: 0 !important;
+        justify-content: flex-start !important;
+    }
+    
+    #servicesGrid.ads-grid > .ad-card {
+        width: calc((100% - 72px) / 4) !important;
+        max-width: calc((100% - 72px) / 4) !important;
+        min-width: calc((100% - 72px) / 4) !important;
+        flex: 0 0 calc((100% - 72px) / 4) !important;
         box-sizing: border-box !important;
+        margin: 0 !important;
+        padding: 0 !important;
     }
 }
 
