@@ -2818,8 +2818,10 @@ function setupEventListeners() {
                 btnAuthSubmit2.textContent = 'Dokončuji…';
 
                 // Potvrdit SMS kód
+                console.log('📱 Potvrzuji SMS kód...');
                 const result = await phoneConfirmationResult.confirm(code);
                 const phoneUser = result.user;
+                console.log('✅ SMS kód potvrzen, uživatel:', phoneUser.uid);
 
                 // Data pro propojení
                 const form = document.getElementById('authForm');
@@ -2838,12 +2840,22 @@ function setupEventListeners() {
                 const companyAddress = (formData.get('companyAddress') || '').toString().trim();
                 const businessDescription = (formData.get('businessDescription') || '').toString().trim();
 
+                console.log('📝 Shromážděná data:', { email, userType, firstName, lastName, companyName });
+
                 // Vytvořit e-mailové přihlašování k telefonnímu účtu
+                console.log('🔗 Propojuji email s telefonním účtem...');
                 const { linkWithCredential, EmailAuthProvider, updateProfile } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
                 const credential = EmailAuthProvider.credential(email, password);
-                await linkWithCredential(phoneUser, credential);
+                try {
+                    await linkWithCredential(phoneUser, credential);
+                    console.log('✅ Email úspěšně propojen s telefonním účtem');
+                } catch (linkError) {
+                    console.error('❌ Chyba při propojení emailu:', linkError);
+                    throw linkError;
+                }
 
                 // Zapsat profil
+                console.log('💾 Ukládám data do databáze...');
                 const { setDoc, doc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
                 const finalUser = phoneUser;
                 const normalizedIco = normalizeICO(ico);
@@ -2886,18 +2898,38 @@ function setupEventListeners() {
                     profileData.name = companyName || 'Firma';
                 }
                 
-                await setDoc(doc(firebaseDb, 'users', finalUser.uid), {
-                    uid: finalUser.uid,
-                    email,
-                    phoneNumber: finalUser.phoneNumber || '',
-                    createdAt: serverTimestamp(),
-                    provider: 'password+phone',
-                    type: userType
-                }, { merge: true });
-                await setDoc(doc(firebaseDb, 'users', finalUser.uid, 'profile', 'profile'), profileData, { merge: true });
+                console.log('📦 Ukládám root dokument uživatele...');
+                try {
+                    await setDoc(doc(firebaseDb, 'users', finalUser.uid), {
+                        uid: finalUser.uid,
+                        email,
+                        phoneNumber: finalUser.phoneNumber || '',
+                        createdAt: serverTimestamp(),
+                        provider: 'password+phone',
+                        type: userType
+                    }, { merge: true });
+                    console.log('✅ Root dokument uživatele uložen');
+                } catch (rootError) {
+                    console.error('❌ Chyba při ukládání root dokumentu:', rootError);
+                    throw rootError;
+                }
+                
+                console.log('📦 Ukládám profil uživatele...', profileData);
+                try {
+                    await setDoc(doc(firebaseDb, 'users', finalUser.uid, 'profile', 'profile'), profileData, { merge: true });
+                    console.log('✅ Profil uživatele uložen');
+                } catch (profileError) {
+                    console.error('❌ Chyba při ukládání profilu:', profileError);
+                    throw profileError;
+                }
+                
+                console.log('👤 Aktualizuji displayName...');
                 try {
                     await updateProfile(finalUser, { displayName: userType === 'company' ? companyName : `${firstName} ${lastName}`.trim() });
-                } catch (_) {}
+                    console.log('✅ DisplayName aktualizován');
+                } catch (profileUpdateError) {
+                    console.warn('⚠️ Chyba při aktualizaci displayName (není kritická):', profileUpdateError);
+                }
 
                 showMessage('Registrace dokončena.', 'success');
                 closeAuthModal();
@@ -2905,9 +2937,48 @@ function setupEventListeners() {
                     try { window.afterLoginCallback(); } catch (_) {}
                 }
             } catch (err) {
-                const humanizedError = humanizePhoneError(err);
-                console.error('❌ Dokončení registrace selhalo:', humanizedError);
-                showMessage(humanizedError, 'error');
+                console.error('❌ Dokončení registrace selhalo - původní chyba:', err);
+                
+                // Zpracovat různé typy chyb
+                let errorMessage = 'Chyba při dokončení registrace.';
+                
+                // Pokud je to telefonní chyba, použít humanizePhoneError
+                if (err?.code && err.code.startsWith('auth/')) {
+                    errorMessage = humanizePhoneError(err);
+                } 
+                // Pokud je to Firestore chyba
+                else if (err?.code && err.code.startsWith('firestore/')) {
+                    switch (err.code) {
+                        case 'firestore/permission-denied':
+                            errorMessage = 'Nemáte oprávnění k uložení dat. Kontaktujte podporu.';
+                            break;
+                        case 'firestore/unavailable':
+                            errorMessage = 'Databáze není dostupná. Zkontrolujte připojení k internetu.';
+                            break;
+                        default:
+                            errorMessage = `Chyba databáze: ${err.message || err.code || 'neznámá chyba'}`;
+                    }
+                }
+                // Pokud je to chyba při linkWithCredential (email už existuje)
+                else if (err?.code === 'auth/email-already-in-use' || err?.message?.includes('email-already-in-use')) {
+                    errorMessage = 'Účet s tímto emailem již existuje. Použijte jiný email nebo se přihlaste.';
+                }
+                // Pokud je to jiná auth chyba
+                else if (err?.code && err.code.startsWith('auth/')) {
+                    errorMessage = handleAuthError(err) || errorMessage;
+                }
+                // Obecná chyba
+                else if (err?.message) {
+                    errorMessage = err.message;
+                }
+                
+                // Pokud je errorMessage stále jen tečka nebo prázdný, použít obecnou zprávu
+                if (!errorMessage || errorMessage === '.' || errorMessage.trim() === '') {
+                    errorMessage = 'Chyba při dokončení registrace. Zkuste to znovu nebo kontaktujte podporu.';
+                }
+                
+                console.error('❌ Dokončení registrace selhalo:', errorMessage);
+                showMessage(errorMessage, 'error');
             } finally {
                 btnAuthSubmit2.disabled = false;
                 btnAuthSubmit2.textContent = 'Dokončit registraci';
