@@ -7252,9 +7252,8 @@ body.profile-plan-page .plan-info {
 /* Hide mobile menu button on desktop */
 /* Desktop styles - reset mobile overrides for ads-grid */
 @media (min-width: 769px) {
-    /* Reset ads-grid pro desktop - VŽDY stejná struktura bez ohledu na počet prvků */
-    .ads-grid,
-    #servicesGrid {
+    /* Reset ads-grid pro desktop - POUZE pro ostatní stránky, ne servicesGrid */
+    .ads-grid:not(#servicesGrid) {
         grid-template-columns: repeat(4, 1fr) !important;
         gap: 24px !important;
         max-width: 1600px !important;
