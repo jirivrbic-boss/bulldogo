@@ -18178,6 +18178,60 @@ html:has(.ad-detail-content) {
         width: 80px !important;
         height: 60px !important;
     }
+
+/* ===== FINAL OVERRIDE: Services page single-result layout matches multi-result ===== */
+#servicesGrid.ads-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    grid-auto-columns: 1fr !important;
+    gap: 24px !important;
+    align-items: stretch !important;
+    justify-content: start !important;
+}
+#servicesGrid.ads-grid > .ad-card {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    grid-column: span 1 !important;
+}
+#servicesGrid.ads-grid .ad-thumb {
+    aspect-ratio: 4 / 3 !important;
+    height: auto !important;
+}
+#servicesGrid.ads-grid .ad-thumb img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+}
+#servicesGrid.ads-grid .ad-body {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 1 auto !important;
+    padding: 12px 14px 90px !important;
+    box-sizing: border-box !important;
+}
+#servicesGrid.ads-grid .ad-title {
+    font-size: 1rem !important;
+    margin: 0 0 6px 0 !important;
+}
+#servicesGrid.ads-grid .ad-price {
+    margin: 0 0 6px 0 !important;
+}
+
+@media (min-width: 768px) and (max-width: 1199px) {
+    #servicesGrid.ads-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+}
+
+@media (max-width: 767px) {
+    #servicesGrid.ads-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
 }
 
 
