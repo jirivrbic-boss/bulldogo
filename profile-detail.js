@@ -613,8 +613,28 @@ function updateProfileInfo() {
             contactInfoContainer.appendChild(item);
         };
         
-        // Jméno/Název firmy (vždy zobrazit)
-        addContactItem('fas fa-user', 'Jméno', displayName);
+        // Jméno a příjmení - zobrazit samostatně pokud jsou k dispozici
+        console.log('🖼️ Kontaktní informace - firstName:', userProfile.firstName, 'lastName:', userProfile.lastName);
+        if (userProfile.firstName || userProfile.lastName) {
+            // Pokud máme obě hodnoty, zobrazit samostatně
+            if (userProfile.firstName && userProfile.lastName) {
+                console.log('🖼️ Zobrazuji samostatně firstName a lastName');
+                addContactItem('fas fa-user', 'Jméno', userProfile.firstName);
+                addContactItem('fas fa-user', 'Příjmení', userProfile.lastName);
+            } else if (userProfile.firstName) {
+                // Pokud máme jen jméno
+                console.log('🖼️ Zobrazuji jen firstName');
+                addContactItem('fas fa-user', 'Jméno', userProfile.firstName);
+            } else if (userProfile.lastName) {
+                // Pokud máme jen příjmení
+                console.log('🖼️ Zobrazuji jen lastName');
+                addContactItem('fas fa-user', 'Příjmení', userProfile.lastName);
+            }
+        } else {
+            // Fallback na displayName nebo název firmy
+            console.log('🖼️ firstName a lastName nejsou k dispozici, používám displayName:', displayName);
+            addContactItem('fas fa-user', 'Jméno', displayName);
+        }
         
         // Email (pokud je vyplněn)
         const email = userProfile.email || currentProfileUser.email || '';
