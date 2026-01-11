@@ -992,7 +992,8 @@
 }
 
 /* Zajistit, že i jeden inzerát má stejnou velikost jako když jich je více */
-.ads-grid > .ad-card:only-child {
+.ads-grid > .ad-card:only-child,
+#servicesGrid > .ad-card:only-child {
     grid-column: span 1 !important; /* Zabere jen jeden sloupec, stejně jako ostatní */
     width: 100% !important;
     max-width: 100% !important;
@@ -1000,23 +1001,44 @@
     /* Zajistit, že má stejnou velikost jako ostatní karty */
     min-height: auto !important;
     height: auto !important;
+    /* Zajistit stejné formátování jako ostatní karty */
+    padding: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    box-sizing: border-box !important;
+    background: white !important;
+    border-radius: 15px !important;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1) !important;
+    overflow: visible !important;
+    transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+    border: 1px solid #f0f0f0 !important;
 }
 
 /* Zajistit, že grid má vždy stejnou strukturu, i když je jen jeden výsledek */
-#servicesGrid:has(> .ad-card:only-child) {
+#servicesGrid:has(> .ad-card:only-child),
+.ads-grid:has(> .ad-card:only-child) {
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    display: grid !important;
+    gap: 24px !important;
+    max-width: 1600px !important;
+    margin: 0 auto !important;
+    width: 100% !important;
+    justify-content: start !important;
+    align-items: stretch !important;
 }
 
 /* Tablet: 3 sloupce i pro jeden výsledek */
 @media (min-width: 768px) and (max-width: 1199px) {
-    #servicesGrid:has(> .ad-card:only-child) {
+    #servicesGrid:has(> .ad-card:only-child),
+    .ads-grid:has(> .ad-card:only-child) {
         grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
     }
 }
 
 /* Mobil: 1 sloupec i pro jeden výsledek */
 @media (max-width: 767px) {
-    #servicesGrid:has(> .ad-card:only-child) {
+    #servicesGrid:has(> .ad-card:only-child),
+    .ads-grid:has(> .ad-card:only-child) {
         grid-template-columns: 1fr !important;
     }
 }
@@ -7231,24 +7253,38 @@ body.profile-plan-page .plan-info {
 /* Hide mobile menu button on desktop */
 /* Desktop styles - reset mobile overrides for ads-grid */
 @media (min-width: 769px) {
-    /* Reset ads-grid pro desktop */
-    .ads-grid {
+    /* Reset ads-grid pro desktop - včetně jednoho výsledku */
+    .ads-grid,
+    .ads-grid:has(> .ad-card:only-child),
+    #servicesGrid,
+    #servicesGrid:has(> .ad-card:only-child) {
         grid-template-columns: repeat(4, 1fr) !important;
         gap: 24px !important;
         max-width: 1600px !important;
         align-items: stretch !important; /* Všechny karty mají stejnou výšku */
+        display: grid !important;
+        justify-content: start !important;
+        width: 100% !important;
+        margin: 0 auto !important;
     }
     
-    /* Reset ad-card pro desktop */
-    .ad-card {
+    /* Reset ad-card pro desktop - včetně jednoho výsledku */
+    .ad-card,
+    .ad-card:only-child {
         padding: 0 !important;
         display: flex !important; /* Flexbox pro stejnou výšku */
         flex-direction: column !important; /* Vertikální uspořádání */
         height: 100% !important; /* Plná výška v gridu */
         gap: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+        grid-column: span 1 !important;
     }
     
-    .ad-card .ad-thumb {
+    .ad-card .ad-thumb,
+    .ad-card:only-child .ad-thumb {
         width: 100% !important;
         aspect-ratio: 4 / 3 !important; /* FIXNÍ poměr stran - stejný všude */
         height: auto !important;
@@ -7258,7 +7294,8 @@ body.profile-plan-page .plan-info {
         overflow: hidden !important;
     }
     
-    .ad-card .ad-thumb img {
+    .ad-card .ad-thumb img,
+    .ad-card:only-child .ad-thumb img {
         border-radius: 0 !important;
         width: 100% !important;
         height: 100% !important;
@@ -7266,7 +7303,8 @@ body.profile-plan-page .plan-info {
         object-position: center !important; /* Vycentrovat obrázek */
     }
     
-    .ad-card .ad-body {
+    .ad-card .ad-body,
+    .ad-card:only-child .ad-body {
         padding: 12px 14px 80px !important;
         flex: 1 !important; /* Vyplní zbývající prostor v kartě */
         display: flex !important; /* Flexbox pro rozložení obsahu */
