@@ -873,9 +873,10 @@ function displayServices(list) {
             // Debug: zkontroluj, že se to spustí
             console.log('🔧 Přidávám placeholdery pro jeden výsledek');
 
-            // Placeholder se stejnou strukturou jako normální karta, ale neviditelný
+            // Placeholder se stejnou strukturou jako normální karta
+            // Použij opacity: 0 místo visibility: hidden, aby zůstal v grid layoutu
             const placeholder = `
-                <article class="ad-card ad-card-placeholder" aria-hidden="true" style="visibility: hidden; pointer-events: none;">
+                <article class="ad-card ad-card-placeholder" aria-hidden="true" style="opacity: 0; pointer-events: none; position: relative; z-index: -1;">
                     <div class="ad-thumb" style="width: 100%; aspect-ratio: 4 / 3; height: auto;"></div>
                     <div class="ad-body" style="padding: 12px 14px 90px;">
                         <div class="ad-meta"><span>&nbsp;</span></div>
