@@ -337,6 +337,26 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     mo.observe(document.documentElement, { childList: true, subtree: true });
+    
+    // Zkontrolovat hash v URL a otevřít modal pokud je potřeba (univerzální popup okno)
+    try {
+        const hash = window.location.hash;
+        if (hash === '#prihlaseni') {
+            setTimeout(() => {
+                if (typeof showAuthModal === 'function') {
+                    showAuthModal('login');
+                }
+            }, 300);
+        } else if (hash === '#registrace') {
+            setTimeout(() => {
+                if (typeof showAuthModal === 'function') {
+                    showAuthModal('register');
+                }
+            }, 300);
+        }
+    } catch (e) {
+        console.warn('⚠️ Chyba při kontrole hash v URL:', e);
+    }
 });
 
 // Inicializace autentifikace
@@ -393,6 +413,58 @@ function initAuth() {
     
     // Nastavení event listenerů
     setupEventListeners();
+    
+    // Listener pro změny hash v URL (univerzální popup okno)
+    window.addEventListener('hashchange', () => {
+        try {
+            const hash = window.location.hash;
+            if (hash === '#prihlaseni') {
+                if (typeof showAuthModal === 'function') {
+                    showAuthModal('login');
+                }
+            } else if (hash === '#registrace') {
+                if (typeof showAuthModal === 'function') {
+                    showAuthModal('register');
+                }
+            } else {
+                // Pokud hash není přihlášení/registrace, zavřít modal
+                const modal = document.getElementById('authModal');
+                if (modal && modal.style.display !== 'none' && modal.style.display !== '') {
+                    if (typeof closeAuthModal === 'function') {
+                        closeAuthModal();
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn('⚠️ Chyba při zpracování hashchange:', e);
+        }
+    }, false);
+    
+    // Listener pro změny hash v URL (univerzální popup okno)
+    window.addEventListener('hashchange', () => {
+        try {
+            const hash = window.location.hash;
+            if (hash === '#prihlaseni') {
+                if (typeof showAuthModal === 'function') {
+                    showAuthModal('login');
+                }
+            } else if (hash === '#registrace') {
+                if (typeof showAuthModal === 'function') {
+                    showAuthModal('register');
+                }
+            } else if (hash === '' || (!hash.includes('#prihlaseni') && !hash.includes('#registrace'))) {
+                // Pokud hash není přihlášení/registrace, zavřít modal
+                const modal = document.getElementById('authModal');
+                if (modal && modal.style.display !== 'none') {
+                    if (typeof closeAuthModal === 'function') {
+                        closeAuthModal();
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn('⚠️ Chyba při zpracování hashchange:', e);
+        }
+    });
     
     // Debug: Zkontrolovat elementy po načtení
     setTimeout(() => {
@@ -1349,6 +1421,17 @@ function setupAuthModalEvents() {
 
 // Zobrazení auth modalu
 function showAuthModal(type = 'login') {
+    // Přidat hash do URL pro univerzální odkaz
+    try {
+        const hash = type === 'register' ? '#registrace' : '#prihlaseni';
+        if (window.location.hash !== hash) {
+            // Použít replaceState aby se nepřidalo do historie
+            window.history.replaceState(null, '', window.location.pathname + window.location.search + hash);
+        }
+    } catch (e) {
+        console.warn('⚠️ Nepodařilo se přidat hash do URL:', e);
+    }
+    
     // Kontrola in-app browseru při registraci nebo přihlášení
     if (isInAppBrowser()) {
         const actionText = type === 'register' ? 'registraci' : 'přihlášení';
