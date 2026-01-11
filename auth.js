@@ -2931,8 +2931,42 @@ function setupEventListeners() {
                     console.warn('⚠️ Chyba při aktualizaci displayName (není kritická):', profileUpdateError);
                 }
 
+                // Počkat chvíli, aby se data uložila do Firestore
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                console.log('✅ Registrace úspěšně dokončena');
                 showMessage('Registrace dokončena.', 'success');
+                
+                // Zavřít modal
                 closeAuthModal();
+                
+                // Aktualizovat UI
+                if (typeof updateUI === 'function') {
+                    try {
+                        updateUI(finalUser);
+                    } catch (uiError) {
+                        console.warn('⚠️ Chyba při aktualizaci UI:', uiError);
+                    }
+                }
+                
+                // Pokud jsme na stránce nastavení, znovu načíst data pomocí custom eventu
+                if (window.location.pathname.includes('profile-settings')) {
+                    try {
+                        // Vyslat custom event pro znovunačtení dat
+                        window.dispatchEvent(new CustomEvent('userProfileUpdated', { 
+                            detail: { uid: finalUser.uid } 
+                        }));
+                        // Také zkusit zavolat loadUserSettings pokud je dostupná
+                        setTimeout(() => {
+                            if (typeof window.loadUserSettings === 'function') {
+                                window.loadUserSettings();
+                            }
+                        }, 1000);
+                    } catch (reloadError) {
+                        console.warn('⚠️ Chyba při znovunačtení nastavení:', reloadError);
+                    }
+                }
+                
                 if (typeof window.afterLoginCallback === 'function') {
                     try { window.afterLoginCallback(); } catch (_) {}
                 }

@@ -2266,6 +2266,15 @@
                 }
             });
 
+            // Automatické načítání při aktualizaci profilu (např. po registraci)
+            window.addEventListener('userProfileUpdated', async (event) => {
+                if (isInitialized) {
+                    console.log('🔄 Automatické načítání dat po aktualizaci profilu');
+                    await loadUserSettings();
+                    await loadUserData();
+                }
+            });
+
             // Automatické načítání při změně auth stavu
             if (window.firebaseAuth) {
                 let previousEmail = null;
