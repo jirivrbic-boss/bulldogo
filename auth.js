@@ -766,6 +766,21 @@ async function register(email, password, userData) {
         console.log('🔄 Manuálně aktualizuji UI po registraci');
         updateUI(user);
 
+        // Vyslat event pro aktualizaci nastavení (pokud je otevřena stránka nastavení)
+        try {
+            window.dispatchEvent(new CustomEvent('userProfileUpdated', { 
+                detail: { uid: user.uid } 
+            }));
+            // Také zkusit zavolat loadUserSettings pokud je dostupná (pro stránku nastavení)
+            setTimeout(() => {
+                if (typeof window.loadUserSettings === 'function') {
+                    window.loadUserSettings();
+                }
+            }, 500);
+        } catch (reloadError) {
+            console.warn('⚠️ Chyba při vysílání eventu userProfileUpdated:', reloadError);
+        }
+
         showMessage('Úspěšně jste se zaregistrovali!', 'success');
         closeAuthModal();
         return user;
