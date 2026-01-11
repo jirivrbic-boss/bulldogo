@@ -189,6 +189,8 @@ async function loadUserProfile(userId) {
         if (profileSnap.exists()) {
             userProfile = profileSnap.data();
             console.log('✅ Profile loaded from users/{userId}/profile/profile:', userProfile);
+            console.log('📝 firstName v profilu:', userProfile.firstName);
+            console.log('📝 lastName v profilu:', userProfile.lastName);
         } else {
             console.log('🖼️ Profile not found in users/{userId}/profile/profile, trying fallback');
             // Fallback to users/{userId}
@@ -214,9 +216,16 @@ async function loadUserProfile(userId) {
             currentProfileUser.id = userId;
             console.log('✅ User basic info loaded:', currentProfileUser);
             // Sloučit základní info s profilem pro lepší fallbacky při zobrazení
-            // (pole z profilu mají přednost před polem ze základního dokumentu)
+            // DŮLEŽITÉ: pole z profilu (userProfile) mají přednost před polem ze základního dokumentu (currentProfileUser)
+            // Zachovat firstName a lastName z profilu, pokud existují
+            const profileFirstName = userProfile.firstName;
+            const profileLastName = userProfile.lastName;
             userProfile = { ...currentProfileUser, ...userProfile };
+            // Zajistit, že firstName a lastName z profilu se nepřepíšou
+            if (profileFirstName !== undefined) userProfile.firstName = profileFirstName;
+            if (profileLastName !== undefined) userProfile.lastName = profileLastName;
             console.log('🧩 Merged userProfile for display:', userProfile);
+            console.log('📝 Po sloučení - firstName:', userProfile.firstName, 'lastName:', userProfile.lastName);
         } else {
             console.error('❌ User basic info not found');
             throw new Error('Základní informace o uživateli nebyly nalezeny');
@@ -409,6 +418,8 @@ function updateProfileInfo() {
     console.log('🖼️ updateProfileInfo called');
     console.log('🖼️ userProfile:', userProfile);
     console.log('🖼️ currentProfileUser:', currentProfileUser);
+    console.log('📝 firstName v updateProfileInfo:', userProfile?.firstName);
+    console.log('📝 lastName v updateProfileInfo:', userProfile?.lastName);
     
     // Profile display name
     const displayName = (userProfile.name && userProfile.name.trim())
