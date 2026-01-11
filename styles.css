@@ -1022,6 +1022,13 @@
     box-sizing: border-box !important;
 }
 
+/* Neviditelné placeholder karty pro správný layout při jednom výsledku */
+#servicesGrid.ads-grid > .ad-card-placeholder {
+    visibility: hidden !important;
+    pointer-events: none !important;
+    opacity: 0 !important;
+}
+
 @media (min-width: 768px) and (max-width: 1199px) {
     #servicesGrid.ads-grid {
         grid-template-columns: repeat(3, 1fr) !important;
@@ -18219,6 +18226,18 @@ html:has(.ad-detail-content) {
 }
 #servicesGrid.ads-grid .ad-price {
     margin: 0 0 6px 0 !important;
+}
+
+.ad-card-placeholder {
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
 }
 
 @media (min-width: 768px) and (max-width: 1199px) {

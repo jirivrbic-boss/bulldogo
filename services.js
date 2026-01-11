@@ -861,9 +861,39 @@ function displayServices(list) {
         const currentHeight = grid.offsetHeight;
         if (currentHeight > 0) {
             grid.style.minHeight = currentHeight + 'px';
-    }
+        }
 
-    grid.innerHTML = finalServices.map(service => createAdCard(service, showActions)).join('');
+        // Vykreslit karty
+        let htmlContent = finalServices.map(service => createAdCard(service, showActions)).join('');
+
+        // Pokud je na stránce služeb jen jeden výsledek, přidej neviditelné placeholdery
+        // aby grid držel stejný layout jako kdyby tam byl ještě jeden inzerát vedle.
+        const isServicesPage = !limit; // limit je jen na homepage
+        if (isServicesPage && finalServices.length === 1) {
+            // Placeholder se stejnou strukturou jako normální karta, ale neviditelný
+            const placeholder = `
+                <article class="ad-card ad-card-placeholder" aria-hidden="true" style="visibility: hidden; pointer-events: none;">
+                    <div class="ad-thumb" style="width: 100%; aspect-ratio: 4 / 3; height: auto;"></div>
+                    <div class="ad-body" style="padding: 12px 14px 90px;">
+                        <div class="ad-meta"><span>&nbsp;</span></div>
+                        <h3 class="ad-title">&nbsp;</h3>
+                        <div class="ad-price">&nbsp;</div>
+                        <div class="ad-location">&nbsp;</div>
+                    </div>
+                </article>
+            `;
+
+            // Vždy přidej neviditelné placeholdery, aby to formatovalo jako kdyby byly dva inzeráty vedle sebe
+            // Desktop: 4 sloupce celkem (1 skutečný + 3 placeholdery)
+            // Tablet: 3 sloupce celkem (1 skutečný + 2 placeholdery)
+            // Mobil: 1 sloupec (jen 1 skutečný, žádné placeholdery)
+            if (typeof window !== 'undefined' && window.innerWidth >= 768) {
+                const placeholdersCount = window.innerWidth >= 1200 ? 3 : 2;
+                htmlContent += placeholder.repeat(placeholdersCount);
+            }
+        }
+
+        grid.innerHTML = htmlContent;
         
         // Po renderování odstranit min-height
         requestAnimationFrame(() => {
