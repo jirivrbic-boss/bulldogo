@@ -2850,18 +2850,23 @@ function setupEventListeners() {
                 
                 const profileData = {
                     name: userType === 'company' ? companyName : `${firstName} ${lastName}`.trim(),
-                    firstName: userType === 'company' ? '' : firstName,
-                    lastName: userType === 'company' ? '' : lastName,
-                    birthDate: userType === 'company' ? '' : birthDate,
                     phone: (finalUser.phoneNumber || ''),
                     email: email,
                     userType: userType,
                     plan: 'none',
-                    updatedAt: serverTimestamp()
+                    createdAt: serverTimestamp(),
+                    updatedAt: serverTimestamp(),
+                    balance: 1000
                 };
                 
-                // Pro firmy přidat obchodní informace na hlavní úroveň profilu
-                if (userType === 'company') {
+                // Pro osoby přidat osobní informace
+                if (userType === 'person') {
+                    profileData.firstName = firstName || '';
+                    profileData.lastName = lastName || '';
+                    profileData.birthDate = birthDate || null;
+                    profileData.name = `${firstName} ${lastName}`.trim() || 'Uživatel';
+                } else if (userType === 'company') {
+                    // Pro firmy přidat obchodní informace na hlavní úroveň profilu
                     profileData.businessName = companyName || null;
                     profileData.businessType = businessType || null;
                     profileData.businessIco = normalizedIco || null;
@@ -2878,6 +2883,7 @@ function setupEventListeners() {
                         phone: (finalUser.phoneNumber || ''),
                         address: companyAddress || null
                     };
+                    profileData.name = companyName || 'Firma';
                 }
                 
                 await setDoc(doc(firebaseDb, 'users', finalUser.uid), {
