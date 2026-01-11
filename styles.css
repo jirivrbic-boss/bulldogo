@@ -941,58 +941,70 @@
 }
 
 /* ===== UNIVERZÁLNÍ ŠABLONA PRO VŠECHNY INZERÁTY ===== */
-/* Zajišťuje konzistentní vzhled bez ohledu na počet inzerátů */
+/* Desktop: grid vždy 4 sloupce, každá karta zabírá přesně 1/4, zarovnáno vlevo */
 
-.ads-grid,
 #servicesGrid.ads-grid {
     display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
     gap: 24px !important;
     max-width: 1600px !important;
     margin: 0 auto !important;
     width: 100% !important;
-    justify-content: start !important;
     justify-items: start !important;
-    align-items: stretch !important;
-    grid-auto-flow: row !important;
-    grid-template-columns: repeat(4, 1fr) !important;
 }
 
-/* Desktop: 4 sloupce */
 @media (min-width: 1200px) {
-    .ads-grid,
-    #servicesGrid.ads-grid {
-        grid-template-columns: repeat(4, 1fr) !important;
+    #servicesGrid.ads-grid > .ad-card {
+        grid-column: span 1 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
     }
 }
 
 /* Tablet: 3 sloupce */
 @media (min-width: 768px) and (max-width: 1199px) {
-    .ads-grid,
     #servicesGrid.ads-grid {
         grid-template-columns: repeat(3, 1fr) !important;
+    }
+    
+    #servicesGrid.ads-grid > .ad-card {
+        grid-column: span 1 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
     }
 }
 
 /* Mobil: 1 sloupec */
 @media (max-width: 767px) {
-    .ads-grid,
     #servicesGrid.ads-grid {
         grid-template-columns: 1fr !important;
     }
+    
+    #servicesGrid.ads-grid > .ad-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
 }
 
-/* Univerzální styl pro všechny karty - vždy stejný bez ohledu na počet */
-.ads-grid > .ad-card,
-#servicesGrid > .ad-card {
+/* Základní grid pro ostatní stránky */
+.ads-grid:not(#servicesGrid) {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 24px !important;
+    max-width: 1600px !important;
+    margin: 0 auto !important;
+    width: 100% !important;
+}
+
+.ads-grid:not(#servicesGrid) > .ad-card {
     grid-column: span 1 !important;
     width: 100% !important;
     max-width: 100% !important;
-    min-width: 0 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    height: 100% !important;
     box-sizing: border-box !important;
-    justify-self: start !important;
 }
 
 /* Zajistit, že loading zabere všechny sloupce */
