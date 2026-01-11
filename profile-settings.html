@@ -2639,8 +2639,30 @@
             Object.entries(personalFields).forEach(([fieldId, value]) => {
                 const element = document.getElementById(fieldId);
                 if (element) {
-                    // Pro hobby uživatele: pokud mají hodnotu jméno nebo příjmení, nastavit jako read-only
-                    if ((fieldId === 'firstName' || fieldId === 'lastName') && isHobbyUser && value) {
+                    console.log(`📝 Zpracovávám pole ${fieldId} s hodnotou:`, value);
+                    
+                    // Neaktualizovat pole, která uživatel právě upravuje nebo která mají změněnou hodnotu
+                    const isCurrentlyEditing = document.activeElement === element;
+                    const wasEdited = editedFields.has(fieldId);
+                    const currentValue = element.value.trim();
+                    const newValue = (value || '').toString().trim();
+                    
+                    console.log(`📝 Pole ${fieldId} - currentValue: "${currentValue}", newValue: "${newValue}", isCurrentlyEditing: ${isCurrentlyEditing}, wasEdited: ${wasEdited}`);
+                    
+                    // Nejdřív nastavit hodnotu, pokud je potřeba
+                    // Aktualizovat pouze pokud pole není právě upravováno a hodnota se změnila
+                    if (!isCurrentlyEditing && !wasEdited && currentValue !== newValue) {
+                        console.log(`📝 Nastavuji hodnotu pro ${fieldId}:`, newValue);
+                        element.value = newValue;
+                        element.placeholder = newValue ? `Aktuální: ${newValue}` : 'Zadejte hodnotu';
+                    } else if (!newValue && !currentValue) {
+                        // Pokud je pole prázdné a nová hodnota je také prázdná, aktualizovat placeholder
+                        element.placeholder = 'Zadejte hodnotu';
+                    }
+                    
+                    // Pro hobby uživatele: pokud mají hodnotu jméno nebo příjmení, nastavit jako read-only PO nastavení hodnoty
+                    if ((fieldId === 'firstName' || fieldId === 'lastName') && isHobbyUser && newValue) {
+                        console.log(`📝 Nastavuji ${fieldId} jako read-only pro hobby uživatele`);
                         element.readOnly = true;
                         element.style.backgroundColor = '#f3f4f6';
                         element.style.cursor = 'not-allowed';
@@ -2650,8 +2672,9 @@
                         if (infoEl) {
                             infoEl.style.display = 'block';
                         }
-                    } else if ((fieldId === 'firstName' || fieldId === 'lastName') && isHobbyUser && !value) {
+                    } else if ((fieldId === 'firstName' || fieldId === 'lastName') && isHobbyUser && !newValue) {
                         // Pokud hobby uživatel nemá hodnotu, pole není read-only
+                        console.log(`📝 ${fieldId} není read-only, protože nemá hodnotu`);
                         element.readOnly = false;
                         element.style.backgroundColor = '';
                         element.style.cursor = '';
@@ -2662,22 +2685,8 @@
                             infoEl.style.display = 'none';
                         }
                     }
-                    
-                    // Neaktualizovat pole, která uživatel právě upravuje nebo která mají změněnou hodnotu
-                    const isCurrentlyEditing = document.activeElement === element;
-                    const wasEdited = editedFields.has(fieldId);
-                    const currentValue = element.value.trim();
-                    const newValue = (value || '').toString().trim();
-                    
-                    // Aktualizovat pouze pokud pole není právě upravováno a hodnota se změnila
-                    // A pokud není read-only
-                    if (!isCurrentlyEditing && !wasEdited && currentValue !== newValue && !element.readOnly) {
-                        element.value = value;
-                        element.placeholder = value ? `Aktuální: ${value}` : 'Zadejte hodnotu';
-                    } else if (!value && !currentValue) {
-                        // Pokud je pole prázdné a nová hodnota je také prázdná, aktualizovat placeholder
-                        element.placeholder = 'Zadejte hodnotu';
-                    }
+                } else {
+                    console.warn(`⚠️ Element ${fieldId} nebyl nalezen v DOM`);
                 }
             });
 
