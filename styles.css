@@ -940,97 +940,50 @@
     padding: 0 !important;
 }
 
-.ads-grid {
+/* ===== UNIVERZÁLNÍ ŠABLONA PRO VŠECHNY INZERÁTY ===== */
+/* Zajišťuje konzistentní vzhled bez ohledu na počet inzerátů */
+
+.ads-grid,
+#servicesGrid.ads-grid {
     display: grid !important;
     gap: 24px !important;
     max-width: 1600px !important;
     margin: 0 auto !important;
     width: 100% !important;
     justify-content: start !important;
+    justify-items: start !important;
     align-items: stretch !important;
     grid-auto-flow: row !important;
-    /* Desktop: 4 sloupce - použít 1fr místo minmax(0, 1fr) pro konzistentní šířku */
     grid-template-columns: repeat(4, 1fr) !important;
-    /* Zabraň změně velikosti při filtrování */
-    contain: layout style !important;
-    min-height: 0 !important;
-    overflow: visible !important;
 }
 
-/* Desktop: 4 sloupce - VŽDY stejná struktura - použít 1fr pro konzistentní šířku */
+/* Desktop: 4 sloupce */
 @media (min-width: 1200px) {
     .ads-grid,
-    #servicesGrid {
+    #servicesGrid.ads-grid {
         grid-template-columns: repeat(4, 1fr) !important;
     }
 }
 
-/* Tablet: 3 sloupce - VŽDY stejná struktura - použít 1fr pro konzistentní šířku */
+/* Tablet: 3 sloupce */
 @media (min-width: 768px) and (max-width: 1199px) {
     .ads-grid,
-    #servicesGrid {
+    #servicesGrid.ads-grid {
         grid-template-columns: repeat(3, 1fr) !important;
     }
 }
 
-/* Mobil: 1 sloupec - VŽDY stejná struktura */
+/* Mobil: 1 sloupec */
 @media (max-width: 767px) {
     .ads-grid,
-    #servicesGrid {
-        grid-template-columns: 1fr !important;
-    }
-}
-
-/* Zajistit, že každá karta má správnou šířku - vždy jen jeden sloupec, bez ohledu na počet */
-.ads-grid > .ad-card,
-#servicesGrid > .ad-card {
-    grid-column: span 1 !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    /* Zajistit, že karta má vždy správnou šířku podle grid sloupce */
-    box-sizing: border-box !important;
-}
-
-/* Zajistit, že loading zabere všechny sloupce */
-.ads-grid > .loading-services {
-    grid-column: 1 / -1 !important;
-}
-
-/* ===== UNIVERZÁLNÍ ŠABLONA PRO VŠECHNY INZERÁTY ===== */
-/* Zajišťuje konzistentní vzhled bez ohledu na počet inzerátů */
-
-#servicesGrid.ads-grid,
-.ads-grid {
-    display: grid !important;
-    gap: 24px !important;
-    max-width: 1600px !important;
-    margin: 0 auto !important;
-    width: 100% !important;
-    justify-content: start !important;
-    align-items: stretch !important;
-    grid-auto-flow: row !important;
-    grid-template-columns: repeat(4, 1fr) !important;
-}
-
-@media (min-width: 768px) and (max-width: 1199px) {
-    #servicesGrid.ads-grid,
-    .ads-grid {
-        grid-template-columns: repeat(3, 1fr) !important;
-    }
-}
-
-@media (max-width: 767px) {
-    #servicesGrid.ads-grid,
-    .ads-grid {
+    #servicesGrid.ads-grid {
         grid-template-columns: 1fr !important;
     }
 }
 
 /* Univerzální styl pro všechny karty - vždy stejný bez ohledu na počet */
 .ads-grid > .ad-card,
-#servicesGrid > .ad-card,
-.ads-grid .ad-card {
+#servicesGrid > .ad-card {
     grid-column: span 1 !important;
     width: 100% !important;
     max-width: 100% !important;
@@ -1039,8 +992,12 @@
     flex-direction: column !important;
     height: 100% !important;
     box-sizing: border-box !important;
-    flex-shrink: 0 !important;
-    flex-grow: 0 !important;
+    justify-self: start !important;
+}
+
+/* Zajistit, že loading zabere všechny sloupce */
+.ads-grid > .loading-services {
+    grid-column: 1 / -1 !important;
 }
 
 /* Na hlavní stránce zmenšit grid, aby inzeráty nebyly až u kraje */
@@ -18188,48 +18145,6 @@ html:has(.ad-detail-content) {
         height: 60px !important;
     }
 
-/* ===== FINAL OVERRIDE: Services page single-result layout matches multi-result ===== */
-#servicesGrid.ads-grid {
-    grid-template-columns: repeat(4, 1fr) !important;
-    grid-auto-columns: 1fr !important;
-    gap: 24px !important;
-    align-items: stretch !important;
-    justify-content: start !important;
-}
-#servicesGrid.ads-grid > .ad-card {
-    display: flex !important;
-    flex-direction: column !important;
-    height: 100% !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    box-sizing: border-box !important;
-    grid-column: span 1 !important;
-}
-#servicesGrid.ads-grid .ad-thumb {
-    aspect-ratio: 4 / 3 !important;
-    height: auto !important;
-}
-#servicesGrid.ads-grid .ad-thumb img {
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: cover !important;
-}
-#servicesGrid.ads-grid .ad-body {
-    display: flex !important;
-    flex-direction: column !important;
-    flex: 1 1 auto !important;
-    padding: 12px 14px 90px !important;
-    box-sizing: border-box !important;
-}
-#servicesGrid.ads-grid .ad-title {
-    font-size: 1rem !important;
-    margin: 0 0 6px 0 !important;
-}
-#servicesGrid.ads-grid .ad-price {
-    margin: 0 0 6px 0 !important;
-}
-
 .ad-card-placeholder {
     visibility: hidden !important;
     opacity: 0 !important;
@@ -18240,19 +18155,6 @@ html:has(.ad-detail-content) {
     padding: 0 !important;
     border: none !important;
     box-shadow: none !important;
-}
-
-@media (min-width: 768px) and (max-width: 1199px) {
-    #servicesGrid.ads-grid {
-        grid-template-columns: repeat(3, 1fr) !important;
-    }
-}
-
-@media (max-width: 767px) {
-    #servicesGrid.ads-grid {
-        grid-template-columns: 1fr !important;
-    }
-}
 }
 
 
