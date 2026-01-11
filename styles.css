@@ -17707,7 +17707,9 @@ html:has(.ad-detail-content) {
     min-width: 0 !important;
     text-align: left !important;
     box-sizing: border-box !important;
-    display: block !important;
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
     float: none !important;
@@ -17720,7 +17722,8 @@ html:has(.ad-detail-content) {
     min-width: 0 !important;
     text-align: left !important;
     box-sizing: border-box !important;
-    display: block !important;
+    display: flex !important;
+    flex-direction: column !important;
     margin: 0 !important;
     padding: 12px 14px 90px !important;
     float: none !important;
