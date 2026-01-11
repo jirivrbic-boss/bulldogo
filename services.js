@@ -857,48 +857,13 @@ function displayServices(list) {
 
     // Zabraň změně velikosti při filtrování - použij requestAnimationFrame
     requestAnimationFrame(() => {
-        let htmlContent = finalServices.map(service => createAdCard(service, showActions)).join('');
-        
-        // Pokud je jen jeden výsledek na PC (ne na mobilu), přidat neviditelné placeholder prvky
-        // Grid potřebuje vidět další prvky, aby správně formátoval první prvek
-        if (finalServices.length === 1 && window.innerWidth >= 768) {
-            // Vytvořit neviditelný placeholder prvek se stejnou strukturou jako karta
-            // Musí mít stejnou výšku, aby grid správně formátoval první prvek
-            const placeholderCard = `
-                <div class="ad-card-placeholder" aria-hidden="true" style="
-                    grid-column: span 1 !important;
-                    width: 100% !important;
-                    max-width: 100% !important;
-                    min-width: 0 !important;
-                    visibility: hidden !important;
-                    opacity: 0 !important;
-                    pointer-events: none !important;
-                    height: 0 !important;
-                    min-height: 0 !important;
-                    overflow: hidden !important;
-                    margin: 0 !important;
-                    padding: 0 !important;
-                    border: none !important;
-                    box-sizing: border-box !important;
-                "></div>
-            `;
-            
-            // Určit počet sloupců podle šířky obrazovky
-            let placeholdersCount = 0;
-            if (window.innerWidth >= 1200) {
-                // Desktop: 4 sloupce - přidat 3 neviditelné placeholdery
-                placeholdersCount = 3;
-            } else if (window.innerWidth >= 768) {
-                // Tablet: 3 sloupce - přidat 2 neviditelné placeholdery
-                placeholdersCount = 2;
-            }
-            
-            if (placeholdersCount > 0) {
-                htmlContent += placeholderCard.repeat(placeholdersCount);
-            }
-        }
-        
-        grid.innerHTML = htmlContent;
+        // Nastavit minimální výšku gridu, aby se zabránilo změně velikosti
+        const currentHeight = grid.offsetHeight;
+        if (currentHeight > 0) {
+            grid.style.minHeight = currentHeight + 'px';
+    }
+
+    grid.innerHTML = finalServices.map(service => createAdCard(service, showActions)).join('');
         
         // Po renderování odstranit min-height
         requestAnimationFrame(() => {

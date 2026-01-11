@@ -949,27 +949,27 @@
     justify-content: start !important;
     align-items: stretch !important;
     grid-auto-flow: row !important;
-    /* Desktop: 4 sloupce s fixní šířkou - vždy stejná struktura i pro jeden prvek */
-    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    /* Desktop: 4 sloupce - použít 1fr místo minmax(0, 1fr) pro konzistentní šířku */
+    grid-template-columns: repeat(4, 1fr) !important;
     /* Zabraň změně velikosti při filtrování */
     contain: layout style !important;
     min-height: 0 !important;
     overflow: visible !important;
 }
 
-/* Desktop: 4 sloupce - VŽDY stejná struktura */
+/* Desktop: 4 sloupce - VŽDY stejná struktura - použít 1fr pro konzistentní šířku */
 @media (min-width: 1200px) {
     .ads-grid,
     #servicesGrid {
-        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        grid-template-columns: repeat(4, 1fr) !important;
     }
 }
 
-/* Tablet: 3 sloupce - VŽDY stejná struktura */
+/* Tablet: 3 sloupce - VŽDY stejná struktura - použít 1fr pro konzistentní šířku */
 @media (min-width: 768px) and (max-width: 1199px) {
     .ads-grid,
     #servicesGrid {
-        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        grid-template-columns: repeat(3, 1fr) !important;
     }
 }
 
@@ -988,24 +988,8 @@
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
-}
-
-/* Neviditelné placeholder prvky pro správné formátování jednoho výsledku */
-.ads-grid > .ad-card-placeholder,
-#servicesGrid > .ad-card-placeholder {
-    grid-column: span 1 !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    visibility: hidden !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-    height: 0 !important;
-    min-height: 0 !important;
-    overflow: hidden !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    border: none !important;
+    /* Zajistit, že karta má vždy správnou šířku podle grid sloupce */
+    box-sizing: border-box !important;
 }
 
 /* Zajistit, že loading zabere všechny sloupce */
@@ -1038,9 +1022,6 @@
     max-width: 100% !important;
     min-width: 0 !important;
     box-sizing: border-box !important;
-    /* Zajistit fixní šířku - grid automaticky vypočítá šířku na základě počtu sloupců */
-    flex: 0 0 auto !important;
-}
     display: flex !important; /* Flexbox pro stejnou výšku */
     flex-direction: column !important; /* Vertikální uspořádání */
     height: 100% !important; /* Plná výška v gridu */
@@ -16486,20 +16467,20 @@ body.chat-page .message.other .message-content { margin-right: auto !important; 
     justify-content: start !important;
     align-items: stretch !important;
     grid-auto-flow: row !important;
-    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    grid-template-columns: repeat(4, 1fr) !important;
 }
 
 /* Desktop: 4 sloupce */
 @media (min-width: 1200px) {
     .ads-grid:not(#servicesGrid) {
-        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        grid-template-columns: repeat(4, 1fr) !important;
     }
 }
 
 /* Tablet: 3 sloupce */
 @media (min-width: 768px) and (max-width: 1199px) {
     .ads-grid:not(#servicesGrid) {
-        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        grid-template-columns: repeat(3, 1fr) !important;
     }
 }
 
