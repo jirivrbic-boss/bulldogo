@@ -2873,10 +2873,24 @@ function setupEventListeners() {
                 
                 // Pro osoby přidat osobní informace
                 if (userType === 'person') {
-                    profileData.firstName = firstName || '';
-                    profileData.lastName = lastName || '';
-                    profileData.birthDate = birthDate || null;
-                    profileData.name = `${firstName} ${lastName}`.trim() || 'Uživatel';
+                    console.log('📝 Ukládám osobní informace - firstName:', firstName, 'lastName:', lastName);
+                    // Uložit firstName a lastName pouze pokud nejsou prázdné
+                    if (firstName && firstName.trim()) {
+                        profileData.firstName = firstName.trim();
+                    }
+                    if (lastName && lastName.trim()) {
+                        profileData.lastName = lastName.trim();
+                    }
+                    if (birthDate && birthDate.trim()) {
+                        profileData.birthDate = birthDate.trim();
+                    }
+                    // Nastavit name pouze pokud máme alespoň jedno jméno
+                    if ((firstName && firstName.trim()) || (lastName && lastName.trim())) {
+                        profileData.name = `${firstName || ''} ${lastName || ''}`.trim();
+                    } else {
+                        profileData.name = 'Uživatel';
+                    }
+                    console.log('📝 Po zpracování - profileData.firstName:', profileData.firstName, 'profileData.lastName:', profileData.lastName);
                 } else if (userType === 'company') {
                     // Pro firmy přidat obchodní informace na hlavní úroveň profilu
                     profileData.businessName = companyName || null;
@@ -2915,9 +2929,18 @@ function setupEventListeners() {
                 }
                 
                 console.log('📦 Ukládám profil uživatele...', profileData);
+                console.log('📝 Před uložením - firstName:', profileData.firstName, 'lastName:', profileData.lastName);
                 try {
                     await setDoc(doc(firebaseDb, 'users', finalUser.uid, 'profile', 'profile'), profileData, { merge: true });
                     console.log('✅ Profil uživatele uložen');
+                    // Ověřit, že se data uložila správně
+                    const { getDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                    const savedProfileRef = doc(firebaseDb, 'users', finalUser.uid, 'profile', 'profile');
+                    const savedProfileSnap = await getDoc(savedProfileRef);
+                    if (savedProfileSnap.exists()) {
+                        const savedData = savedProfileSnap.data();
+                        console.log('📝 Ověření uložených dat - firstName:', savedData.firstName, 'lastName:', savedData.lastName);
+                    }
                 } catch (profileError) {
                     console.error('❌ Chyba při ukládání profilu:', profileError);
                     throw profileError;

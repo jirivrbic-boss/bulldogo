@@ -2383,6 +2383,8 @@
                 if (profileSnap.exists()) {
                     userProfile = profileSnap.data();
                     console.log('✅ Automaticky načtený profil:', userProfile);
+                    console.log('📝 firstName v načteném profilu:', userProfile.firstName);
+                    console.log('📝 lastName v načteném profilu:', userProfile.lastName);
                 } else {
                     // Pokud profil neexistuje, vytvořit základní strukturu s aktuálními daty uživatele
                     const displayName = currentUser.displayName || currentUser.email?.split('@')[0] || '';
@@ -2594,12 +2596,14 @@
             applyUserTypeToSettingsUI(resolvedType);
             
             // Osobní informace - vždy prefilled (bez emailu a telefonu)
+            console.log('📝 Před naplněním formuláře - firstName:', userProfile?.firstName, 'lastName:', userProfile?.lastName);
             const personalFields = {
                 'firstName': userProfile?.firstName || '',
                 'lastName': userProfile?.lastName || '',
                 'city': userProfile?.city || '',
                 'bio': userProfile?.bio || ''
             };
+            console.log('📝 personalFields:', personalFields);
             
             // Datum narození - prefilled a read-only (nelze změnit po registraci)
             const birthDateEl = document.getElementById('birthDate');
