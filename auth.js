@@ -339,20 +339,27 @@ document.addEventListener('DOMContentLoaded', () => {
     mo.observe(document.documentElement, { childList: true, subtree: true });
     
     // Zkontrolovat hash v URL a otevřít modal pokud je potřeba (univerzální popup okno)
+    // POZNÁMKA: Musíme počkat, až se načtou všechny skripty (včetně auth.js)
     try {
         const hash = window.location.hash;
-        if (hash === '#prihlaseni') {
+        if (hash === '#prihlaseni' || hash === '#registrace') {
+            // Počkat déle, aby se auth.js načetl a funkce byly dostupné
             setTimeout(() => {
-                if (typeof showAuthModal === 'function') {
-                    showAuthModal('login');
+                const type = hash === '#prihlaseni' ? 'login' : 'register';
+                if (typeof window.showAuthModal === 'function') {
+                    window.showAuthModal(type);
+                } else {
+                    // Pokud showAuthModal ještě není dostupná, počkat ještě
+                    const checkAuth = setInterval(() => {
+                        if (typeof window.showAuthModal === 'function') {
+                            clearInterval(checkAuth);
+                            window.showAuthModal(type);
+                        }
+                    }, 100);
+                    // Timeout po 3 sekundách
+                    setTimeout(() => clearInterval(checkAuth), 3000);
                 }
-            }, 300);
-        } else if (hash === '#registrace') {
-            setTimeout(() => {
-                if (typeof showAuthModal === 'function') {
-                    showAuthModal('register');
-                }
-            }, 300);
+            }, 500);
         }
     } catch (e) {
         console.warn('⚠️ Chyba při kontrole hash v URL:', e);
@@ -1591,13 +1598,20 @@ function showAuthModal(type = 'login') {
     document.body.style.overflow = 'hidden';
     document.body.classList.add('modal-open'); // Přidat třídu pro CSS kontrolu
     
-    // Po vytvoření/otevření modalu navěsit plné listenery (form submit, SMS krok)
-    // Nastavit listenery okamžitě, ne v setTimeout
-    try { 
-        setupEventListeners(); 
-    } catch (e) { 
-        console.warn('setupEventListeners failed', e); 
-    }
+    // POZOR: Nastavit event listenery VŽDY po otevření modalu (i když se otevře přes hash)
+    // To zajistí, že formulář bude fungovat správně
+    setTimeout(() => {
+        try {
+            // Odstranit flag, aby se listenery nastavily znovu (důležité pro hash otevření)
+            const authForm = document.getElementById('authForm');
+            if (authForm && authForm.hasAttribute('data-listener-set')) {
+                authForm.removeAttribute('data-listener-set');
+            }
+            setupEventListeners();
+        } catch (e) {
+            console.warn('setupEventListeners failed in showAuthModal', e);
+        }
+    }, 100);
     
     // Zajistit, aby se listener nastavil i po malém zpoždění (fallback)
     // Použít requestAnimationFrame pro lepší načasování
