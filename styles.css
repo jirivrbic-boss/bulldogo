@@ -981,15 +981,17 @@
     }
 }
 
-/* Mobil: 1 sloupec */
+/* Mobil: 2 sloupce vedle sebe */
 @media (max-width: 767px) {
     #servicesGrid.ads-grid {
         display: grid !important;
-        grid-template-columns: 1fr !important;
-        gap: 24px !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 12px !important;
         max-width: 1600px !important;
         margin: 0 auto !important;
         width: 100% !important;
+        padding: 0 1rem !important;
+        box-sizing: border-box !important;
     }
     
     #servicesGrid.ads-grid > .ad-card {
