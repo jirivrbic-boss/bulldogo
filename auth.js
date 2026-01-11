@@ -2838,24 +2838,36 @@ function setupEventListeners() {
                 const phoneUser = result.user;
                 console.log('✅ SMS kód potvrzen, uživatel:', phoneUser.uid);
 
-                // Data pro propojení
-                const form = document.getElementById('authForm');
-                const formData = new FormData(form);
-                const email = formData.get('email');
-                const password = formData.get('password');
+                // Data pro propojení - číst přímo z input polí (spolehlivější než FormData)
+                const emailEl = document.getElementById('authEmail');
+                const passwordEl = document.getElementById('authPassword');
+                const email = emailEl ? emailEl.value.trim() : '';
+                const password = passwordEl ? passwordEl.value : '';
                 const activeTypeBtn = document.querySelector('.registration-type-btn.active');
                 const userType = activeTypeBtn ? activeTypeBtn.getAttribute('data-type') : 'person';
-                const firstName = (formData.get('firstName') || '').toString().trim();
-                const lastName = (formData.get('lastName') || '').toString().trim();
-                const birthDate = (formData.get('birthDate') || '').toString().trim();
-                const companyName = (formData.get('companyName') || '').toString().trim();
-                const ico = (formData.get('ico') || '').toString().trim();
-                const dic = (formData.get('dic') || '').toString().trim();
-                const businessType = (formData.get('businessType') || '').toString().trim();
-                const companyAddress = (formData.get('companyAddress') || '').toString().trim();
-                const businessDescription = (formData.get('businessDescription') || '').toString().trim();
+                
+                // Číst data přímo z input polí
+                const firstNameEl = document.getElementById('firstName');
+                const lastNameEl = document.getElementById('lastName');
+                const birthDateEl = document.getElementById('birthDate');
+                const companyNameEl = document.getElementById('companyName');
+                const icoEl = document.getElementById('ico');
+                const dicEl = document.getElementById('dic');
+                const businessTypeEl = document.getElementById('businessType');
+                const companyAddressEl = document.getElementById('companyAddress');
+                const businessDescriptionEl = document.getElementById('businessDescription');
+                
+                const firstName = firstNameEl ? firstNameEl.value.trim() : '';
+                const lastName = lastNameEl ? lastNameEl.value.trim() : '';
+                const birthDate = birthDateEl ? birthDateEl.value.trim() : '';
+                const companyName = companyNameEl ? companyNameEl.value.trim() : '';
+                const ico = icoEl ? icoEl.value.trim() : '';
+                const dic = dicEl ? dicEl.value.trim() : '';
+                const businessType = businessTypeEl ? businessTypeEl.value.trim() : '';
+                const companyAddress = companyAddressEl ? companyAddressEl.value.trim() : '';
+                const businessDescription = businessDescriptionEl ? businessDescriptionEl.value.trim() : '';
 
-                console.log('📝 Shromážděná data:', { email, userType, firstName, lastName, companyName });
+                console.log('📝 Shromážděná data:', { email, userType, firstName, lastName, companyName, birthDate });
 
                 // Vytvořit e-mailové přihlašování k telefonnímu účtu
                 console.log('🔗 Propojuji email s telefonním účtem...');
