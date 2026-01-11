@@ -997,10 +997,12 @@
     grid-column: 1 / -1 !important;
 }
 
-/* ===== Services page – konzistentní layout i pro jeden výsledek ===== */
-#servicesGrid.ads-grid {
+/* ===== UNIVERZÁLNÍ ŠABLONA PRO VŠECHNY INZERÁTY ===== */
+/* Zajišťuje konzistentní vzhled bez ohledu na počet inzerátů */
+
+#servicesGrid.ads-grid,
+.ads-grid {
     display: grid !important;
-    grid-template-columns: repeat(4, 1fr) !important;
     gap: 24px !important;
     max-width: 1600px !important;
     margin: 0 auto !important;
@@ -1008,11 +1010,27 @@
     justify-content: start !important;
     align-items: stretch !important;
     grid-auto-flow: row !important;
-    grid-auto-columns: 1fr !important;
+    grid-template-columns: repeat(4, 1fr) !important;
 }
 
-/* Vynutit správnou šířku karty i při jednom výsledku */
-#servicesGrid.ads-grid > .ad-card {
+@media (min-width: 768px) and (max-width: 1199px) {
+    #servicesGrid.ads-grid,
+    .ads-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+}
+
+@media (max-width: 767px) {
+    #servicesGrid.ads-grid,
+    .ads-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* Univerzální styl pro všechny karty - vždy stejný bez ohledu na počet */
+.ads-grid > .ad-card,
+#servicesGrid > .ad-card,
+.ads-grid .ad-card {
     grid-column: span 1 !important;
     width: 100% !important;
     max-width: 100% !important;
@@ -1021,18 +1039,8 @@
     flex-direction: column !important;
     height: 100% !important;
     box-sizing: border-box !important;
-}
-
-@media (min-width: 768px) and (max-width: 1199px) {
-    #servicesGrid.ads-grid {
-        grid-template-columns: repeat(3, 1fr) !important;
-    }
-}
-
-@media (max-width: 767px) {
-    #servicesGrid.ads-grid {
-        grid-template-columns: 1fr !important;
-    }
+    flex-shrink: 0 !important;
+    flex-grow: 0 !important;
 }
 
 /* Na hlavní stránce zmenšit grid, aby inzeráty nebyly až u kraje */

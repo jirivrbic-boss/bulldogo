@@ -863,76 +863,9 @@ function displayServices(list) {
             grid.style.minHeight = currentHeight + 'px';
         }
 
-        // Vykreslit karty
+        // Vykreslit karty - univerzální šablona zajistí konzistentní vzhled
         let htmlContent = finalServices.map(service => createAdCard(service, showActions)).join('');
-
-        // Pokud je na stránce služeb jen jeden výsledek, přidej neviditelné placeholdery
-        // aby grid držel stejný layout jako kdyby tam byl ještě jeden inzerát vedle.
-        const isServicesPage = !limit; // limit je jen na homepage
-        if (isServicesPage && finalServices.length === 1) {
-            // Debug: zkontroluj, že se to spustí
-            console.log('🔧 Přidávám placeholdery pro jeden výsledek');
-
-            // Placeholder se stejnou strukturou jako normální karta
-            // Použij opacity: 0 místo visibility: hidden, aby zůstal v grid layoutu
-            const placeholder = `
-                <article class="ad-card ad-card-placeholder" aria-hidden="true" style="opacity: 0; pointer-events: none; position: relative; z-index: -1;">
-                    <div class="ad-thumb" style="width: 100%; aspect-ratio: 4 / 3; height: auto;"></div>
-                    <div class="ad-body" style="padding: 12px 14px 90px;">
-                        <div class="ad-meta"><span>&nbsp;</span></div>
-                        <h3 class="ad-title">&nbsp;</h3>
-                        <div class="ad-price">&nbsp;</div>
-                        <div class="ad-location">&nbsp;</div>
-                    </div>
-                </article>
-            `;
-
-            // Vždy přidej neviditelné placeholdery, aby to formatovalo jako kdyby byly dva inzeráty vedle sebe
-            // Desktop: 4 sloupce celkem (1 skutečný + 3 placeholdery)
-            // Tablet: 3 sloupce celkem (1 skutečný + 2 placeholdery)
-            // Mobil: 1 sloupec (jen 1 skutečný, žádné placeholdery)
-            if (typeof window !== 'undefined' && window.innerWidth >= 768) {
-                const placeholdersCount = window.innerWidth >= 1200 ? 3 : 2;
-                console.log(`🔧 Přidávám ${placeholdersCount} placeholdery pro ${window.innerWidth >= 1200 ? 'desktop' : 'tablet'}`);
-                htmlContent += placeholder.repeat(placeholdersCount);
-            }
-        }
-
         grid.innerHTML = htmlContent;
-        
-        // Pokud je jen jedna karta, nastavit fixní šířku podle grid layoutu
-        if (isServicesPage && finalServices.length === 1) {
-            requestAnimationFrame(() => {
-                const cards = grid.querySelectorAll('.ad-card:not(.ad-card-placeholder)');
-                if (cards.length === 1) {
-                    const card = cards[0];
-                    const gridWidth = grid.offsetWidth;
-                    const gap = 24; // gap mezi kartami
-                    
-                    // Vypočítat šířku podle počtu sloupců
-                    let cardWidth;
-                    if (window.innerWidth >= 1200) {
-                        // Desktop: 4 sloupce
-                        cardWidth = (gridWidth - (gap * 3)) / 4;
-                    } else if (window.innerWidth >= 768) {
-                        // Tablet: 3 sloupce
-                        cardWidth = (gridWidth - (gap * 2)) / 3;
-                    } else {
-                        // Mobil: 1 sloupec
-                        cardWidth = gridWidth;
-                    }
-                    
-                    // Nastavit fixní šířku
-                    card.style.width = cardWidth + 'px';
-                    card.style.maxWidth = cardWidth + 'px';
-                    card.style.minWidth = cardWidth + 'px';
-                    card.style.flexShrink = '0';
-                    card.style.flexGrow = '0';
-                    
-                    console.log('🔧 Nastavena fixní šířka karty:', cardWidth + 'px');
-                }
-            });
-        }
         
         // Po renderování odstranit min-height
         requestAnimationFrame(() => {
@@ -1037,12 +970,10 @@ function createAdCard(service, showActions = true) {
         }
     }
     
-    // Základní styly pro všechny karty - stejné pro všechny lokace
-    // Použij flex, aby měla karta plnou výšku a konzistentní layout i když je v gridu sama
-    const baseCardStyle = 'width: 100% !important; max-width: 100% !important; min-width: 0 !important; text-align: left !important; box-sizing: border-box !important; display: flex !important; flex-direction: column !important; height: 100% !important;';
+    // CSS šablona zajistí všechny základní styly - pouze TOP border/shadow jako inline
     const topStyle = isTop 
-        ? `style="${baseCardStyle} border: 3px solid #ff8a00 !important; box-shadow: 0 8px 28px rgba(255, 138, 0, 0.6), 0 0 0 2px rgba(255, 138, 0, 0.4) !important;"`
-        : `style="${baseCardStyle}"`;
+        ? `style="border: 3px solid #ff8a00 !important; box-shadow: 0 8px 28px rgba(255, 138, 0, 0.6), 0 0 0 2px rgba(255, 138, 0, 0.4) !important;"`
+        : '';
     
     // Formátování ceny - pokud je jen číslo, přidat Kč
     let formattedPrice = service.price || '';
@@ -1147,24 +1078,19 @@ function createAdCard(service, showActions = true) {
     // Získat formátovanou lokaci - STEJNĚ jako u ostatních krajů
     const formattedLocation = getLocationName(service.location || '') || 'Neuvedeno';
     
-    // Styly pro ad-body - STEJNÉ pro všechny lokace
-    const adBodyStyle = 'width: 100% !important; max-width: 100% !important; min-width: 0 !important; text-align: left !important; box-sizing: border-box !important; margin: 0 !important; padding: 12px 14px 90px !important; position: relative !important; display: block !important;';
-    
-    // Styly pro ad-location - STEJNÉ pro všechny lokace
-    const adLocationStyle = 'width: 100% !important; max-width: 100% !important; min-width: 0 !important; text-align: left !important; box-sizing: border-box !important; margin: 0 !important; padding: 0 !important; word-wrap: break-word !important; overflow-wrap: break-word !important; white-space: normal !important; display: block !important; font-size: 0.85rem !important; color: #6b7280 !important;';
-    
+    // CSS šablona zajistí všechny styly - žádné inline styly potřeba
     const escapedLocation = formattedLocation.replace(/"/g, '&quot;');
     
     return `
         <article class="ad-card${isTop ? ' is-top' : ''}" data-category="${service.category || ''}" data-status="${status}" data-location="${escapedLocation}" ${topStyle}>
-            <div class="ad-thumb" style="width: 100% !important; aspect-ratio: 4 / 3 !important; height: auto !important; display: block !important; overflow: hidden !important;">
+            <div class="ad-thumb">
                 ${imageHtml}
             </div>
-            <div class="ad-body" data-location="${escapedLocation}" style="${adBodyStyle}">
-                <div class="ad-meta" style="text-align: left !important; display: block !important; margin: 0 0 6px 0 !important;"><span>${getCategoryName(service.category || '')}</span></div>
-                <h3 class="ad-title" style="text-align: left !important; margin: 0 0 6px 0 !important; font-size: 1rem !important; color: #111827 !important; display: block !important; word-wrap: break-word !important; overflow-wrap: break-word !important;">${service.title || 'Bez názvu'}</h3>
-                ${formattedPrice ? `<div class="ad-price" style="text-align: left !important; display: block !important; margin: 0 0 6px 0 !important;">${formattedPrice}</div>` : ''}
-                <div class="ad-location" data-location-text="${escapedLocation}" style="${adLocationStyle}">${formattedLocation}</div>
+            <div class="ad-body" data-location="${escapedLocation}">
+                <div class="ad-meta"><span>${getCategoryName(service.category || '')}</span></div>
+                <h3 class="ad-title">${service.title || 'Bez názvu'}</h3>
+                ${formattedPrice ? `<div class="ad-price">${formattedPrice}</div>` : ''}
+                <div class="ad-location" data-location-text="${escapedLocation}">${formattedLocation}</div>
             </div>
             ${isTop ? `
             <div class="ad-badge-top"><i class="fas fa-fire"></i> TOP</div>
