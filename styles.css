@@ -990,6 +990,24 @@
     min-width: 0 !important;
 }
 
+/* Neviditelné placeholder prvky pro správné formátování jednoho výsledku */
+.ads-grid > .ad-card-placeholder,
+#servicesGrid > .ad-card-placeholder {
+    grid-column: span 1 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+}
+
 /* Zajistit, že loading zabere všechny sloupce */
 .ads-grid > .loading-services {
     grid-column: 1 / -1 !important;
@@ -1020,6 +1038,9 @@
     max-width: 100% !important;
     min-width: 0 !important;
     box-sizing: border-box !important;
+    /* Zajistit fixní šířku - grid automaticky vypočítá šířku na základě počtu sloupců */
+    flex: 0 0 auto !important;
+}
     display: flex !important; /* Flexbox pro stejnou výšku */
     flex-direction: column !important; /* Vertikální uspořádání */
     height: 100% !important; /* Plná výška v gridu */
