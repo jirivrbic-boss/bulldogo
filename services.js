@@ -969,7 +969,8 @@ function createAdCard(service, showActions = true) {
     }
     
     // Základní styly pro všechny karty - stejné pro všechny lokace
-    const baseCardStyle = 'width: 100% !important; max-width: 100% !important; min-width: 0 !important; text-align: left !important; box-sizing: border-box !important; display: block !important;';
+    // Použij flex, aby měla karta plnou výšku a konzistentní layout i když je v gridu sama
+    const baseCardStyle = 'width: 100% !important; max-width: 100% !important; min-width: 0 !important; text-align: left !important; box-sizing: border-box !important; display: flex !important; flex-direction: column !important; height: 100% !important;';
     const topStyle = isTop 
         ? `style="${baseCardStyle} border: 3px solid #ff8a00 !important; box-shadow: 0 8px 28px rgba(255, 138, 0, 0.6), 0 0 0 2px rgba(255, 138, 0, 0.4) !important;"`
         : `style="${baseCardStyle}"`;

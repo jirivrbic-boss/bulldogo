@@ -997,6 +997,43 @@
     grid-column: 1 / -1 !important;
 }
 
+/* ===== Services page – konzistentní layout i pro jeden výsledek ===== */
+#servicesGrid.ads-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 24px !important;
+    max-width: 1600px !important;
+    margin: 0 auto !important;
+    width: 100% !important;
+    justify-content: start !important;
+    align-items: stretch !important;
+    grid-auto-flow: row !important;
+    grid-auto-columns: 1fr !important;
+}
+
+#servicesGrid.ads-grid > .ad-card {
+    grid-column: span 1 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+    box-sizing: border-box !important;
+}
+
+@media (min-width: 768px) and (max-width: 1199px) {
+    #servicesGrid.ads-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+}
+
+@media (max-width: 767px) {
+    #servicesGrid.ads-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
 /* Na hlavní stránce zmenšit grid, aby inzeráty nebyly až u kraje */
 .ads-grid[data-limit] {
     max-width: 1400px;
