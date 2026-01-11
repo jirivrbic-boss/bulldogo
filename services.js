@@ -756,7 +756,11 @@ function displayServices(list) {
                             (regionFilter?.value?.trim() || '');
     
     // Pokud není žádný výsledek, zobrazit prázdný stav a ukončit
-    if (!filteredServices || filteredServices.length === 0) {
+    // DŮLEŽITÉ: Zkontrolovat, že filteredServices je skutečně prázdné pole, ne undefined/null
+    // a že není prázdné kvůli chybě v logice
+    const hasResults = filteredServices && Array.isArray(filteredServices) && filteredServices.length > 0;
+    
+    if (!hasResults) {
         // Skrýt paginaci
         const pagination = document.getElementById('pagination');
         if (pagination) {
@@ -768,6 +772,9 @@ function displayServices(list) {
         if (noServices) {
             noServices.style.display = 'none';
         }
+        
+        // Zkontrolovat, jestli jsou nějaké služby v databázi (allServices)
+        const hasAnyServices = allServices && Array.isArray(allServices) && allServices.length > 0;
         
         if (hasActiveFilters) {
             // Aktivní filtry, ale žádné výsledky
@@ -781,7 +788,7 @@ function displayServices(list) {
                     <p class="no-services-suggestion">Zkuste upravit kritéria vyhledávání nebo zkuste jiný výraz.</p>
                 </div>
             `;
-        } else {
+        } else if (!hasAnyServices) {
             // Žádné filtry, ale žádné služby v databázi
             grid.innerHTML = `
                 <div class="no-services">
@@ -792,8 +799,31 @@ function displayServices(list) {
                     <p>Momentálně nejsou k dispozici žádné služby.</p>
                 </div>
             `;
+        } else {
+            // Máme služby v databázi, ale filteredServices je prázdné (možná chyba v logice)
+            // V tomto případě zkusit zobrazit všechny služby jako fallback
+            console.warn('⚠️ filteredServices je prázdné, ale allServices obsahuje služby. Zobrazuji všechny služby jako fallback.');
+            if (allServices && allServices.length > 0) {
+                filteredServices = [...allServices];
+                // Pokračovat v renderování (ne return)
+            } else {
+                grid.innerHTML = `
+                    <div class="no-services">
+                        <div class="no-services-icon">
+                            <i class="fas fa-inbox"></i>
+                        </div>
+                        <h3>Žádné služby nenalezeny</h3>
+                        <p>Momentálně nejsou k dispozici žádné služby.</p>
+                    </div>
+                `;
+                return;
+            }
         }
-        return;
+        
+        // Pokud jsme se dostali sem a stále nemáme výsledky, ukončit
+        if (!filteredServices || filteredServices.length === 0) {
+            return;
+        }
     }
     
     // VŽDY použít filteredServices, ne předaný parametr (aby se respektovaly filtry)
@@ -1750,7 +1780,9 @@ function sortServices() {
     const sortBy = document.getElementById('sortSelect')?.value || 'newest';
 
     // Pokud není co řadit (prázdný filteredServices), zobrazit prázdný stav
-    if (!filteredServices || filteredServices.length === 0) {
+    // DŮLEŽITÉ: Zkontrolovat, že filteredServices je skutečně prázdné pole, ne undefined/null
+    const hasResults = filteredServices && Array.isArray(filteredServices) && filteredServices.length > 0;
+    if (!hasResults) {
         displayServices();
         return;
     }
