@@ -870,6 +870,9 @@ function displayServices(list) {
         // aby grid držel stejný layout jako kdyby tam byl ještě jeden inzerát vedle.
         const isServicesPage = !limit; // limit je jen na homepage
         if (isServicesPage && finalServices.length === 1) {
+            // Debug: zkontroluj, že se to spustí
+            console.log('🔧 Přidávám placeholdery pro jeden výsledek');
+
             // Placeholder se stejnou strukturou jako normální karta, ale neviditelný
             const placeholder = `
                 <article class="ad-card ad-card-placeholder" aria-hidden="true" style="visibility: hidden; pointer-events: none;">
@@ -889,6 +892,7 @@ function displayServices(list) {
             // Mobil: 1 sloupec (jen 1 skutečný, žádné placeholdery)
             if (typeof window !== 'undefined' && window.innerWidth >= 768) {
                 const placeholdersCount = window.innerWidth >= 1200 ? 3 : 2;
+                console.log(`🔧 Přidávám ${placeholdersCount} placeholdery pro ${window.innerWidth >= 1200 ? 'desktop' : 'tablet'}`);
                 htmlContent += placeholder.repeat(placeholdersCount);
             }
         }
