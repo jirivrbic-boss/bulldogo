@@ -1011,6 +1011,7 @@
     grid-auto-columns: 1fr !important;
 }
 
+/* Vynutit správnou šířku karty i při jednom výsledku */
 #servicesGrid.ads-grid > .ad-card {
     grid-column: span 1 !important;
     width: 100% !important;
@@ -1020,19 +1021,6 @@
     flex-direction: column !important;
     height: 100% !important;
     box-sizing: border-box !important;
-}
-
-/* Neviditelné placeholder karty pro správný layout při jednom výsledku */
-#servicesGrid.ads-grid > .ad-card-placeholder {
-    opacity: 0 !important;
-    pointer-events: none !important;
-    position: relative !important;
-    z-index: -1 !important;
-    /* Zajistit, že placeholder zabírá místo v gridu */
-    width: 100% !important;
-    height: auto !important;
-    min-height: 0 !important;
-    grid-column: span 1 !important;
 }
 
 @media (min-width: 768px) and (max-width: 1199px) {

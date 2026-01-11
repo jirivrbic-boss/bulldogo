@@ -900,6 +900,40 @@ function displayServices(list) {
 
         grid.innerHTML = htmlContent;
         
+        // Pokud je jen jedna karta, nastavit fixní šířku podle grid layoutu
+        if (isServicesPage && finalServices.length === 1) {
+            requestAnimationFrame(() => {
+                const cards = grid.querySelectorAll('.ad-card:not(.ad-card-placeholder)');
+                if (cards.length === 1) {
+                    const card = cards[0];
+                    const gridWidth = grid.offsetWidth;
+                    const gap = 24; // gap mezi kartami
+                    
+                    // Vypočítat šířku podle počtu sloupců
+                    let cardWidth;
+                    if (window.innerWidth >= 1200) {
+                        // Desktop: 4 sloupce
+                        cardWidth = (gridWidth - (gap * 3)) / 4;
+                    } else if (window.innerWidth >= 768) {
+                        // Tablet: 3 sloupce
+                        cardWidth = (gridWidth - (gap * 2)) / 3;
+                    } else {
+                        // Mobil: 1 sloupec
+                        cardWidth = gridWidth;
+                    }
+                    
+                    // Nastavit fixní šířku
+                    card.style.width = cardWidth + 'px';
+                    card.style.maxWidth = cardWidth + 'px';
+                    card.style.minWidth = cardWidth + 'px';
+                    card.style.flexShrink = '0';
+                    card.style.flexGrow = '0';
+                    
+                    console.log('🔧 Nastavena fixní šířka karty:', cardWidth + 'px');
+                }
+            });
+        }
+        
         // Po renderování odstranit min-height
         requestAnimationFrame(() => {
             grid.style.minHeight = '';
