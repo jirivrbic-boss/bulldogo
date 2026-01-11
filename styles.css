@@ -941,14 +941,13 @@
 }
 
 /* ===== UNIVERZÁLNÍ ŠABLONA PRO VŠECHNY INZERÁTY ===== */
-/* Každá karta má fixní šířku jako když jich je plný řádek, nezávisle na počtu */
+/* Fixní formátování: každá karta má vždy stejnou velikost jako při plném řádku */
 
-/* Desktop: 4 karty na řádku - každá karta = (100% - 3*gap) / 4 */
+/* Desktop: 4 karty na řádku - fixní šířka pomocí margin */
 @media (min-width: 1200px) {
     #servicesGrid.ads-grid {
         display: flex !important;
         flex-wrap: wrap !important;
-        gap: 24px !important;
         max-width: 1600px !important;
         margin: 0 auto !important;
         width: 100% !important;
@@ -961,17 +960,23 @@
         min-width: calc((100% - 72px) / 4) !important;
         flex: 0 0 calc((100% - 72px) / 4) !important;
         box-sizing: border-box !important;
-        margin: 0 !important;
-        padding: 0 !important;
+        margin-right: 24px !important;
+        margin-bottom: 24px !important;
+        margin-left: 0 !important;
+        margin-top: 0 !important;
+    }
+    
+    /* Odstranit margin-right u každé 4. karty */
+    #servicesGrid.ads-grid > .ad-card:nth-child(4n) {
+        margin-right: 0 !important;
     }
 }
 
-/* Tablet: 3 karty na řádku - každá karta = (100% - 2*gap) / 3 */
+/* Tablet: 3 karty na řádku - fixní šířka pomocí margin */
 @media (min-width: 768px) and (max-width: 1199px) {
     #servicesGrid.ads-grid {
         display: flex !important;
         flex-wrap: wrap !important;
-        gap: 24px !important;
         max-width: 1600px !important;
         margin: 0 auto !important;
         width: 100% !important;
@@ -984,8 +989,15 @@
         min-width: calc((100% - 48px) / 3) !important;
         flex: 0 0 calc((100% - 48px) / 3) !important;
         box-sizing: border-box !important;
-        margin: 0 !important;
-        padding: 0 !important;
+        margin-right: 24px !important;
+        margin-bottom: 24px !important;
+        margin-left: 0 !important;
+        margin-top: 0 !important;
+    }
+    
+    /* Odstranit margin-right u každé 3. karty */
+    #servicesGrid.ads-grid > .ad-card:nth-child(3n) {
+        margin-right: 0 !important;
     }
 }
 
@@ -994,7 +1006,6 @@
     #servicesGrid.ads-grid {
         display: flex !important;
         flex-wrap: wrap !important;
-        gap: 24px !important;
         max-width: 1600px !important;
         margin: 0 auto !important;
         width: 100% !important;
@@ -1007,8 +1018,10 @@
         min-width: 100% !important;
         flex: 0 0 100% !important;
         box-sizing: border-box !important;
-        margin: 0 !important;
-        padding: 0 !important;
+        margin-right: 0 !important;
+        margin-bottom: 24px !important;
+        margin-left: 0 !important;
+        margin-top: 0 !important;
     }
 }
 
