@@ -3151,37 +3151,39 @@ function setupEventListeners() {
                 const normalizedIco = normalizeICO(ico || '');
                 
                 // Příprava payload pro userProfileService
+                // STEJNĚ PRO HOBBY I FIRMY: základní struktura
                 const profilePayload = {
                     email: email,
                     phoneNumber: finalUser.phoneNumber || registrationPayload.phone || '',
                     provider: 'password+phone',
                     userType: userType,
-                    name: userType === 'company' ? companyName : `${firstName} ${lastName}`.trim(),
+                    name: '', // Bude nastaveno níže podle typu
                     consentAccepted: true,
                     balance: 1000,
                     plan: 'none'
                 };
                 
-                // Osobní údaje
+                // Osobní údaje - HOBBY (funguje perfektně, NEMĚNIT)
                 if (userType === 'person') {
                     console.log('[REGISTER] 📝 Přidávám osobní informace - firstName:', firstName, 'lastName:', lastName);
                     if (firstName && firstName.trim()) profilePayload.firstName = firstName.trim();
                     if (lastName && lastName.trim()) profilePayload.lastName = lastName.trim();
                     if (birthDate && birthDate.trim()) profilePayload.birthDate = birthDate.trim();
-                    if (!profilePayload.name || profilePayload.name.trim() === '') {
-                        profilePayload.name = `${firstName || ''} ${lastName || ''}`.trim() || 'Uživatel';
-                    }
-                } else if (userType === 'company') {
-                    console.log('[REGISTER] 📝 Přidávám firemní informace - companyName:', companyName, 'ico:', ico);
-                    if (companyName) profilePayload.companyName = companyName;
-                    if (normalizedIco) profilePayload.ico = normalizedIco;
-                    if (dic) profilePayload.dic = dic;
-                    if (businessType) profilePayload.businessType = businessType;
-                    if (companyAddress) profilePayload.companyAddress = companyAddress;
-                    if (businessDescription) profilePayload.businessDescription = businessDescription;
-                    if (!profilePayload.name || profilePayload.name.trim() === '') {
-                        profilePayload.name = companyName || 'Firma';
-                    }
+                    // Nastavit name stejně jako u hobby
+                    profilePayload.name = `${firstName || ''} ${lastName || ''}`.trim() || 'Uživatel';
+                } 
+                // Firemní údaje - FIRMA (aplikovat STEJNOU logiku jako hobby)
+                else if (userType === 'company') {
+                    console.log('[REGISTER] 📝 Přidávám firemní informace - companyName:', companyName, 'ico:', normalizedIco);
+                    // STEJNĚ JAKO U HOBBY: kontrolovat .trim() a ukládat pouze pokud není prázdný
+                    if (companyName && companyName.trim()) profilePayload.companyName = companyName.trim();
+                    if (normalizedIco && normalizedIco.trim()) profilePayload.ico = normalizedIco.trim();
+                    if (dic && dic.trim()) profilePayload.dic = dic.trim();
+                    if (businessType && businessType.trim()) profilePayload.businessType = businessType.trim();
+                    if (companyAddress && companyAddress.trim()) profilePayload.companyAddress = companyAddress.trim();
+                    if (businessDescription && businessDescription.trim()) profilePayload.businessDescription = businessDescription.trim();
+                    // Nastavit name STEJNĚ jako u hobby (stejná logika)
+                    profilePayload.name = (companyName && companyName.trim()) ? companyName.trim() : 'Firma';
                 }
                 
                 console.log('[REGISTER] 📦 Writing profile payload:', profilePayload);
