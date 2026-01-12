@@ -397,9 +397,22 @@ function initAuth() {
                 setTimeout(() => window.checkAndShowAdminMenu(), 500);
             }
             
+            // DŮLEŽITÉ: Zajistit, že uživatel má profil v Firestore (fail-safe)
+            // Toto opraví i existující účty, které byly vytvořeny bez profilu
+            if (user && window.authService && typeof window.authService.ensureUserProfile === 'function') {
+                // Volat asynchronně, aby neblokovalo UI
+                window.authService.ensureUserProfile(user).catch(err => {
+                    console.error('[AUTH] ❌ Chyba při ensureUserProfile v onAuthStateChanged:', err);
+                });
+            }
+            
             // Zkontrolovat, zda existuje callback po přihlášení
-            if (user && window.afterLoginCallback) {
-                console.log('🔄 Spouštím callback po přihlášení');
+            // DŮLEŽITÉ: Pro registraci se callback NESMÍ volat z onAuthStateChanged,
+            // protože Firestore zápis ještě nemusí být dokončen.
+            // Callback se zavolá až po úspěšném dokončení registrace (v btnAuthSubmit2 handleru).
+            // Tady voláme callback jen pro přihlášení (ne registraci).
+            if (user && window.afterLoginCallback && !window._registrationInProgress) {
+                console.log('🔄 Spouštím callback po přihlášení (ne registrace)');
                 try {
                     window.afterLoginCallback();
                 } catch (e) {
@@ -407,6 +420,8 @@ function initAuth() {
                 }
                 // Vyčistit callback
                 window.afterLoginCallback = null;
+            } else if (user && window._registrationInProgress) {
+                console.log('⚠️ Registrace probíhá, afterLoginCallback se zavolá po dokončení Firestore zápisu');
             } else if (user) {
                 console.log('⚠️ Uživatel přihlášen, ale afterLoginCallback není nastaven');
             }
@@ -905,6 +920,8 @@ async function register(email, password, userData) {
 // Přihlášení uživatele
 async function login(email, password) {
     try {
+        // DŮLEŽITÉ: Zajistit, že uživatel má profil v Firestore (fail-safe)
+        // Toto opraví i existující účty, které byly vytvořeny bez profilu
         console.log('🔐 Pokus o přihlášení:', { email, firebaseAuth: !!firebaseAuth });
         
         if (!firebaseAuth) {
@@ -919,12 +936,28 @@ async function login(email, password) {
         
         // Volám signInWithEmailAndPassword - logy odstraněny
         const userCredential = await signInWithEmailAndPassword(firebaseAuth, email, password);
-        console.log('✅ Přihlášení úspěšné:', userCredential.user);
+        const user = userCredential.user;
+        console.log('✅ Přihlášení úspěšné:', user.uid);
+        
+        // DŮLEŽITÉ: Zajistit, že uživatel má profil v Firestore (fail-safe)
+        // Toto opraví i existující účty, které byly vytvořeny bez profilu
+        if (window.authService && typeof window.authService.ensureUserProfile === 'function') {
+            try {
+                console.log('[AUTH] 🔧 Kontroluji/zajišťuji profil uživatele po přihlášení...');
+                const profileCreated = await window.authService.ensureUserProfile(user);
+                if (profileCreated) {
+                    console.log('[AUTH] ✅ Profil byl vytvořen/aktualizován po přihlášení');
+                }
+            } catch (ensureError) {
+                console.error('[AUTH] ❌ Chyba při ensureUserProfile po přihlášení:', ensureError);
+                // Necháme pokračovat, není kritické
+            }
+        }
         
         // Počkat na aktualizaci auth state (onAuthStateChanged se spustí automaticky)
         // Manuálně aktualizovat UI po přihlášení
         console.log('🔄 Manuálně aktualizuji UI po přihlášení');
-        updateUI(userCredential.user);
+        updateUI(user);
         
         // Zkontrolovat, zda existuje callback po přihlášení a zavolat ho
         if (window.afterLoginCallback) {
@@ -938,7 +971,7 @@ async function login(email, password) {
         
         showMessage('Úspěšně jste se přihlásili!', 'success');
         closeAuthModal();
-        return userCredential.user;
+        return user;
     } catch (error) {
         console.error('❌ Chyba při přihlašování:', error);
         console.error('❌ Error details:', {
@@ -2963,6 +2996,10 @@ function setupEventListeners() {
                 const title = (document.querySelector('#authModal .modal-title')?.textContent || '').trim();
                 if (title !== 'Registrace') return; // jen v režimu registrace
                 
+                // Nastavit flag, že probíhá registrace (aby onAuthStateChanged nevolal callback předčasně)
+                window._registrationInProgress = true;
+                console.log('[AUTH] 🚩 Nastaven flag _registrationInProgress = true');
+                
                 // Kontrola GDPR souhlasu
                 const gdprCheckbox = document.getElementById('gdprConsent');
                 if (!gdprCheckbox || !gdprCheckbox.checked) {
@@ -3118,9 +3155,21 @@ function setupEventListeners() {
                     if (savedProfileSnap.exists()) {
                         const savedData = savedProfileSnap.data();
                         console.log('📝 Ověření uložených dat - firstName:', savedData.firstName, 'lastName:', savedData.lastName);
+                    } else {
+                        console.error('❌ Profil se nepodařilo ověřit - dokument neexistuje po uložení!');
+                        throw new Error('Profil se nepodařilo uložit do databáze. Dokument neexistuje.');
                     }
                 } catch (profileError) {
                     console.error('❌ Chyba při ukládání profilu:', profileError);
+                    console.error('❌ Error details:', {
+                        code: profileError?.code,
+                        message: profileError?.message,
+                        stack: profileError?.stack,
+                        pathname: window.location.pathname
+                    });
+                    // Zobrazit chybu uživateli
+                    const errorMsg = profileError?.message || 'Nepodařilo se uložit profil do databáze.';
+                    showMessage(`Chyba při ukládání profilu: ${errorMsg}`, 'error');
                     throw profileError;
                 }
                 
@@ -3192,10 +3241,25 @@ function setupEventListeners() {
                     }
                 }
                 
+                // DŮLEŽITÉ: afterLoginCallback se NESMÍ volat dřív, než se dokončí Firestore zápis
+                // Callback se zavolá až po úspěšném ověření uložení profilu (viz kód výše)
+                // Pokud je nastaven afterLoginCallback, počkáme ještě chvíli před jeho zavoláním
+                // aby se zajistilo, že všechny DB operace jsou dokončené
                 if (typeof window.afterLoginCallback === 'function') {
-                    try { window.afterLoginCallback(); } catch (_) {}
+                    // Počkat ještě chvíli, aby se zajistilo, že Firestore zápis je dokončen
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                    try { 
+                        console.log('[AUTH] 🔄 Volám afterLoginCallback po úspěšné registraci');
+                        window.afterLoginCallback(); 
+                    } catch (callbackError) {
+                        console.error('[AUTH] ❌ Chyba při volání afterLoginCallback:', callbackError);
+                    }
                 }
             } catch (err) {
+                // Odstranit flag registrace i při chybě
+                window._registrationInProgress = false;
+                console.log('[AUTH] 🚩 Odstraněn flag _registrationInProgress (kvůli chybě)');
+                
                 console.error('❌ Dokončení registrace selhalo - původní chyba:', err);
                 
                 // Zpracovat různé typy chyb
