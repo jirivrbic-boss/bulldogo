@@ -2935,9 +2935,33 @@ function setupEventListeners() {
                     timestamp: Date.now()
                 };
                 
+                // DEBUG: Pro firmy vypiš firemní údaje
+                if (userType === 'company') {
+                    console.log('[REGISTER] 🔍 DEBUG - Firemní údaje před uložením do sessionStorage:', {
+                        companyName: registrationPayload.companyName,
+                        ico: registrationPayload.ico,
+                        dic: registrationPayload.dic,
+                        businessType: registrationPayload.businessType,
+                        companyAddress: registrationPayload.companyAddress,
+                        businessDescription: registrationPayload.businessDescription
+                    });
+                }
+                
                 try {
                     sessionStorage.setItem('pendingRegistrationPayload', JSON.stringify(registrationPayload));
                     console.log('[REGISTER] ✅ Data uložena do sessionStorage:', Object.keys(registrationPayload));
+                    // Ověřit, že se data skutečně uložila
+                    const verify = sessionStorage.getItem('pendingRegistrationPayload');
+                    if (verify) {
+                        const parsed = JSON.parse(verify);
+                        if (userType === 'company') {
+                            console.log('[REGISTER] 🔍 DEBUG - Ověření uložených dat:', {
+                                companyName: parsed.companyName,
+                                ico: parsed.ico,
+                                dic: parsed.dic
+                            });
+                        }
+                    }
                 } catch (storageError) {
                     console.error('[REGISTER] ❌ Chyba při ukládání do sessionStorage:', storageError);
                     // Pokračovat i při chybě, ale data se mohou ztratit
@@ -3120,18 +3144,38 @@ function setupEventListeners() {
                     console.log('[REGISTER] ⚠️ Data načtena z DOM (fallback):', Object.keys(registrationPayload));
                 }
                 
+                // DŮLEŽITÉ: Nejdřív načíst všechna data z registrationPayload
                 const { email, password, userType, firstName, lastName, birthDate, companyName, ico, dic, businessType, companyAddress, businessDescription } = registrationPayload;
                 
-                // Uložit payload pro případný retry
-                registrationPayload = { ...registrationPayload }; // Kopie pro retry
-
+                // DEBUG: Pro firmy vypiš načtená data
+                if (userType === 'company') {
+                    console.log('[REGISTER] 🔍 DEBUG - Načtená data z registrationPayload:', {
+                        companyName: companyName,
+                        companyNameType: typeof companyName,
+                        companyNameLength: companyName ? companyName.length : 0,
+                        ico: ico,
+                        icoType: typeof ico,
+                        icoLength: ico ? ico.length : 0,
+                        dic: dic,
+                        businessType: businessType,
+                        companyAddress: companyAddress,
+                        businessDescription: businessDescription
+                    });
+                }
+                
+                // Uložit payload pro případný retry (PŘED destructuring, aby se neztratila data)
+                const originalPayload = { ...registrationPayload }; // Kopie pro retry
+                
                 // Potvrdit SMS kód
                 console.log('[REGISTER] 📱 Potvrzuji SMS kód...');
                 const result = await phoneConfirmationResult.confirm(code);
                 const phoneUser = result.user;
                 finalUser = phoneUser; // Nastavit pro použití v catch bloku
                 console.log('[REGISTER] ✅ OTP verified uid:', phoneUser.uid, 'phone:', phoneUser.phoneNumber);
-                console.log('[REGISTER] 📝 Shromážděná data:', { email, userType, firstName, lastName, companyName, birthDate });
+                console.log('[REGISTER] 📝 Shromážděná data:', { email, userType, firstName, lastName, companyName, ico, normalizedIco: normalizeICO(ico || ''), birthDate });
+                
+                // Pro retry použít originalPayload
+                registrationPayload = originalPayload;
 
                 // Vytvořit e-mailové přihlašování k telefonnímu účtu
                 console.log('🔗 Propojuji email s telefonním účtem...');
@@ -3174,16 +3218,48 @@ function setupEventListeners() {
                 } 
                 // Firemní údaje - FIRMA (aplikovat STEJNOU logiku jako hobby)
                 else if (userType === 'company') {
-                    console.log('[REGISTER] 📝 Přidávám firemní informace - companyName:', companyName, 'ico:', normalizedIco);
+                    console.log('[REGISTER] 📝 Přidávám firemní informace - companyName:', companyName, 'ico:', ico, 'normalizedIco:', normalizedIco);
+                    console.log('[REGISTER] 🔍 DEBUG - Typy hodnot:', {
+                        companyNameType: typeof companyName,
+                        companyNameValue: companyName,
+                        companyNameLength: companyName ? companyName.length : 0,
+                        icoType: typeof ico,
+                        icoValue: ico,
+                        normalizedIcoType: typeof normalizedIco,
+                        normalizedIcoValue: normalizedIco
+                    });
                     // STEJNĚ JAKO U HOBBY: kontrolovat .trim() a ukládat pouze pokud není prázdný
-                    if (companyName && companyName.trim()) profilePayload.companyName = companyName.trim();
-                    if (normalizedIco && normalizedIco.trim()) profilePayload.ico = normalizedIco.trim();
-                    if (dic && dic.trim()) profilePayload.dic = dic.trim();
-                    if (businessType && businessType.trim()) profilePayload.businessType = businessType.trim();
-                    if (companyAddress && companyAddress.trim()) profilePayload.companyAddress = companyAddress.trim();
-                    if (businessDescription && businessDescription.trim()) profilePayload.businessDescription = businessDescription.trim();
+                    if (companyName && companyName.trim()) {
+                        profilePayload.companyName = companyName.trim();
+                        console.log('[REGISTER] ✅ companyName přidáno do payload:', profilePayload.companyName);
+                    } else {
+                        console.warn('[REGISTER] ⚠️ companyName je prázdný nebo undefined:', companyName);
+                    }
+                    if (normalizedIco && normalizedIco.trim()) {
+                        profilePayload.ico = normalizedIco.trim();
+                        console.log('[REGISTER] ✅ ico přidáno do payload:', profilePayload.ico);
+                    } else {
+                        console.warn('[REGISTER] ⚠️ normalizedIco je prázdný nebo undefined:', normalizedIco, '(původní ico:', ico, ')');
+                    }
+                    if (dic && dic.trim()) {
+                        profilePayload.dic = dic.trim();
+                        console.log('[REGISTER] ✅ dic přidáno do payload');
+                    }
+                    if (businessType && businessType.trim()) {
+                        profilePayload.businessType = businessType.trim();
+                        console.log('[REGISTER] ✅ businessType přidáno do payload');
+                    }
+                    if (companyAddress && companyAddress.trim()) {
+                        profilePayload.companyAddress = companyAddress.trim();
+                        console.log('[REGISTER] ✅ companyAddress přidáno do payload');
+                    }
+                    if (businessDescription && businessDescription.trim()) {
+                        profilePayload.businessDescription = businessDescription.trim();
+                        console.log('[REGISTER] ✅ businessDescription přidáno do payload');
+                    }
                     // Nastavit name STEJNĚ jako u hobby (stejná logika)
                     profilePayload.name = (companyName && companyName.trim()) ? companyName.trim() : 'Firma';
+                    console.log('[REGISTER] ✅ name nastaveno na:', profilePayload.name);
                 }
                 
                 console.log('[REGISTER] 📦 Writing profile payload:', profilePayload);
