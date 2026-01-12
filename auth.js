@@ -421,33 +421,39 @@ function initAuth() {
     // Nastavení event listenerů
     setupEventListeners();
     
-    // Listener pro změny hash v URL (univerzální popup okno)
-    window.addEventListener('hashchange', () => {
-        try {
-            const hash = window.location.hash;
-            if (hash === '#prihlaseni') {
-                if (typeof showAuthModal === 'function') {
-                    showAuthModal('login');
-                }
-            } else if (hash === '#registrace') {
-                if (typeof showAuthModal === 'function') {
-                    showAuthModal('register');
-                }
-            } else {
-                // Pokud hash není přihlášení/registrace, zavřít modal
-                const modal = document.getElementById('authModal');
-                if (modal && modal.style.display !== 'none' && modal.style.display !== '') {
-                    if (typeof closeAuthModal === 'function') {
-                        closeAuthModal();
+    // Hash navigace je nyní zpracovávána v lib/hashModal.js
+    // Tento listener je zachován pro kompatibilitu, ale hashModal.js má prioritu
+    // (hashModal.js se inicializuje později a přepíše tento listener)
+    
+    // Listener pro změny hash v URL (univerzální popup okno) - DEPRECATED, použijte hashModal.js
+    if (!window.hashModal || !window.hashModalInitialized) {
+        window.addEventListener('hashchange', () => {
+            try {
+                const hash = window.location.hash;
+                if (hash === '#prihlaseni') {
+                    if (typeof showAuthModal === 'function') {
+                        showAuthModal('login');
+                    }
+                } else if (hash === '#registrace') {
+                    if (typeof showAuthModal === 'function') {
+                        showAuthModal('register');
+                    }
+                } else {
+                    // Pokud hash není přihlášení/registrace, zavřít modal
+                    const modal = document.getElementById('authModal');
+                    if (modal && modal.style.display !== 'none' && modal.style.display !== '') {
+                        if (typeof closeAuthModal === 'function') {
+                            closeAuthModal();
+                        }
                     }
                 }
+            } catch (e) {
+                console.warn('⚠️ Chyba při zpracování hashchange:', e);
             }
-        } catch (e) {
-            console.warn('⚠️ Chyba při zpracování hashchange:', e);
-        }
-    }, false);
+        }, false);
+    }
     
-    // Listener pro změny hash v URL (univerzální popup okno)
+    // Listener pro změny hash v URL (univerzální popup okno) - DUPLICATE REMOVED
     window.addEventListener('hashchange', () => {
         try {
             const hash = window.location.hash;
@@ -860,8 +866,36 @@ async function register(email, password, userData) {
             console.warn('⚠️ Chyba při vysílání eventu userProfileUpdated:', reloadError);
         }
 
+        // DŮLEŽITÉ: Ověřit, že se data skutečně uložila před zavřením modalu
+        const { getDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        let retries = 0;
+        let profileSaved = false;
+        while (retries < 5 && !profileSaved) {
+            const verifyRef = doc(firebaseDb, 'users', user.uid, 'profile', 'profile');
+            const verifySnap = await getDoc(verifyRef);
+            if (verifySnap.exists()) {
+                profileSaved = true;
+                console.log('[AUTH] ✅ Ověření: Profil je v DB (register funkce), retries:', retries);
+            } else {
+                retries++;
+                console.log('[AUTH] ⏳ Čekám na uložení profilu (register funkce), retry:', retries);
+                await new Promise(resolve => setTimeout(resolve, 200));
+            }
+        }
+        
+        if (!profileSaved) {
+            console.error('[AUTH] ❌ Profil se nepodařilo ověřit po 5 pokusech (register funkce)');
+            throw new Error('Profil se nepodařilo uložit do databáze. Zkuste to znovu.');
+        }
+        
         showMessage('Úspěšně jste se zaregistrovali!', 'success');
-        closeAuthModal();
+        
+        // Zavřít modal (použít hash modal hook pokud je dostupný)
+        if (window.hashModal && typeof window.hashModal.close === 'function') {
+            window.hashModal.close();
+        } else {
+            closeAuthModal();
+        }
         return user;
     } catch (error) {
         handleAuthError(error);
@@ -1428,6 +1462,14 @@ function setupAuthModalEvents() {
 
 // Zobrazení auth modalu
 function showAuthModal(type = 'login') {
+    // Diagnostika: vypiš pathname pro debug
+    console.log(`[AUTH MODAL] 🔓 Otevírám modal "${type}" z: ${window.location.pathname}`, {
+        hash: window.location.hash,
+        firebaseAuth: !!window.firebaseAuth,
+        firebaseDb: !!window.firebaseDb,
+        firebaseReady: !!window.firebaseReady
+    });
+    
     // Přidat hash do URL pro univerzální odkaz
     try {
         const hash = type === 'register' ? '#registrace' : '#prihlaseni';
@@ -1671,6 +1713,18 @@ function closeAuthModal() {
         const form = document.getElementById('authForm');
         if (form) {
             form.reset();
+        }
+        
+        // Odstranit hash z URL (pokud hash modal hook není dostupný, uděláme to zde)
+        if (!window.hashModal || typeof window.hashModal.close !== 'function') {
+            try {
+                const newUrl = window.location.pathname + window.location.search;
+                if (window.location.hash) {
+                    window.history.replaceState(null, '', newUrl);
+                }
+            } catch (e) {
+                console.warn('⚠️ Nepodařilo se odstranit hash z URL:', e);
+            }
         }
     } catch (e) {
         console.error('Chyba při zavírání modalu:', e);
@@ -3078,22 +3132,46 @@ function setupEventListeners() {
                     console.warn('⚠️ Chyba při aktualizaci displayName (není kritická):', profileUpdateError);
                 }
 
-                // Počkat chvíli, aby se data uložila do Firestore
-                await new Promise(resolve => setTimeout(resolve, 500));
+                // DŮLEŽITÉ: Počkat na dokončení všech DB zápisů před zavřením modalu
+                // Ověřit, že se data skutečně uložila
+                const { getDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                let retries = 0;
+                let profileSaved = false;
+                while (retries < 5 && !profileSaved) {
+                    const verifyRef = doc(firebaseDb, 'users', finalUser.uid, 'profile', 'profile');
+                    const verifySnap = await getDoc(verifyRef);
+                    if (verifySnap.exists()) {
+                        profileSaved = true;
+                        console.log('[AUTH] ✅ Ověření: Profil je v DB, retries:', retries);
+                    } else {
+                        retries++;
+                        console.log('[AUTH] ⏳ Čekám na uložení profilu, retry:', retries);
+                        await new Promise(resolve => setTimeout(resolve, 200));
+                    }
+                }
                 
-                console.log('✅ Registrace úspěšně dokončena');
+                if (!profileSaved) {
+                    console.error('[AUTH] ❌ Profil se nepodařilo ověřit po 5 pokusech');
+                    throw new Error('Profil se nepodařilo uložit do databáze. Zkuste to znovu.');
+                }
+                
+                console.log('✅ Registrace úspěšně dokončena - DB zápis ověřen');
                 showMessage('Registrace dokončena.', 'success');
                 
-                // Zavřít modal
-                closeAuthModal();
-                
-                // Aktualizovat UI
+                // Aktualizovat UI PŘED zavřením modalu
                 if (typeof updateUI === 'function') {
                     try {
                         updateUI(finalUser);
                     } catch (uiError) {
                         console.warn('⚠️ Chyba při aktualizaci UI:', uiError);
                     }
+                }
+                
+                // Zavřít modal (použít hash modal hook pokud je dostupný)
+                if (window.hashModal && typeof window.hashModal.close === 'function') {
+                    window.hashModal.close();
+                } else {
+                    closeAuthModal();
                 }
                 
                 // Pokud jsme na stránce nastavení, znovu načíst data pomocí custom eventu

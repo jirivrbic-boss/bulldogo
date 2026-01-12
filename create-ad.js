@@ -140,80 +140,82 @@
                             initCreateAdPage();
                         } else {
                             // Uživatel není přihlášen – až TEĎ zobrazit login
-                            if (typeof window.showAuthModal === 'function') {
-                                window.afterLoginCallback = () => window.location.reload();
-                                
-                                // Sledovat zavření modalu bez přihlášení
-                                const originalCloseAuthModal = window.closeAuthModal;
-                                let modalClosedWithoutLogin = false;
-                                
-                                // Přepsat closeAuthModal pro tuto situaci
-                                window.closeAuthModal = function() {
-                                    modalClosedWithoutLogin = true;
-                                    if (originalCloseAuthModal) {
-                                        originalCloseAuthModal();
+                            // DŮLEŽITÉ: Čekat na načtení auth.js před otevřením modalu
+                            waitForAuthJS(() => {
+                                if (typeof window.showAuthModal === 'function') {
+                                    window.afterLoginCallback = () => window.location.reload();
+                                    
+                                    // Použít hash modal hook pokud je dostupný
+                                    if (window.hashModal && typeof window.hashModal.open === 'function') {
+                                        window.hashModal.open('login');
+                                    } else {
+                                        showAuthModal('login');
                                     }
+                                    
+                                    // Sledovat přihlášení a reload stránky
+                                    const checkLogin = setInterval(() => {
+                                        if (window.firebaseAuth?.currentUser) {
+                                            clearInterval(checkLogin);
+                                            // Po přihlášení reload stránky (aby se zkontrolovalo předplatné)
+                                            setTimeout(() => {
+                                                window.location.reload();
+                                            }, 500);
+                                        }
+                                    }, 500);
+                                    
                                     // Pokud se modal zavře bez přihlášení, přesměrovat zpět
-                                    setTimeout(() => {
-                                        if (modalClosedWithoutLogin && !window.firebaseAuth?.currentUser) {
+                                    const checkModalClose = setInterval(() => {
+                                        const modal = document.getElementById('authModal');
+                                        if (modal && modal.style.display === 'none' && !window.firebaseAuth?.currentUser) {
+                                            clearInterval(checkModalClose);
                                             window.location.href = 'index.html';
                                         }
-                                    }, 100);
-                                };
-                                
-                                showAuthModal('login');
-                                
-                                // Obnovit původní closeAuthModal po úspěšném přihlášení
-                                const checkLogin = setInterval(() => {
-                                    if (window.firebaseAuth?.currentUser) {
-                                        clearInterval(checkLogin);
-                                        window.closeAuthModal = originalCloseAuthModal;
-                                    }
-                                }, 500);
-                            } else {
-                                alert('Pro vytvoření inzerátu se prosím přihlaste.');
-                                window.location.href = 'index.html';
-                            }
+                                    }, 1000);
+                                } else {
+                                    alert('Pro vytvoření inzerátu se prosím přihlaste.');
+                                    window.location.href = 'index.html';
+                                }
+                            });
                         }
                     });
                 } catch (authErr) {
                     console.error('Chyba při inicializaci auth:', authErr);
                     // Bezpečný fallback - přesměrovat na balíčky, protože nemůžeme ověřit předplatné
                     if (!window.firebaseAuth?.currentUser) {
-                        if (typeof window.showAuthModal === 'function') {
-                            window.afterLoginCallback = () => window.location.reload();
-                            
-                            // Sledovat zavření modalu bez přihlášení
-                            const originalCloseAuthModal = window.closeAuthModal;
-                            let modalClosedWithoutLogin = false;
-                            
-                            // Přepsat closeAuthModal pro tuto situaci
-                            window.closeAuthModal = function() {
-                                modalClosedWithoutLogin = true;
-                                if (originalCloseAuthModal) {
-                                    originalCloseAuthModal();
+                        waitForAuthJS(() => {
+                            if (typeof window.showAuthModal === 'function') {
+                                window.afterLoginCallback = () => window.location.reload();
+                                
+                                // Použít hash modal hook pokud je dostupný
+                                if (window.hashModal && typeof window.hashModal.open === 'function') {
+                                    window.hashModal.open('login');
+                                } else {
+                                    showAuthModal('login');
                                 }
+                                
+                                // Sledovat přihlášení a reload stránky
+                                const checkLogin = setInterval(() => {
+                                    if (window.firebaseAuth?.currentUser) {
+                                        clearInterval(checkLogin);
+                                        setTimeout(() => {
+                                            window.location.reload();
+                                        }, 500);
+                                    }
+                                }, 500);
+                                
                                 // Pokud se modal zavře bez přihlášení, přesměrovat zpět
-                                setTimeout(() => {
-                                    if (modalClosedWithoutLogin && !window.firebaseAuth?.currentUser) {
+                                const checkModalClose = setInterval(() => {
+                                    const modal = document.getElementById('authModal');
+                                    if (modal && modal.style.display === 'none' && !window.firebaseAuth?.currentUser) {
+                                        clearInterval(checkModalClose);
                                         window.location.href = 'index.html';
                                     }
-                                }, 100);
-                            };
-                            
-                            showAuthModal('login');
-                            
-                            // Obnovit původní closeAuthModal po úspěšném přihlášení
-                            const checkLogin = setInterval(() => {
-                                if (window.firebaseAuth?.currentUser) {
-                                    clearInterval(checkLogin);
-                                    window.closeAuthModal = originalCloseAuthModal;
-                                }
-                            }, 500);
-                        } else {
-                            alert('Pro vytvoření inzerátu se prosím přihlaste.');
-                            window.location.href = 'index.html';
-                        }
+                                }, 1000);
+                            } else {
+                                alert('Pro vytvoření inzerátu se prosím přihlaste.');
+                                window.location.href = 'index.html';
+                            }
+                        });
                     } else {
                         // Pokud nemůžeme ověřit předplatné, raději přesměrujeme
                         console.warn('⚠️ Nelze ověřit předplatné, přesměrovávám na balíčky');
@@ -284,7 +286,27 @@
     }
 
     function initCreateAdPage() {
-        // Počítadlo znaků popisu
+        // Pomocná funkce pro čekání na načtení auth.js
+    function waitForAuthJS(callback, maxWait = 5000) {
+        if (typeof window.showAuthModal === 'function') {
+            callback();
+            return;
+        }
+        
+        let waited = 0;
+        const checkInterval = setInterval(() => {
+            waited += 100;
+            if (typeof window.showAuthModal === 'function') {
+                clearInterval(checkInterval);
+                callback();
+            } else if (waited >= maxWait) {
+                clearInterval(checkInterval);
+                console.error('[CREATE-AD] ❌ Timeout čekání na auth.js');
+            }
+        }, 100);
+    }
+
+    // Počítadlo znaků popisu
         const desc = document.getElementById('serviceDescription');
         const counter = document.getElementById('serviceDescriptionCounter');
         if (desc && counter) {
