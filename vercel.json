@@ -2,6 +2,10 @@
   "outputDirectory": "public",
   "rewrites": [
     {
+      "source": "/lib/:path*.js",
+      "destination": "/lib/:path*.js"
+    },
+    {
       "source": "/create-ad",
       "destination": "/create-ad.html"
     },
@@ -23,6 +27,15 @@
     }
   ],
   "headers": [
+    {
+      "source": "/lib/(.*)",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/javascript; charset=utf-8"
+        }
+      ]
+    },
     {
       "source": "/(.*)",
       "headers": [
