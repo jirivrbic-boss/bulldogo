@@ -1051,7 +1051,7 @@
             // Update role
             const profileRole = document.querySelector('.profile-role');
             if (profileRole) {
-                const role = userProfile?.businessName || userProfile?.role || 'Poskytovatel služeb';
+                const role = userProfile?.companyName || userProfile?.role || 'Poskytovatel služeb';
                 profileRole.textContent = role;
                 console.log('📝 Updated role:', role);
             }

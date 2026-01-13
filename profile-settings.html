@@ -2743,7 +2743,7 @@
             // Načíst z hlavní úrovně profilu, nebo z company objektu (pro zpětnou kompatibilitu)
             const company = userProfile?.company || {};
             const businessFields = {
-                'businessName': userProfile?.businessName || company?.companyName || '',
+                'businessName': userProfile?.companyName || company?.companyName || '',
                 'businessType': userProfile?.businessType || '',
                 'businessIco': userProfile?.businessIco || company?.ico || '',
                 'businessDic': userProfile?.businessDic || company?.dic || '',

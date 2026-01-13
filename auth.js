@@ -857,7 +857,7 @@ async function register(email, password, userData) {
             profileData.name = userData.companyName || 'Firma';
             // Uložit obchodní informace i na hlavní úroveň profilu (pro zobrazení v nastavení)
             const normalizedIco = normalizeICO(userData.ico || '');
-            profileData.businessName = userData.companyName || null;
+            profileData.companyName = userData.companyName || null;
             profileData.businessType = userData.businessType || null;
             profileData.businessIco = normalizedIco || null;
             profileData.businessDic = userData.dic || null;
@@ -3652,7 +3652,7 @@ function setupEventListeners() {
                     profileData.name = userData.companyName || 'Firma';
                     // Uložit obchodní informace i na hlavní úroveň profilu (pro zobrazení v nastavení)
                     const normalizedIco = normalizeICO(userData.ico || '');
-                    profileData.businessName = userData.companyName || null;
+                    profileData.companyName = userData.companyName || null;
                     profileData.businessType = userData.businessType || null;
                     profileData.businessIco = normalizedIco || null;
                     profileData.businessDic = userData.dic || null;

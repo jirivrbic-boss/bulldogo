@@ -220,8 +220,6 @@ function displayAdDetail() {
             displayName = adOwner.name;
         } else if (adOwner.displayName) {
             displayName = adOwner.displayName;
-        } else if (adOwner.businessName) {
-            displayName = adOwner.businessName;
         } else if (adOwner.companyName) {
             displayName = adOwner.companyName;
         } else if (adOwner.email) {
@@ -326,7 +324,6 @@ function displayAdDetail() {
             firstName: adOwner.firstName,
             lastName: adOwner.lastName,
             displayName: adOwner.displayName,
-            businessName: adOwner.businessName,
             companyName: adOwner.companyName,
             email: adOwner.email,
             phone: adOwner.phone || adOwner.companyPhone || adOwner.telefon,
