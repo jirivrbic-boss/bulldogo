@@ -594,6 +594,22 @@
     padding: 56px 0 72px;
     background: #ffffff;
     text-align: center; /* Vycentrovat obsah */
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+}
+
+/* Zajistit správné formátování containeru v ads-section na PC */
+@media (min-width: 769px) {
+    .ads-section .container {
+        max-width: 1600px !important;
+        width: 100% !important;
+        margin: 0 auto !important;
+        padding: 0 2rem !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+    }
 }
 
 /* Kontejner pro tlačítko "Zobrazit více inzerátů" */
@@ -943,11 +959,11 @@
 /* ===== UNIVERZÁLNÍ ŠABLONA PRO VŠECHNY INZERÁTY ===== */
 /* CSS Grid s auto-fill: karty mají konzistentní velikost bez ohledu na počet */
 
-/* Desktop: auto-fill vytvoří 4 sloupce, každá karta má minimálně 350px */
+/* Desktop: přesně 4 sloupce na řádek */
 @media (min-width: 1200px) {
     #servicesGrid.ads-grid {
         display: grid !important;
-        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)) !important;
+        grid-template-columns: repeat(4, 1fr) !important;
         gap: 24px !important;
         max-width: 1600px !important;
         margin: 0 auto !important;
@@ -1030,10 +1046,10 @@
     box-sizing: border-box;
 }
 
-/* Homepage: stejný grid systém jako services, ale s menším max-width */
+/* Homepage: přesně 4 sloupce na řádek */
 @media (min-width: 1200px) {
     #servicesGrid.ads-grid[data-limit] {
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)) !important;
+        grid-template-columns: repeat(4, 1fr) !important;
     }
 }
 
@@ -9387,6 +9403,37 @@ html {
     color: #f77c00;
 }
 
+/* My Ads Grid - specifické formátování pro PC */
+@media (min-width: 769px) {
+    #myAdsGrid.ads-grid {
+        display: grid !important;
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 24px !important;
+        max-width: 1600px !important;
+        width: 100% !important;
+        margin: 0 auto !important;
+        padding: 0 !important;
+        box-sizing: border-box !important;
+        overflow: visible !important;
+    }
+    
+    #myAdsGrid.ads-grid > .ad-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+        overflow: visible !important;
+    }
+    
+    #myAdsGrid .loading-services {
+        grid-column: 1 / -1 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        overflow: visible !important;
+    }
+}
+
 /* My Ads – empty state CTA button (match screenshot style) */
 #myAdsGrid .no-services-actions {
     flex-direction: column;
@@ -13035,6 +13082,8 @@ body:has(.ad-detail-content) .main-content .ad-detail-content,
     width: 100% !important;
     aspect-ratio: 4 / 3 !important; /* FIXNÍ poměr stran - stejný všude */
     height: auto !important; /* Automatická výška podle aspect-ratio */
+    min-height: 300px !important; /* Minimální výška pro konzistenci */
+    max-height: 600px !important; /* Maximální výška pro konzistenci */
     background: #f8f9fa;
     border-radius: 12px;
     display: flex;
@@ -13044,17 +13093,27 @@ body:has(.ad-detail-content) .main-content .ad-detail-content,
     color: #6b7280;
     font-size: 3rem;
     border: 2px dashed #e5e7eb;
-    overflow: hidden;
+    overflow: hidden !important;
     position: relative;
+    box-sizing: border-box !important;
 }
 
 .ad-main-img {
-    width: 100%;
-    height: 100%;
+    width: 100% !important;
+    height: 100% !important;
+    min-width: 100% !important;
+    min-height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
     object-fit: cover !important;
     object-position: center !important; /* Vycentrovat obrázek */
     border-radius: 12px;
     transition: transform 0.3s ease;
+    display: block !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    box-sizing: border-box !important;
 }
 
 .ad-main-img:hover {
@@ -13102,14 +13161,37 @@ body:has(.ad-detail-content) .main-content .ad-detail-content,
 }
 
 .ad-thumbnail {
-    width: 100px;
+    width: 100px !important;
+    min-width: 100px !important;
+    max-width: 100px !important;
     aspect-ratio: 4 / 3 !important; /* Konzistentní poměr stran pro všechny zařízení */
     height: auto !important;
+    min-height: 75px !important;
+    max-height: 75px !important;
     border-radius: 12px;
-    overflow: hidden;
+    overflow: hidden !important;
     cursor: pointer;
     border: 3px solid transparent;
     transition: all 0.3s ease;
+    position: relative !important;
+    box-sizing: border-box !important;
+    flex-shrink: 0 !important;
+}
+
+.ad-thumbnail img {
+    width: 100% !important;
+    height: 100% !important;
+    min-width: 100% !important;
+    min-height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    object-fit: cover !important;
+    object-position: center !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    box-sizing: border-box !important;
+}
     flex-shrink: 0;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
@@ -13749,6 +13831,8 @@ body:has(.ad-detail-content) .main-content .ad-detail-content,
         min-width: 0 !important;
         aspect-ratio: 4 / 3 !important;
         height: auto !important;
+        min-height: 300px !important;
+        max-height: 600px !important;
         margin: 0 0 0.75rem 0 !important;
         padding: 0 !important;
         border-radius: 0 !important;
@@ -13756,14 +13840,22 @@ body:has(.ad-detail-content) .main-content .ad-detail-content,
         display: block !important;
         box-sizing: border-box !important;
         background: #f8f9fa !important;
+        position: relative !important;
     }
     
     .ad-main-image .ad-main-img {
         width: 100% !important;
         height: 100% !important;
+        min-width: 100% !important;
+        min-height: 100% !important;
+        max-width: 100% !important;
+        max-height: 100% !important;
         object-fit: cover !important;
         object-position: center !important;
         display: block !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
         box-sizing: border-box !important;
     }
     
@@ -17815,20 +17907,30 @@ html:has(.ad-detail-content) {
     aspect-ratio: 4 / 3 !important;
     height: auto !important;
     width: 100% !important;
-    max-height: none !important;
-    min-height: 0 !important;
+    min-height: 300px !important;
+    max-height: 600px !important;
     padding-bottom: 0 !important;
+    overflow: hidden !important;
+    position: relative !important;
+    box-sizing: border-box !important;
 }
 
 .ad-main-img,
-.ad-main-img[style*="height"] {
+.ad-main-img[style*="height"],
+.ad-main-img[style*="width"] {
     width: 100% !important;
     height: 100% !important;
+    min-width: 100% !important;
+    min-height: 100% !important;
+    max-width: 100% !important;
     max-height: 100% !important;
-    min-height: 0 !important;
     object-fit: cover !important;
     object-position: center !important;
     display: block !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    box-sizing: border-box !important;
 }
 
 .ad-thumbnail,
