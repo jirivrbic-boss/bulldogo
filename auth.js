@@ -550,15 +550,14 @@ function toggleCompanyFormFields(disabled) {
     const authPhoneEl = document.getElementById('authPhone');
     const btnSendPhoneCode = document.getElementById('btnSendPhoneCode');
     
-    if (companyNameEl) companyNameEl.disabled = disabled;
+    // companyName je vždy read-only (nemůže ho uživatel měnit), takže ho neovlivňujeme
     if (authEmailEl) authEmailEl.disabled = disabled;
     if (authPasswordEl) authPasswordEl.disabled = disabled;
     if (authPhoneEl) authPhoneEl.disabled = disabled;
     if (btnSendPhoneCode) btnSendPhoneCode.disabled = disabled;
     
-    // Visual feedback
+    // Visual feedback (companyName má vlastní read-only styl, neovlivňujeme ho)
     const style = disabled ? 'cursor: not-allowed; opacity: 0.6;' : 'cursor: auto; opacity: 1;';
-    if (companyNameEl) companyNameEl.style.cssText = (companyNameEl.style.cssText.replace(/cursor:[^;]+;|opacity:[^;]+;/g, '')) + style;
     if (authEmailEl) authEmailEl.style.cssText = (authEmailEl.style.cssText.replace(/cursor:[^;]+;|opacity:[^;]+;/g, '')) + style;
     if (authPasswordEl) authPasswordEl.style.cssText = (authPasswordEl.style.cssText.replace(/cursor:[^;]+;|opacity:[^;]+;/g, '')) + style;
     if (authPhoneEl) authPhoneEl.style.cssText = (authPhoneEl.style.cssText.replace(/cursor:[^;]+;|opacity:[^;]+;/g, '')) + style;
@@ -1372,7 +1371,7 @@ function createAuthModal() {
                         <div id="icoStatus" style="font-size:13px; margin-top:4px; color:#6b7280;"></div>
                     </div>
                     <div class="form-group">
-                        <input type="text" id="companyName" name="companyName" placeholder="Název firmy" required>
+                        <input type="text" id="companyName" name="companyName" placeholder="Název firmy" required readonly style="background-color: #f3f4f6; cursor: not-allowed;">
                     </div>
                     <!-- Telefon a e‑mail pro firmu se vyplňují níže ve společných polích -->
                 </div>
@@ -3850,82 +3849,7 @@ function setupEventListeners() {
         });
     }
 
-    // Automatické vyhledání IČO při zadání názvu firmy
-    const companyNameEl = document.getElementById('companyName');
-    if (companyNameEl) {
-        let searchTimeout = null;
-        companyNameEl.addEventListener('input', async () => {
-            // Zrušit předchozí timeout
-            if (searchTimeout) {
-                clearTimeout(searchTimeout);
-            }
-            
-            const companyName = (companyNameEl.value || '').toString().trim();
-            const icoInput = document.getElementById('ico');
-            const statusEl = document.getElementById('icoStatus');
-            const activeTypeBtn = document.querySelector('.registration-type-btn.active');
-            const userType = activeTypeBtn ? activeTypeBtn.getAttribute('data-type') : 'person';
-            
-            // Pouze pro firemní registraci a pokud je IČO pole prázdné
-            if (userType !== 'company' || !companyName || !icoInput || icoInput.value.trim()) {
-                return;
-            }
-            
-            // Pokud je IČO již ověřené a read-only, nedělat nic
-            if (icoInput.readOnly) {
-                return;
-            }
-            
-            // Počkat 1 sekundu po zadání (debounce)
-            searchTimeout = setTimeout(async () => {
-                try {
-                    if (statusEl) {
-                        statusEl.style.color = '#6b7280';
-                        statusEl.textContent = 'Vyhledávám IČO...';
-                    }
-                    
-                    // Vyhledat firmu podle názvu přes HlídačStátu API
-                    const searchUrl = `https://api.hlidacstatu.cz/api/v2/dataset/firmy/hledat?dotaz=${encodeURIComponent(companyName)}&limit=1`;
-                    const response = await fetch(searchUrl, {
-                        headers: {
-                            'Accept': 'application/json'
-                        }
-                    });
-                    
-                    if (response.ok) {
-                        const data = await response.json();
-                        if (data && data.Results && data.Results.length > 0) {
-                            const company = data.Results[0];
-                            const foundIco = company.ICO;
-                            const foundName = company.Jmeno;
-                            
-                            // Pokud se název shoduje (nebo je podobný), naplnit IČO
-                            if (foundIco && foundName && foundName.toLowerCase().includes(companyName.toLowerCase())) {
-                                const normalizedIco = normalizeICO(foundIco);
-                                if (normalizedIco && normalizedIco.length === 8) {
-                                    icoInput.value = normalizedIco;
-                                    if (statusEl) {
-                                        statusEl.style.color = '#6b7280';
-                                        statusEl.textContent = 'IČO nalezeno, ověřte prosím tlačítkem "Ověřit"';
-                                    }
-                                }
-                            }
-                        } else {
-                            if (statusEl) {
-                                statusEl.style.color = '#6b7280';
-                                statusEl.textContent = '';
-                            }
-                        }
-                    }
-                } catch (error) {
-                    console.warn('⚠️ Nepodařilo se vyhledat IČO podle názvu:', error);
-                    if (statusEl) {
-                        statusEl.textContent = '';
-                    }
-                }
-            }, 1000);
-        });
-    }
+    // Pole "název firmy" je read-only - může ho vyplnit pouze systém při ověření IČO
     
     // Přepínání mezi přihlášením a registrací
     const authSwitchBtn = document.querySelector('.auth-switch-btn');
