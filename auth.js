@@ -1,30 +1,211 @@
 // Auth.js - Firebase Authentication funkcionality
 
-// Hard diagnostika při načtení - zkontrolovat dostupnost služeb
-(function checkServicesOnLoad() {
-    // Počkat na načtení služeb (defer scripty)
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
-            setTimeout(checkServices, 100);
-        });
-    } else {
-        setTimeout(checkServices, 100);
-    }
+// ============================================================================
+// INLINE USER PROFILE SERVICE (vloženo přímo kvůli problémům s načítáním modulů)
+// ============================================================================
+(function() {
+    'use strict';
     
-    function checkServices() {
-        console.log('[BOOT] auth.js loaded, services available:', {
-            userProfileService: typeof window.userProfileService,
-            upsertUserProfile: typeof (window.userProfileService?.upsertUserProfile),
-            ensureUserProfile: typeof (window.userProfileService?.ensureUserProfile),
-            authService: typeof window.authService,
-            hashModal: typeof window.hashModal
-        });
-        
-        if (!window.userProfileService || typeof window.userProfileService.upsertUserProfile !== 'function') {
-            console.error('[BOOT] ❌ userProfileService není dostupný! Moduly se nenačetly správně.');
+    /**
+     * Normalizuje payload z registračního formuláře do jednotného formátu
+     */
+    function normalizeRegistrationPayload(formData, authUser) {
+        const userType = formData.userType || formData.type || 'person';
+        const normalized = {
+            uid: authUser?.uid || '',
+            type: userType,
+            provider: formData.provider || (authUser?.providerData?.[0]?.providerId === 'phone' ? 'cloudotp' : 'password+phone') || 'phone',
+            phoneNumber: authUser?.phoneNumber || formData.phoneNumber || formData.phone || '',
+            email: authUser?.email || formData.email || '',
+            consentAccepted: formData.consentAccepted !== undefined ? formData.consentAccepted : true,
+            consentAt: formData.consentAccepted ? new Date().toISOString() : null
+        };
+
+        if (userType === 'person') {
+            if (formData.firstName && formData.firstName.trim()) normalized.firstName = formData.firstName.trim();
+            if (formData.lastName && formData.lastName.trim()) normalized.lastName = formData.lastName.trim();
+            if (formData.birthDate && formData.birthDate.trim()) normalized.birthDate = formData.birthDate.trim();
+            normalized.name = `${formData.firstName || ''} ${formData.lastName || ''}`.trim() || 'Uživatel';
+        } else if (userType === 'company') {
+            if (formData.companyName && formData.companyName.trim()) normalized.companyName = formData.companyName.trim();
+            if (formData.ico && formData.ico.trim()) {
+                normalized.ico = formData.ico.trim().replace(/\s+/g, '').replace(/-/g, '');
+            }
+            if (formData.dic && formData.dic.trim()) normalized.dic = formData.dic.trim();
+            if (formData.businessType && formData.businessType.trim()) normalized.businessType = formData.businessType.trim();
+            if (formData.companyAddress && formData.companyAddress.trim()) normalized.companyAddress = formData.companyAddress.trim();
+            if (formData.businessDescription && formData.businessDescription.trim()) normalized.businessDescription = formData.businessDescription.trim();
+            normalized.name = (formData.companyName && formData.companyName.trim()) ? formData.companyName.trim() : 'Firma';
+        }
+
+        return normalized;
+    }
+
+    /**
+     * Uloží kompletní profil uživatele do Firestore
+     */
+    async function saveUserProfile(uid, payload) {
+        if (!uid) throw new Error('UID je povinný pro uložení profilu');
+        if (!window.firebaseDb) throw new Error('Firebase DB není dostupný');
+
+        try {
+            const { setDoc, doc, serverTimestamp, getDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+            
+            const rootData = {
+                uid: uid,
+                email: payload.email || '',
+                phoneNumber: payload.phoneNumber || payload.phone || '',
+                provider: payload.provider || 'phone',
+                type: payload.userType || payload.type || 'person',
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp()
+            };
+            
+            await setDoc(doc(window.firebaseDb, 'users', uid), rootData, { merge: true });
+            
+            const profileData = {
+                email: payload.email || '',
+                phone: payload.phoneNumber || payload.phone || '',
+                userType: payload.userType || payload.type || 'person',
+                name: payload.name || '',
+                balance: payload.balance || 1000,
+                plan: payload.plan || 'none',
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp()
+            };
+            
+            if (payload.firstName && payload.firstName.trim()) profileData.firstName = payload.firstName.trim();
+            if (payload.lastName && payload.lastName.trim()) profileData.lastName = payload.lastName.trim();
+            if (payload.birthDate && payload.birthDate.trim()) profileData.birthDate = payload.birthDate.trim();
+            
+            if (payload.companyName && payload.companyName.trim()) profileData.businessName = payload.companyName.trim();
+            if (payload.ico && payload.ico.trim()) profileData.businessIco = payload.ico.trim();
+            if (payload.dic && payload.dic.trim()) profileData.businessDic = payload.dic.trim();
+            if (payload.companyAddress && payload.companyAddress.trim()) profileData.businessAddress = payload.companyAddress.trim();
+            if (payload.businessType && payload.businessType.trim()) profileData.businessType = payload.businessType.trim();
+            if (payload.businessDescription && payload.businessDescription.trim()) profileData.businessDescription = payload.businessDescription.trim();
+            
+            if (payload.consentAccepted !== undefined) {
+                profileData.consentAccepted = payload.consentAccepted;
+                if (payload.consentAccepted) profileData.consentAt = serverTimestamp();
+            }
+            
+            await setDoc(doc(window.firebaseDb, 'users', uid, 'profile', 'profile'), profileData, { merge: true });
+            
+            const verifyRef = doc(window.firebaseDb, 'users', uid, 'profile', 'profile');
+            const verifySnap = await getDoc(verifyRef);
+            if (!verifySnap.exists()) {
+                throw new Error('Profil se nepodařilo ověřit po uložení');
+            }
+        } catch (error) {
+            console.error('[USER PROFILE SERVICE] ❌ Chyba při saveUserProfile:', error);
+            throw error;
         }
     }
+
+    /**
+     * Jednotná funkce pro uložení/aktualizaci profilu (pro hobby i firmu)
+     */
+    async function upsertUserProfile(uid, formData, authUser) {
+        console.log('[USER PROFILE SERVICE] 🔄 upsertUserProfile - jednotná funkce pro hobby i firmu', {
+            uid,
+            userType: formData?.userType || formData?.type,
+            hasAuthUser: !!authUser
+        });
+
+        const normalizedPayload = normalizeRegistrationPayload(formData, authUser);
+        console.log('[USER PROFILE SERVICE] ✅ Normalizovaný payload:', {
+            type: normalizedPayload.type,
+            name: normalizedPayload.name,
+            hasCompanyData: !!(normalizedPayload.companyName || normalizedPayload.ico),
+            hasPersonData: !!(normalizedPayload.firstName || normalizedPayload.lastName)
+        });
+
+        await saveUserProfile(uid, normalizedPayload);
+    }
+
+    /**
+     * Zajistí, že uživatel má profil v Firestore (fail-safe)
+     */
+    async function ensureUserProfile(uid, payload = null) {
+        if (!uid || !window.firebaseDb) return false;
+
+        try {
+            const { getDoc, setDoc, doc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+            
+            const userRef = doc(window.firebaseDb, 'users', uid);
+            const userSnap = await getDoc(userRef);
+            const profileRef = doc(window.firebaseDb, 'users', uid, 'profile', 'profile');
+            const profileSnap = await getDoc(profileRef);
+            
+            let created = false;
+            
+            if (!userSnap.exists()) {
+                await setDoc(userRef, {
+                    uid: uid,
+                    email: payload?.email || '',
+                    phoneNumber: payload?.phoneNumber || '',
+                    provider: payload?.provider || 'unknown',
+                    type: payload?.type || 'person',
+                    createdAt: serverTimestamp(),
+                    updatedAt: serverTimestamp()
+                }, { merge: true });
+                created = true;
+            }
+            
+            if (!profileSnap.exists()) {
+                const profileData = {
+                    email: payload?.email || '',
+                    phone: payload?.phoneNumber || payload?.phone || '',
+                    userType: payload?.userType || payload?.type || 'person',
+                    name: payload?.name || 'Uživatel',
+                    balance: 1000,
+                    plan: 'none',
+                    createdAt: serverTimestamp(),
+                    updatedAt: serverTimestamp()
+                };
+                
+                if (payload) {
+                    if (payload.firstName && payload.firstName.trim()) profileData.firstName = payload.firstName.trim();
+                    if (payload.lastName && payload.lastName.trim()) profileData.lastName = payload.lastName.trim();
+                    if (payload.birthDate && payload.birthDate.trim()) profileData.birthDate = payload.birthDate.trim();
+                    if (payload.companyName && payload.companyName.trim()) profileData.businessName = payload.companyName.trim();
+                    if (payload.ico && payload.ico.trim()) profileData.businessIco = payload.ico.trim();
+                    if (payload.dic && payload.dic.trim()) profileData.businessDic = payload.dic.trim();
+                    if (payload.companyAddress && payload.companyAddress.trim()) profileData.businessAddress = payload.companyAddress.trim();
+                    if (payload.businessType && payload.businessType.trim()) profileData.businessType = payload.businessType.trim();
+                    if (payload.businessDescription && payload.businessDescription.trim()) profileData.businessDescription = payload.businessDescription.trim();
+                }
+                
+                await setDoc(profileRef, profileData, { merge: true });
+                created = true;
+            }
+            
+            return created;
+        } catch (error) {
+            console.error('[USER PROFILE SERVICE] ❌ Chyba při ensureUserProfile:', error);
+            return false;
+        }
+    }
+
+    // Export do window pro globální použití
+    window.userProfileService = {
+        ensureUserProfile: ensureUserProfile,
+        saveUserProfile: saveUserProfile,
+        upsertUserProfile: upsertUserProfile,
+        normalizeRegistrationPayload: normalizeRegistrationPayload
+    };
+    
+    console.log('[BOOT] userProfileService loaded inline v auth.js:', {
+        ensureUserProfile: typeof ensureUserProfile,
+        saveUserProfile: typeof saveUserProfile,
+        upsertUserProfile: typeof upsertUserProfile,
+        normalizeRegistrationPayload: typeof normalizeRegistrationPayload
+    });
 })();
+// ============================================================================
+// KONEC INLINE USER PROFILE SERVICE
+// ============================================================================
 
 // Globální proměnné
 let authCurrentUser = null;
