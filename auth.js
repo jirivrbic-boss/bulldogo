@@ -1,7 +1,17 @@
 // Auth.js - Firebase Authentication funkcionality
+// ES modul s importy pro spolehlivé načítání služeb
 
-// Debug: Zkontrolovat, jestli se auth.js načítá
-// Auth.js se načítá - logy odstraněny
+// Import služeb (ES moduly)
+import { upsertUserProfile, ensureUserProfile, saveUserProfile, normalizeRegistrationPayload } from '/lib/userProfileService.js';
+import { ensureUserProfile as authEnsureUserProfile } from '/lib/authService.js';
+
+// Hard diagnostika při načtení
+console.log('[BOOT] auth.js loaded, services available:', {
+    upsertUserProfile: typeof upsertUserProfile,
+    ensureUserProfile: typeof ensureUserProfile,
+    saveUserProfile: typeof saveUserProfile,
+    normalizeRegistrationPayload: typeof normalizeRegistrationPayload
+});
 
 // Globální proměnné
 let authCurrentUser = null;
@@ -959,7 +969,7 @@ async function login(email, password) {
         if (window.authService && typeof window.authService.ensureUserProfile === 'function') {
             try {
                 console.log('[AUTH] 🔧 Kontroluji/zajišťuji profil uživatele po přihlášení...');
-                const profileCreated = await window.authService.ensureUserProfile(user);
+                const profileCreated = await authEnsureUserProfile(user);
                 if (profileCreated) {
                     console.log('[AUTH] ✅ Profil byl vytvořen/aktualizován po přihlášení');
                 }
@@ -3220,46 +3230,36 @@ function setupEventListeners() {
                 }
                 
                 // Použít jednotnou funkci upsertUserProfile (pro hobby i firmu)
-                if (window.userProfileService && typeof window.userProfileService.upsertUserProfile === 'function') {
-                    try {
-                        await window.userProfileService.upsertUserProfile(finalUser.uid, formDataForProfile, finalUser);
-                        console.log('[REGISTER] ✅ Profil uložen přes upsertUserProfile (jednotná funkce)');
-                        if (userType === 'company') {
-                            console.log('[company-register] ✅ firestore write successful');
-                        }
-                    } catch (profileServiceError) {
-                        console.error('[REGISTER] ❌ Firestore write failed přes upsertUserProfile:', profileServiceError);
-                        if (userType === 'company') {
-                            console.error('[company-register] ❌ firestore failed', {
-                                code: profileServiceError?.code,
-                                message: profileServiceError?.message,
-                                error: profileServiceError
-                            });
-                        }
-                        console.error('[REGISTER] ❌ Error details:', {
+                // DŮLEŽITÉ: upsertUserProfile musí být vždy dostupný (import z ES modulu)
+                if (typeof upsertUserProfile !== 'function') {
+                    throw new Error('upsertUserProfile není dostupný - chyba při importu modulu');
+                }
+                
+                try {
+                    await upsertUserProfile(finalUser.uid, formDataForProfile, finalUser);
+                    console.log('[REGISTER] ✅ Profil uložen přes upsertUserProfile (jednotná funkce)');
+                    if (userType === 'company') {
+                        console.log('[company-register] ✅ firestore write successful');
+                    }
+                } catch (profileServiceError) {
+                    console.error('[REGISTER] ❌ Firestore write failed přes upsertUserProfile:', profileServiceError);
+                    if (userType === 'company') {
+                        console.error('[company-register] ❌ firestore failed', {
                             code: profileServiceError?.code,
                             message: profileServiceError?.message,
-                            stack: profileServiceError?.stack,
-                            pathname: window.location.pathname
+                            error: profileServiceError
                         });
-                        // Zobrazit chybu uživateli
-                        const errorMsg = profileServiceError?.message || 'Nepodařilo se uložit profil do databáze.';
-                        showMessage(`Chyba při ukládání profilu: ${errorMsg}`, 'error');
-                        throw profileServiceError;
                     }
-                } else {
-                    // Fallback: použít saveUserProfile pokud upsertUserProfile není dostupný
-                    console.warn('[REGISTER] ⚠️ upsertUserProfile není dostupný, používám saveUserProfile');
-                    if (window.userProfileService && typeof window.userProfileService.saveUserProfile === 'function') {
-                        // Normalizovat payload pomocí normalizeRegistrationPayload
-                        const normalizedPayload = window.userProfileService.normalizeRegistrationPayload 
-                            ? window.userProfileService.normalizeRegistrationPayload(formDataForProfile, finalUser)
-                            : formDataForProfile;
-                        await window.userProfileService.saveUserProfile(finalUser.uid, normalizedPayload);
-                        console.log('[REGISTER] ✅ Profil uložen přes saveUserProfile (fallback)');
-                    } else {
-                        throw new Error('userProfileService není dostupný');
-                    }
+                    console.error('[REGISTER] ❌ Error details:', {
+                        code: profileServiceError?.code,
+                        message: profileServiceError?.message,
+                        stack: profileServiceError?.stack,
+                        pathname: window.location.pathname
+                    });
+                    // Zobrazit chybu uživateli
+                    const errorMsg = profileServiceError?.message || 'Nepodařilo se uložit profil do databáze.';
+                    showMessage(`Chyba při ukládání profilu: ${errorMsg}`, 'error');
+                    throw profileServiceError;
                 }
                 
                 console.log('👤 Aktualizuji displayName...');
@@ -3459,8 +3459,12 @@ function setupEventListeners() {
                                 console.log('[REGISTER] 🔄 Retry: Ukládám profil znovu...', { uid: finalUser.uid, payloadKeys: Object.keys(payload) });
                                 
                                 // Zkusit znovu uložit profil pomocí upsertUserProfile (jednotná funkce)
-                                if (window.userProfileService && typeof window.userProfileService.upsertUserProfile === 'function') {
-                                    await window.userProfileService.upsertUserProfile(finalUser.uid, payload, finalUser);
+                                // DŮLEŽITÉ: upsertUserProfile musí být vždy dostupný (import z ES modulu)
+                                if (typeof upsertUserProfile !== 'function') {
+                                    throw new Error('upsertUserProfile není dostupný - chyba při importu modulu');
+                                }
+                                
+                                await upsertUserProfile(finalUser.uid, payload, finalUser);
                                     showMessage('Profil úspěšně uložen!', 'success');
                                     retryBtn.remove();
                                     
@@ -3498,46 +3502,9 @@ function setupEventListeners() {
                                     
                                     // Odstranit flag registrace
                                     window._registrationInProgress = false;
-                                } else if (window.userProfileService && typeof window.userProfileService.saveUserProfile === 'function') {
-                                    // Fallback na saveUserProfile s normalizací
-                                    const normalizedPayload = window.userProfileService.normalizeRegistrationPayload 
-                                        ? window.userProfileService.normalizeRegistrationPayload(payload, finalUser)
-                                        : payload;
-                                    await window.userProfileService.saveUserProfile(finalUser.uid, normalizedPayload);
-                                    showMessage('Profil úspěšně uložen!', 'success');
-                                    retryBtn.remove();
-                                    
-                                    try {
-                                        sessionStorage.removeItem('pendingRegistrationPayload');
-                                    } catch (_) {}
-                                    
-                                    await new Promise(resolve => setTimeout(resolve, 500));
-                                    if (window.hashModal && typeof window.hashModal.close === 'function') {
-                                        window.hashModal.close();
-                                    } else {
-                                        closeAuthModal();
-                                    }
-                                    
-                                    if (typeof updateUI === 'function') {
-                                        try {
-                                            updateUI(finalUser);
-                                        } catch (uiError) {
-                                            console.warn('⚠️ Chyba při aktualizaci UI:', uiError);
-                                        }
-                                    }
-                                    
-                                    if (typeof window.afterLoginCallback === 'function') {
-                                        try {
-                                            window.afterLoginCallback();
-                                            window.afterLoginCallback = null;
-                                        } catch (callbackError) {
-                                            console.error('[AUTH] ❌ Chyba při volání afterLoginCallback:', callbackError);
-                                        }
-                                    }
-                                    
-                                    window._registrationInProgress = false;
                                 } else {
-                                    throw new Error('userProfileService není dostupný');
+                                    // upsertUserProfile musí být vždy dostupný (import z ES modulu)
+                                    throw new Error('upsertUserProfile není dostupný - chyba při importu modulu');
                                 }
                             } catch (retryError) {
                                 console.error('[REGISTER] ❌ Retry selhal:', retryError);
