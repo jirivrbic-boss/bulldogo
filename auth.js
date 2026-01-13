@@ -2880,19 +2880,25 @@ function setupEventListeners() {
                     return;
                 }
                 // Ověřit IČO pro firemní registraci (musí být již ověřeno před odesláním)
+                // DŮLEŽITÉ: Toto zastaví registraci PŘED vytvořením Auth uživatele
                 if (userType === 'company') {
+                    console.log('[company-register] 🔍 Kontrola IČO před odesláním OTP...');
                     if (!window.__icoVerified || window.__icoVerifiedValue !== ico) {
+                        console.warn('[company-register] ⚠️ IČO není ověřeno, zastavuji registraci PŘED Auth');
                         showMessage('Nejdříve musíte ověřit IČO tlačítkem "Ověřit".', 'error');
-                        return;
+                        return; // Zastavit registraci PŘED vytvořením Auth uživatele
                     }
                     // Dvojité ověření pro jistotu
+                    console.log('[company-register] 🔍 Dvojité ověření IČO přes ARES...');
                     const icoCheck = await validateICOWithARES(ico);
                     if (!icoCheck.ok) {
+                        console.error('[company-register] ❌ IČO ověření selhalo, zastavuji registraci PŘED Auth');
                         showMessage(icoCheck.reason || 'IČO se nepodařilo ověřit.', 'error');
                         window.__icoVerified = false;
                         toggleCompanyFormFields(true);
-                        return;
+                        return; // Zastavit registraci PŘED vytvořením Auth uživatele
                     }
+                    console.log('[company-register] ✅ IČO ověřeno, pokračuji v registraci');
                 }
                 if (!phone.startsWith('+') && !phone.startsWith('00') && !phone.startsWith('420')) {
                     showMessage('Telefon uveďte v mezinárodním formátu (např. +420...).', 'error');
@@ -3189,88 +3195,47 @@ function setupEventListeners() {
                     throw linkError;
                 }
 
-                // DŮLEŽITÉ: Použít centralizovanou službu pro uložení profilu
-                console.log('[REGISTER] 💾 Ukládám data do databáze přes userProfileService...');
-                // finalUser už je nastaven výše (z phoneUser po OTP verifikaci)
-                const normalizedIco = normalizeICO(ico || '');
+                // DŮLEŽITÉ: Použít JEDNOTNOU funkci pro uložení profilu (hobby i firma)
+                console.log('[REGISTER] 💾 Ukládám data do databáze přes upsertUserProfile (jednotná funkce pro hobby i firmu)...');
                 
-                // Příprava payload pro userProfileService
-                // STEJNĚ PRO HOBBY I FIRMY: základní struktura
-                const profilePayload = {
-                    email: email,
-                    phoneNumber: finalUser.phoneNumber || registrationPayload.phone || '',
+                // Připravit formData z registrationPayload (stejné pro hobby i firmu)
+                const formDataForProfile = {
+                    ...registrationPayload,
                     provider: 'password+phone',
-                    userType: userType,
-                    name: '', // Bude nastaveno níže podle typu
-                    consentAccepted: true,
-                    balance: 1000,
-                    plan: 'none'
+                    consentAccepted: true
                 };
                 
-                // Osobní údaje - HOBBY (funguje perfektně, NEMĚNIT)
-                if (userType === 'person') {
-                    console.log('[REGISTER] 📝 Přidávám osobní informace - firstName:', firstName, 'lastName:', lastName);
-                    if (firstName && firstName.trim()) profilePayload.firstName = firstName.trim();
-                    if (lastName && lastName.trim()) profilePayload.lastName = lastName.trim();
-                    if (birthDate && birthDate.trim()) profilePayload.birthDate = birthDate.trim();
-                    // Nastavit name stejně jako u hobby
-                    profilePayload.name = `${firstName || ''} ${lastName || ''}`.trim() || 'Uživatel';
-                } 
-                // Firemní údaje - FIRMA (aplikovat STEJNOU logiku jako hobby)
-                else if (userType === 'company') {
-                    console.log('[REGISTER] 📝 Přidávám firemní informace - companyName:', companyName, 'ico:', ico, 'normalizedIco:', normalizedIco);
-                    console.log('[REGISTER] 🔍 DEBUG - Typy hodnot:', {
-                        companyNameType: typeof companyName,
-                        companyNameValue: companyName,
-                        companyNameLength: companyName ? companyName.length : 0,
-                        icoType: typeof ico,
-                        icoValue: ico,
-                        normalizedIcoType: typeof normalizedIco,
-                        normalizedIcoValue: normalizedIco
+                // Instrumentace pro firmy
+                if (userType === 'company') {
+                    console.log('[company-register] 📦 submit payload:', {
+                        companyName: formDataForProfile.companyName,
+                        ico: formDataForProfile.ico,
+                        dic: formDataForProfile.dic,
+                        businessType: formDataForProfile.businessType,
+                        companyAddress: formDataForProfile.companyAddress,
+                        businessDescription: formDataForProfile.businessDescription
                     });
-                    // STEJNĚ JAKO U HOBBY: kontrolovat .trim() a ukládat pouze pokud není prázdný
-                    if (companyName && companyName.trim()) {
-                        profilePayload.companyName = companyName.trim();
-                        console.log('[REGISTER] ✅ companyName přidáno do payload:', profilePayload.companyName);
-                    } else {
-                        console.warn('[REGISTER] ⚠️ companyName je prázdný nebo undefined:', companyName);
-                    }
-                    if (normalizedIco && normalizedIco.trim()) {
-                        profilePayload.ico = normalizedIco.trim();
-                        console.log('[REGISTER] ✅ ico přidáno do payload:', profilePayload.ico);
-                    } else {
-                        console.warn('[REGISTER] ⚠️ normalizedIco je prázdný nebo undefined:', normalizedIco, '(původní ico:', ico, ')');
-                    }
-                    if (dic && dic.trim()) {
-                        profilePayload.dic = dic.trim();
-                        console.log('[REGISTER] ✅ dic přidáno do payload');
-                    }
-                    if (businessType && businessType.trim()) {
-                        profilePayload.businessType = businessType.trim();
-                        console.log('[REGISTER] ✅ businessType přidáno do payload');
-                    }
-                    if (companyAddress && companyAddress.trim()) {
-                        profilePayload.companyAddress = companyAddress.trim();
-                        console.log('[REGISTER] ✅ companyAddress přidáno do payload');
-                    }
-                    if (businessDescription && businessDescription.trim()) {
-                        profilePayload.businessDescription = businessDescription.trim();
-                        console.log('[REGISTER] ✅ businessDescription přidáno do payload');
-                    }
-                    // Nastavit name STEJNĚ jako u hobby (stejná logika)
-                    profilePayload.name = (companyName && companyName.trim()) ? companyName.trim() : 'Firma';
-                    console.log('[REGISTER] ✅ name nastaveno na:', profilePayload.name);
+                    console.log('[company-register] ✅ otp verified uid:', finalUser.uid);
+                    console.log('[company-register] 💾 writing firestore...');
                 }
                 
-                console.log('[REGISTER] 📦 Writing profile payload:', profilePayload);
-                
-                // Použít userProfileService pokud je dostupný, jinak fallback na přímý zápis
-                if (window.userProfileService && typeof window.userProfileService.saveUserProfile === 'function') {
+                // Použít jednotnou funkci upsertUserProfile (pro hobby i firmu)
+                if (window.userProfileService && typeof window.userProfileService.upsertUserProfile === 'function') {
                     try {
-                        await window.userProfileService.saveUserProfile(finalUser.uid, profilePayload);
-                        console.log('[REGISTER] ✅ Profil uložen přes userProfileService');
+                        await window.userProfileService.upsertUserProfile(finalUser.uid, formDataForProfile, finalUser);
+                        console.log('[REGISTER] ✅ Profil uložen přes upsertUserProfile (jednotná funkce)');
+                        if (userType === 'company') {
+                            console.log('[company-register] ✅ firestore write successful');
+                        }
                     } catch (profileServiceError) {
-                        console.error('[REGISTER] ❌ Firestore write failed přes userProfileService:', profileServiceError);
+                        console.error('[REGISTER] ❌ Firestore write failed přes upsertUserProfile:', profileServiceError);
+                        if (userType === 'company') {
+                            console.error('[company-register] ❌ firestore failed', {
+                                code: profileServiceError?.code,
+                                message: profileServiceError?.message,
+                                error: profileServiceError
+                            });
+                        }
                         console.error('[REGISTER] ❌ Error details:', {
                             code: profileServiceError?.code,
                             message: profileServiceError?.message,
@@ -3280,33 +3245,20 @@ function setupEventListeners() {
                         // Zobrazit chybu uživateli
                         const errorMsg = profileServiceError?.message || 'Nepodařilo se uložit profil do databáze.';
                         showMessage(`Chyba při ukládání profilu: ${errorMsg}`, 'error');
-                        // NENECHAT uživatele bez profilu - zkusit fallback
                         throw profileServiceError;
                     }
                 } else {
-                    // Fallback: přímý zápis (starý způsob)
-                    console.warn('[REGISTER] ⚠️ userProfileService není dostupný, používám fallback');
-                    const { setDoc, doc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
-                    
-                    try {
-                        await setDoc(doc(firebaseDb, 'users', finalUser.uid), {
-                            uid: finalUser.uid,
-                            email,
-                            phoneNumber: finalUser.phoneNumber || '',
-                            createdAt: serverTimestamp(),
-                            provider: 'password+phone',
-                            type: userType
-                        }, { merge: true });
-                        
-                        const profileData = { ...profilePayload };
-                        profileData.createdAt = serverTimestamp();
-                        profileData.updatedAt = serverTimestamp();
-                        
-                        await setDoc(doc(firebaseDb, 'users', finalUser.uid, 'profile', 'profile'), profileData, { merge: true });
-                        console.log('[REGISTER] ✅ Profil uložen přes fallback');
-                    } catch (fallbackError) {
-                        console.error('[REGISTER] ❌ Firestore write failed (fallback):', fallbackError);
-                        throw fallbackError;
+                    // Fallback: použít saveUserProfile pokud upsertUserProfile není dostupný
+                    console.warn('[REGISTER] ⚠️ upsertUserProfile není dostupný, používám saveUserProfile');
+                    if (window.userProfileService && typeof window.userProfileService.saveUserProfile === 'function') {
+                        // Normalizovat payload pomocí normalizeRegistrationPayload
+                        const normalizedPayload = window.userProfileService.normalizeRegistrationPayload 
+                            ? window.userProfileService.normalizeRegistrationPayload(formDataForProfile, finalUser)
+                            : formDataForProfile;
+                        await window.userProfileService.saveUserProfile(finalUser.uid, normalizedPayload);
+                        console.log('[REGISTER] ✅ Profil uložen přes saveUserProfile (fallback)');
+                    } else {
+                        throw new Error('userProfileService není dostupný');
                     }
                 }
                 
@@ -3506,9 +3458,9 @@ function setupEventListeners() {
                                 
                                 console.log('[REGISTER] 🔄 Retry: Ukládám profil znovu...', { uid: finalUser.uid, payloadKeys: Object.keys(payload) });
                                 
-                                // Zkusit znovu uložit profil
-                                if (window.userProfileService && typeof window.userProfileService.saveUserProfile === 'function') {
-                                    await window.userProfileService.saveUserProfile(finalUser.uid, payload);
+                                // Zkusit znovu uložit profil pomocí upsertUserProfile (jednotná funkce)
+                                if (window.userProfileService && typeof window.userProfileService.upsertUserProfile === 'function') {
+                                    await window.userProfileService.upsertUserProfile(finalUser.uid, payload, finalUser);
                                     showMessage('Profil úspěšně uložen!', 'success');
                                     retryBtn.remove();
                                     
@@ -3545,6 +3497,44 @@ function setupEventListeners() {
                                     }
                                     
                                     // Odstranit flag registrace
+                                    window._registrationInProgress = false;
+                                } else if (window.userProfileService && typeof window.userProfileService.saveUserProfile === 'function') {
+                                    // Fallback na saveUserProfile s normalizací
+                                    const normalizedPayload = window.userProfileService.normalizeRegistrationPayload 
+                                        ? window.userProfileService.normalizeRegistrationPayload(payload, finalUser)
+                                        : payload;
+                                    await window.userProfileService.saveUserProfile(finalUser.uid, normalizedPayload);
+                                    showMessage('Profil úspěšně uložen!', 'success');
+                                    retryBtn.remove();
+                                    
+                                    try {
+                                        sessionStorage.removeItem('pendingRegistrationPayload');
+                                    } catch (_) {}
+                                    
+                                    await new Promise(resolve => setTimeout(resolve, 500));
+                                    if (window.hashModal && typeof window.hashModal.close === 'function') {
+                                        window.hashModal.close();
+                                    } else {
+                                        closeAuthModal();
+                                    }
+                                    
+                                    if (typeof updateUI === 'function') {
+                                        try {
+                                            updateUI(finalUser);
+                                        } catch (uiError) {
+                                            console.warn('⚠️ Chyba při aktualizaci UI:', uiError);
+                                        }
+                                    }
+                                    
+                                    if (typeof window.afterLoginCallback === 'function') {
+                                        try {
+                                            window.afterLoginCallback();
+                                            window.afterLoginCallback = null;
+                                        } catch (callbackError) {
+                                            console.error('[AUTH] ❌ Chyba při volání afterLoginCallback:', callbackError);
+                                        }
+                                    }
+                                    
                                     window._registrationInProgress = false;
                                 } else {
                                     throw new Error('userProfileService není dostupný');
