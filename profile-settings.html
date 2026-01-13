@@ -2745,7 +2745,7 @@
             const businessFields = {
                 'businessName': userProfile?.companyName || company?.companyName || '',
                 'businessType': userProfile?.businessType || '',
-                'businessIco': userProfile?.businessIco || company?.ico || '',
+                'businessIco': userProfile?.businessIco || userProfile?.ico || company?.ico || '',
                 'businessDic': userProfile?.businessDic || company?.dic || '',
                 'businessAddress': userProfile?.businessAddress || company?.address || '',
                 'businessWebsite': userProfile?.businessWebsite || company?.website || '',

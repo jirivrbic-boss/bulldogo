@@ -3226,6 +3226,13 @@ function setupEventListeners() {
                         profileData.createdAt = serverTimestamp();
                         profileData.updatedAt = serverTimestamp();
                         
+                        // Mapovat ico na businessIco pro firmy (stejně jako v userProfileService)
+                        if (userType === 'company' && profileData.ico && !profileData.businessIco) {
+                            profileData.businessIco = profileData.ico;
+                            // Odstranit ico, aby se neukládalo do obou polí
+                            delete profileData.ico;
+                        }
+                        
                         await setDoc(doc(firebaseDb, 'users', finalUser.uid, 'profile', 'profile'), profileData, { merge: true });
                         console.log('[REGISTER] ✅ Profil uložen přes fallback');
                     } catch (fallbackError) {

@@ -526,7 +526,7 @@ function updateProfileInfo() {
         // Pro firmy zobrazit další údaje
         if (isCompany) {
             // IČ (pokud je vyplněno)
-            const ico = userProfile.businessIco || userProfile.company?.ico || '';
+            const ico = userProfile.businessIco || userProfile.ico || userProfile.company?.ico || '';
             if (ico) {
                 addAdditionalItem('fas fa-id-card', 'IČ', ico);
             }
