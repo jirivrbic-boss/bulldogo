@@ -519,6 +519,29 @@ function initAuth() {
     }, 1000);
 }
 
+// Funkce pro kontrolu věku - zda je osoba starší 18 let
+function isAtLeast18YearsOld(birthDateString) {
+    if (!birthDateString || !birthDateString.trim()) {
+        return false;
+    }
+    
+    const birthDate = new Date(birthDateString);
+    if (isNaN(birthDate.getTime())) {
+        return false;
+    }
+    
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    
+    // Pokud ještě nebyly narozeniny v tomto roce, odečíst 1 rok
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+    }
+    
+    return age >= 18;
+}
+
 // Funkce pro zablokování/odblokování polí při firemní registraci
 function toggleCompanyFormFields(disabled) {
     const companyNameEl = document.getElementById('companyName');
@@ -574,9 +597,28 @@ function setupRegistrationTypeSelection() {
                 toggleRequired(companyForm, false);
                 // Odblokovat všechna pole pro osobní registraci
                 toggleCompanyFormFields(false);
-                // Reset IČO verifikačního flagu
+                // Reset IČO verifikačního flagu a odblokovat IČO pole
                 window.__icoVerified = false;
                 window.__icoVerifiedValue = null;
+                const icoInput = document.getElementById('ico');
+                if (icoInput) {
+                    icoInput.readOnly = false;
+                    icoInput.style.backgroundColor = '';
+                    icoInput.style.cursor = '';
+                }
+                const icoStatusEl = document.getElementById('icoStatus');
+                if (icoStatusEl) {
+                    icoStatusEl.textContent = '';
+                }
+                
+                // Nastavit maximální datum narození na 18 let zpět od dneška
+                const birthDateInput = document.getElementById('birthDate');
+                if (birthDateInput) {
+                    const today = new Date();
+                    const maxDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+                    const maxDateStr = maxDate.toISOString().split('T')[0];
+                    birthDateInput.setAttribute('max', maxDateStr);
+                }
             } else if (type === 'company') {
                 // Zobrazení formuláře pro firmu
                 personForm.style.display = 'none';
@@ -590,9 +632,19 @@ function setupRegistrationTypeSelection() {
                 toggleRequired(companyForm, true);
                 // Zablokovat všechna pole kromě IČO pole (dokud není IČO ověřeno)
                 toggleCompanyFormFields(true);
-                // Reset IČO verifikačního flagu
+                // Reset IČO verifikačního flagu a odblokovat IČO pole
                 window.__icoVerified = false;
                 window.__icoVerifiedValue = null;
+                const icoInput = document.getElementById('ico');
+                if (icoInput) {
+                    icoInput.readOnly = false;
+                    icoInput.style.backgroundColor = '';
+                    icoInput.style.cursor = '';
+                }
+                const icoStatusEl = document.getElementById('icoStatus');
+                if (icoStatusEl) {
+                    icoStatusEl.textContent = '';
+                }
             }
             
             // Stav formulářů - logy odstraněny
@@ -1293,7 +1345,19 @@ function createAuthModal() {
                     <div class="form-group">
                         <div class="date-inline">
                             <label for="birthDate">Datum narození</label>
-                            <input type="date" id="birthDate" name="birthDate" required>
+                            <input type="date" id="birthDate" name="birthDate" required max="">
+                            <script>
+                                // Nastavit maximální datum na 18 let zpět od dneška
+                                (function() {
+                                    const today = new Date();
+                                    const maxDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+                                    const maxDateStr = maxDate.toISOString().split('T')[0];
+                                    const birthDateInput = document.getElementById('birthDate');
+                                    if (birthDateInput) {
+                                        birthDateInput.setAttribute('max', maxDateStr);
+                                    }
+                                })();
+                            </script>
                         </div>
                     </div>
                 </div>
@@ -1342,7 +1406,7 @@ function createAuthModal() {
                             flex-shrink: 0;
                         ">
                         <span>
-                            Registrací berete na vědomí zpracování osobních údajů dle <a href="terms.html" target="_blank" style="color: #f77c00; text-decoration: underline; font-weight: 600;">Zásad ochrany osobních údajů</a>.
+                            Registrací berete na vědomí zpracování osobních údajů dle <a href="soubory/gdpr.pdf" target="_blank" style="color: #f77c00; text-decoration: underline; font-weight: 600;">Zásad ochrany osobních údajů</a>.
                         </span>
                     </label>
                 </div>
@@ -2874,6 +2938,20 @@ function setupEventListeners() {
                     return;
                 }
                 
+                // Validace věku pro hobby uživatele (musí být minimálně 18 let)
+                if (userType === 'person') {
+                    const birthDate = (formData.get('birthDate') || '').toString().trim();
+                    if (!birthDate) {
+                        showMessage('Datum narození je povinné pro hobby registraci.', 'error');
+                        return;
+                    }
+                    
+                    if (!isAtLeast18YearsOld(birthDate)) {
+                        showMessage('Pro registraci hobby účtu musíte být starší 18 let.', 'error');
+                        return;
+                    }
+                }
+                
                 // Validace telefonu
                 if (!phone) {
                     showMessage('Telefon je povinný. Zadejte telefonní číslo.', 'error');
@@ -3166,6 +3244,16 @@ function setupEventListeners() {
                 // Osobní údaje - HOBBY (funguje perfektně, NEMĚNIT)
                 if (userType === 'person') {
                     console.log('[REGISTER] 📝 Přidávám osobní informace - firstName:', firstName, 'lastName:', lastName);
+                    
+                    // Validace věku pro hobby uživatele (musí být minimálně 18 let)
+                    if (!birthDate || !birthDate.trim()) {
+                        throw new Error('Datum narození je povinné pro hobby registraci.');
+                    }
+                    
+                    if (!isAtLeast18YearsOld(birthDate)) {
+                        throw new Error('Pro registraci hobby účtu musíte být starší 18 let.');
+                    }
+                    
                     if (firstName && firstName.trim()) profilePayload.firstName = firstName.trim();
                     if (lastName && lastName.trim()) profilePayload.lastName = lastName.trim();
                     if (birthDate && birthDate.trim()) profilePayload.birthDate = birthDate.trim();
@@ -3728,7 +3816,14 @@ function setupEventListeners() {
                     if (res.seat && companyAddressEl && !companyAddressEl.value && res.seat.text) {
                         companyAddressEl.value = res.seat.text;
                     }
-                    // Odblokovat všechna pole po úspěšném ověření
+                    // Zablokovat IČO pole - už nejde přepsat po ověření
+                    if (icoInput) {
+                        icoInput.readOnly = true;
+                        icoInput.disabled = false;
+                        icoInput.style.backgroundColor = '#f3f4f6';
+                        icoInput.style.cursor = 'not-allowed';
+                    }
+                    // Odblokovat ostatní pole po úspěšném ověření
                     toggleCompanyFormFields(false);
                     // Nastavit flag, že IČO je ověřeno
                     window.__icoVerified = true;
@@ -3752,6 +3847,83 @@ function setupEventListeners() {
                 btnVerifyICO.disabled = false;
                 btnVerifyICO.textContent = 'Ověřit';
             }
+        });
+    }
+
+    // Automatické vyhledání IČO při zadání názvu firmy
+    const companyNameEl = document.getElementById('companyName');
+    if (companyNameEl) {
+        let searchTimeout = null;
+        companyNameEl.addEventListener('input', async () => {
+            // Zrušit předchozí timeout
+            if (searchTimeout) {
+                clearTimeout(searchTimeout);
+            }
+            
+            const companyName = (companyNameEl.value || '').toString().trim();
+            const icoInput = document.getElementById('ico');
+            const statusEl = document.getElementById('icoStatus');
+            const activeTypeBtn = document.querySelector('.registration-type-btn.active');
+            const userType = activeTypeBtn ? activeTypeBtn.getAttribute('data-type') : 'person';
+            
+            // Pouze pro firemní registraci a pokud je IČO pole prázdné
+            if (userType !== 'company' || !companyName || !icoInput || icoInput.value.trim()) {
+                return;
+            }
+            
+            // Pokud je IČO již ověřené a read-only, nedělat nic
+            if (icoInput.readOnly) {
+                return;
+            }
+            
+            // Počkat 1 sekundu po zadání (debounce)
+            searchTimeout = setTimeout(async () => {
+                try {
+                    if (statusEl) {
+                        statusEl.style.color = '#6b7280';
+                        statusEl.textContent = 'Vyhledávám IČO...';
+                    }
+                    
+                    // Vyhledat firmu podle názvu přes HlídačStátu API
+                    const searchUrl = `https://api.hlidacstatu.cz/api/v2/dataset/firmy/hledat?dotaz=${encodeURIComponent(companyName)}&limit=1`;
+                    const response = await fetch(searchUrl, {
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data && data.Results && data.Results.length > 0) {
+                            const company = data.Results[0];
+                            const foundIco = company.ICO;
+                            const foundName = company.Jmeno;
+                            
+                            // Pokud se název shoduje (nebo je podobný), naplnit IČO
+                            if (foundIco && foundName && foundName.toLowerCase().includes(companyName.toLowerCase())) {
+                                const normalizedIco = normalizeICO(foundIco);
+                                if (normalizedIco && normalizedIco.length === 8) {
+                                    icoInput.value = normalizedIco;
+                                    if (statusEl) {
+                                        statusEl.style.color = '#6b7280';
+                                        statusEl.textContent = 'IČO nalezeno, ověřte prosím tlačítkem "Ověřit"';
+                                    }
+                                }
+                            }
+                        } else {
+                            if (statusEl) {
+                                statusEl.style.color = '#6b7280';
+                                statusEl.textContent = '';
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.warn('⚠️ Nepodařilo se vyhledat IČO podle názvu:', error);
+                    if (statusEl) {
+                        statusEl.textContent = '';
+                    }
+                }
+            }, 1000);
         });
     }
     
