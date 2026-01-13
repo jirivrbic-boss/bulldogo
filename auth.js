@@ -644,6 +644,15 @@ function setupRegistrationTypeSelection() {
                 if (icoStatusEl) {
                     icoStatusEl.textContent = '';
                 }
+                
+                // Zajistit, že companyName je vždy read-only při přepnutí na firmu
+                const companyNameEl = document.getElementById('companyName');
+                if (companyNameEl) {
+                    companyNameEl.readOnly = true;
+                    companyNameEl.style.backgroundColor = '#f3f4f6';
+                    companyNameEl.style.cursor = 'not-allowed';
+                    companyNameEl.value = ''; // Vymazat hodnotu při přepnutí
+                }
             }
             
             // Stav formulářů - logy odstraněny
@@ -1709,6 +1718,15 @@ function showAuthModal(type = 'login') {
         companyForm.style.display = 'none';
         companyForm.classList.add('hidden');
         companyForm.classList.remove('visible');
+        
+        // Zajistit, že companyName je vždy read-only při otevření registrace
+        const companyNameEl = modal.querySelector('#companyName');
+        if (companyNameEl) {
+            companyNameEl.readOnly = true;
+            companyNameEl.style.backgroundColor = '#f3f4f6';
+            companyNameEl.style.cursor = 'not-allowed';
+            companyNameEl.value = ''; // Vymazat hodnotu při otevření modalu
+        }
         
         // Zobrazit GDPR souhlas při registraci
         if (gdprConsent) {
@@ -3809,8 +3827,12 @@ function setupEventListeners() {
                         statusEl.textContent = 'IČ ověřeno ✓'; 
                     }
                     // Předvyplnit název/sídlo pokud jsou prázdné
-                    if (res.name && companyNameEl && !companyNameEl.value) {
+                    if (res.name && companyNameEl) {
                         companyNameEl.value = res.name;
+                        // Zajistit, že pole zůstane read-only i po vyplnění
+                        companyNameEl.readOnly = true;
+                        companyNameEl.style.backgroundColor = '#f3f4f6';
+                        companyNameEl.style.cursor = 'not-allowed';
                     }
                     if (res.seat && companyAddressEl && !companyAddressEl.value && res.seat.text) {
                         companyAddressEl.value = res.seat.text;
@@ -3824,6 +3846,12 @@ function setupEventListeners() {
                     }
                     // Odblokovat ostatní pole po úspěšném ověření
                     toggleCompanyFormFields(false);
+                    // Zajistit, že companyName zůstane read-only (může být ovlivněno toggleCompanyFormFields)
+                    if (companyNameEl) {
+                        companyNameEl.readOnly = true;
+                        companyNameEl.style.backgroundColor = '#f3f4f6';
+                        companyNameEl.style.cursor = 'not-allowed';
+                    }
                     // Nastavit flag, že IČO je ověřeno
                     window.__icoVerified = true;
                     window.__icoVerifiedValue = icoVal;
@@ -3850,6 +3878,38 @@ function setupEventListeners() {
     }
 
     // Pole "název firmy" je read-only - může ho vyplnit pouze systém při ověření IČO
+    // Zajistit, že pole je vždy read-only (bezpečnostní kontrola)
+    const companyNameEl = document.getElementById('companyName');
+    if (companyNameEl) {
+        // Nastavit read-only hned při inicializaci
+        companyNameEl.readOnly = true;
+        companyNameEl.style.backgroundColor = '#f3f4f6';
+        companyNameEl.style.cursor = 'not-allowed';
+        
+        // Přidat event listener, který zajistí, že pole zůstane read-only i při pokusu o změnu
+        companyNameEl.addEventListener('focus', function() {
+            this.readOnly = true;
+            this.style.backgroundColor = '#f3f4f6';
+            this.style.cursor = 'not-allowed';
+            this.blur(); // Okamžitě ztratit focus, aby uživatel nemohl psát
+        });
+        
+        // Kontrola při každé změně atributu - zajistit, že read-only zůstane
+        const observer = new MutationObserver(function(mutations) {
+            const el = companyNameEl;
+            if (el && !el.readOnly) {
+                el.readOnly = true;
+                el.style.backgroundColor = '#f3f4f6';
+                el.style.cursor = 'not-allowed';
+            }
+        });
+        observer.observe(companyNameEl, { 
+            attributes: true, 
+            attributeFilter: ['readonly', 'disabled'],
+            childList: false,
+            subtree: false
+        });
+    }
     
     // Přepínání mezi přihlášením a registrací
     const authSwitchBtn = document.querySelector('.auth-switch-btn');

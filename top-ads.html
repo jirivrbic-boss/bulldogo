@@ -263,7 +263,19 @@
                 </div>
 
                 <div class="selection-actions">
-                    <button class="btn btn-secondary" onclick="hideAdSelection()">
+                    <button class="btn btn-secondary" onclick="hideAdSelection()" style="
+                        padding: 16px 32px;
+                        background: white;
+                        border: 2px solid #e5e7eb;
+                        border-radius: 12px;
+                        font-size: 16px;
+                        font-weight: 600;
+                        color: #374151;
+                        cursor: pointer;
+                        transition: all 0.2s;
+                        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+                    " onmouseover="this.style.borderColor='#f77c00'; this.style.color='#f77c00'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(247, 124, 0, 0.15)';"
+                    onmouseout="this.style.borderColor='#e5e7eb'; this.style.color='#374151'; this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0, 0, 0, 0.08)';">
                         <i class="fas fa-arrow-left"></i>
                         Zpět k výběru
                     </button>
