@@ -3,6 +3,7 @@ import * as admin from "firebase-admin";
 import axios from "axios";
 import cors from "cors";
 import * as nodemailer from "nodemailer";
+import * as crypto from "crypto";
 
 admin.initializeApp();
 const corsHandler = cors({ origin: true });
