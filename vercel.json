@@ -2,12 +2,88 @@
   "outputDirectory": "public",
   "rewrites": [
     {
+      "source": "/services",
+      "destination": "/services.html"
+    },
+    {
+      "source": "/my-ads",
+      "destination": "/my-ads.html"
+    },
+    {
+      "source": "/ad-detail",
+      "destination": "/ad-detail.html"
+    },
+    {
+      "source": "/profile",
+      "destination": "/profile.html"
+    },
+    {
+      "source": "/profile-detail",
+      "destination": "/profile-detail.html"
+    },
+    {
+      "source": "/profile-settings",
+      "destination": "/profile-settings.html"
+    },
+    {
+      "source": "/profile-services",
+      "destination": "/profile-services.html"
+    },
+    {
+      "source": "/profile-ratings",
+      "destination": "/profile-ratings.html"
+    },
+    {
+      "source": "/profile-top",
+      "destination": "/profile-top.html"
+    },
+    {
+      "source": "/profile-plan",
+      "destination": "/profile-plan.html"
+    },
+    {
+      "source": "/packages",
+      "destination": "/packages.html"
+    },
+    {
+      "source": "/top-ads",
+      "destination": "/top-ads.html"
+    },
+    {
+      "source": "/chat",
+      "destination": "/chat.html"
+    },
+    {
       "source": "/create-ad",
       "destination": "/create-ad.html"
     },
     {
-      "source": "/create-ad.html",
-      "destination": "/create-ad.html"
+      "source": "/edit-ad",
+      "destination": "/edit-ad.html"
+    },
+    {
+      "source": "/dashboard",
+      "destination": "/dashboard.html"
+    },
+    {
+      "source": "/uzivatele",
+      "destination": "/uzivatele.html"
+    },
+    {
+      "source": "/inzeraty",
+      "destination": "/inzeraty.html"
+    },
+    {
+      "source": "/statistiky",
+      "destination": "/statistiky.html"
+    },
+    {
+      "source": "/nahlaseni",
+      "destination": "/nahlaseni.html"
+    },
+    {
+      "source": "/terms",
+      "destination": "/terms.html"
     },
     {
       "source": "/success",
