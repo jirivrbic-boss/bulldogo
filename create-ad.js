@@ -675,13 +675,14 @@
             // Resetovat display na none pro obrázek
             cropImage.style.display = 'none';
             
-            // Nastavit src a počkat na načtení obrázku
-            cropImage.onload = function() {
+            // Funkce pro inicializaci cropperu
+            const initCropper = () => {
                 // Skrýt loading spinner
                 if (cropLoading) {
                     cropLoading.style.display = 'none';
                 }
                 cropImage.style.display = 'block';
+                
                 // Zajistit, že předchozí instance je zničena
                 if (cropperInstance) {
                     cropperInstance.destroy();
@@ -690,28 +691,66 @@
                 
                 // Inicializovat cropper s fixním poměrem 4:3
                 setTimeout(() => {
-                    cropperInstance = new Cropper(cropImage, {
-                        aspectRatio: 4 / 3,
-                        viewMode: 1,
-                        dragMode: 'move',
-                        autoCropArea: 0.8,
-                        restore: false,
-                        guides: true,
-                        center: true,
-                        highlight: false,
-                        cropBoxMovable: true,
-                        cropBoxResizable: true,
-                        toggleDragModeOnDblclick: false,
-                        responsive: true,
-                        minContainerWidth: 300,
-                        minContainerHeight: 225
-                    });
-                    console.log('✅ Cropper initialized with 4:3 aspect ratio');
+                    try {
+                        cropperInstance = new Cropper(cropImage, {
+                            aspectRatio: 4 / 3,
+                            viewMode: 1,
+                            dragMode: 'move',
+                            autoCropArea: 0.8,
+                            restore: false,
+                            guides: true,
+                            center: true,
+                            highlight: false,
+                            cropBoxMovable: true,
+                            cropBoxResizable: true,
+                            toggleDragModeOnDblclick: false,
+                            responsive: true,
+                            minContainerWidth: 300,
+                            minContainerHeight: 225,
+                            ready: function() {
+                                console.log('✅ Cropper initialized with 4:3 aspect ratio');
+                                // Ujistit se, že loading je skrytý i po inicializaci
+                                if (cropLoading) {
+                                    cropLoading.style.display = 'none';
+                                }
+                            }
+                        });
+                    } catch (error) {
+                        console.error('❌ Chyba při inicializaci cropperu:', error);
+                        if (cropLoading) {
+                            cropLoading.style.display = 'none';
+                        }
+                    }
                 }, 100);
             };
             
-            // Nastavit src až po registraci onload handleru
+            // Nastavit onload handler
+            cropImage.onload = initCropper;
+            
+            // Přidat error handler
+            cropImage.onerror = function() {
+                console.error('❌ Chyba při načítání obrázku');
+                if (cropLoading) {
+                    cropLoading.style.display = 'none';
+                }
+                alert('Nepodařilo se načíst obrázek. Zkuste to znovu.');
+            };
+            
+            // Nastavit src až po registraci handlerů
             cropImage.src = e.target.result;
+            
+            // Pokud je obrázek už načtený (z cache), spustit initCropper okamžitě
+            if (cropImage.complete && cropImage.naturalWidth > 0) {
+                initCropper();
+            }
+            
+            // Timeout pro případ, že se onload nespustí (fallback)
+            setTimeout(() => {
+                if (cropImage.complete && cropImage.naturalWidth > 0 && !cropperInstance) {
+                    console.log('⚠️ Obrázek je načtený, ale onload se nespustil, inicializuji cropper...');
+                    initCropper();
+                }
+            }, 500);
         };
         reader.readAsDataURL(file);
     };
