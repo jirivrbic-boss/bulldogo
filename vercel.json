@@ -1,5 +1,127 @@
 {
   "outputDirectory": "public",
+  "redirects": [
+    {
+      "source": "/index.html",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/services.html",
+      "destination": "/services",
+      "permanent": true
+    },
+    {
+      "source": "/my-ads.html",
+      "destination": "/my-ads",
+      "permanent": true
+    },
+    {
+      "source": "/ad-detail.html",
+      "destination": "/ad-detail",
+      "permanent": true
+    },
+    {
+      "source": "/profile.html",
+      "destination": "/profile",
+      "permanent": true
+    },
+    {
+      "source": "/profile-detail.html",
+      "destination": "/profile-detail",
+      "permanent": true
+    },
+    {
+      "source": "/profile-settings.html",
+      "destination": "/profile-settings",
+      "permanent": true
+    },
+    {
+      "source": "/profile-services.html",
+      "destination": "/profile-services",
+      "permanent": true
+    },
+    {
+      "source": "/profile-ratings.html",
+      "destination": "/profile-ratings",
+      "permanent": true
+    },
+    {
+      "source": "/profile-top.html",
+      "destination": "/profile-top",
+      "permanent": true
+    },
+    {
+      "source": "/profile-plan.html",
+      "destination": "/profile-plan",
+      "permanent": true
+    },
+    {
+      "source": "/packages.html",
+      "destination": "/packages",
+      "permanent": true
+    },
+    {
+      "source": "/top-ads.html",
+      "destination": "/top-ads",
+      "permanent": true
+    },
+    {
+      "source": "/chat.html",
+      "destination": "/chat",
+      "permanent": true
+    },
+    {
+      "source": "/create-ad.html",
+      "destination": "/create-ad",
+      "permanent": true
+    },
+    {
+      "source": "/edit-ad.html",
+      "destination": "/edit-ad",
+      "permanent": true
+    },
+    {
+      "source": "/dashboard.html",
+      "destination": "/dashboard",
+      "permanent": true
+    },
+    {
+      "source": "/uzivatele.html",
+      "destination": "/uzivatele",
+      "permanent": true
+    },
+    {
+      "source": "/inzeraty.html",
+      "destination": "/inzeraty",
+      "permanent": true
+    },
+    {
+      "source": "/statistiky.html",
+      "destination": "/statistiky",
+      "permanent": true
+    },
+    {
+      "source": "/nahlaseni.html",
+      "destination": "/nahlaseni",
+      "permanent": true
+    },
+    {
+      "source": "/terms.html",
+      "destination": "/terms",
+      "permanent": true
+    },
+    {
+      "source": "/success.html",
+      "destination": "/success",
+      "permanent": true
+    },
+    {
+      "source": "/failed.html",
+      "destination": "/failed",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/services",
