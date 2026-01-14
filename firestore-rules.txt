@@ -34,6 +34,7 @@ service cloud.firestore {
     
     // Veřejné čtení všech dokumentů uživatelů i bez autentifikace (pro collectionGroup dotazy)
     // Toto je nutné pro collectionGroup("inzeraty") dotazy, které potřebují přístup k users dokumentům
+    // POZOR: Toto pravidlo pokrývá i reviews, ale explicitní pravidlo výše má prioritu
     match /users/{userId}/{document=**} {
       allow read: if true;
       allow write: if request.auth != null && request.auth.uid == userId;
@@ -58,10 +59,10 @@ service cloud.firestore {
     
     // ===== PRAVIDLA PRO RECENZE =====
     // DŮLEŽITÉ: Pro collectionGroup("reviews") dotazy musí být všechny cesty explicitně povoleny
-    // Recenze na profilu uživatele
+    // Recenze na profilu uživatele - MUSÍ BÝT PŘED OBECNÝM PRAVIDLEM /users/{userId}/{document=**}
     match /users/{userId}/reviews/{reviewId} {
-      allow read: if true;  // Veřejné čtení pro všechny (včetně vlastních)
-      allow create: if request.auth != null;
+      allow read: if true;  // Veřejné čtení pro všechny (včetně vlastních) - i bez přihlášení
+      allow create: if request.auth != null;  // Kdokoli přihlášený může psát recenze
       allow update: if request.auth != null && (request.auth.uid == resource.data.reviewerId || request.auth.uid == userId);
       allow delete: if request.auth != null && (request.auth.uid == resource.data.reviewerId || request.auth.uid == userId);
     }
