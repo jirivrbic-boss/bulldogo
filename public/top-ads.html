@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Topování inzerátů - BULLDOGO</title>
+    <meta name="description" content="Zvýrazněte svůj inzerát na BULLDOGO. Vyberte délku topování a získejte více zobrazení.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://bulldogo.cz/top-ads.html">
+    <meta name="theme-color" content="#ff6a00">
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="preload" as="style" href="styles.css" fetchpriority="high">
+    <link rel="preload" as="style" href="electric-border.css">
+    <link rel="icon" type="image/png" href="fotky/bulldogo-logo.png">
+    <link rel="apple-touch-icon" href="fotky/bulldogo-logo.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="BULLDOGO">
+    <meta property="og:title" content="Topování inzerátů - BULLDOGO">
+    <meta property="og:description" content="Zvýrazněte svůj inzerát pro vyšší viditelnost.">
+    <meta property="og:url" content="https://bulldogo.cz/top-ads.html">
+    <meta property="og:image" content="https://bulldogo.cz/fotky/bulldogo-logo.png">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="electric-border.css">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"></noscript>
+    <!-- Firebase SDK (centralizovaná inicializace) -->
+    <script type="module" src="firebase-init.js" defer></script>
+</head>
+<body>
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar">
+        <!-- Logo Section -->
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">B</div>
+                <span class="logo-text">
+                    <span class="logo-bull">ULL</span>
+                    <span class="logo-dogo">DOGO</span>
+                </span>
+            </div>
+            <div class="header-buttons">
+            </div>
+        </div>
+
+        <!-- Navigation Section -->
+        <div class="navigation-section">
+            <h3 class="nav-section-title">NAVIGACE</h3>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="index.html" class="nav-link">
+                        <i class="fas fa-home nav-icon"></i>
+                        <span class="nav-text">Domů</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="services.html" class="nav-link">
+                        <i class="fas fa-list-alt nav-icon"></i>
+                        <span class="nav-text">Služby</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="my-ads.html" class="nav-link">
+                        <i class="fas fa-user nav-icon"></i>
+                        <span class="nav-text">Mé inzeráty</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="index.html#features" class="nav-link">
+                        <i class="fas fa-info-circle nav-icon"></i>
+                        <span class="nav-text">O nás</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="index.html#contact" class="nav-link">
+                        <i class="fas fa-envelope nav-icon"></i>
+                        <span class="nav-text">Kontakt</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="chat.html" class="nav-link">
+                        <i class="fas fa-comment-alt nav-icon"></i>
+                        <span class="nav-text">Chat</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="top-ads.html" class="nav-link active">
+                        <i class="fas fa-fire nav-icon"></i>
+                        <span class="nav-text">Topování</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="packages.html" class="nav-link">
+                        <i class="fas fa-box nav-icon"></i>
+                        <span class="nav-text">Balíčky</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Auth Buttons Section (shown when not logged in) -->
+        <div class="auth-section" id="authSection">
+            <button class="btn-login" onclick="showAuthModal('login')">
+                <i class="fas fa-sign-in-alt"></i>
+                <span>Přihlášení</span>
+            </button>
+            <button class="btn-register" onclick="showAuthModal('register')">
+                <i class="fas fa-user-plus"></i>
+                <span>Registrace</span>
+            </button>
+        </div>
+
+        <!-- User Profile Section (shown when logged in) -->
+        <div class="user-profile-section" id="userProfileSection" style="display: none;">
+            <button class="btn-profile" onclick="window.location.href='profile.html'">
+                <i class="fas fa-user-circle"></i>
+                <span>Profil</span>
+            </button>
+            <button class="btn-logout" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Odhlásit se</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Mobile Menu Button -->
+    <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Sidebar Toggle Button (for collapsed state) -->
+    <button class="sidebar-toggle-btn" onclick="toggleSidebar()" style="display: none;">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Main Content Wrapper -->
+    <div class="main-content">
+        <!-- Hero Section (sjednocený obdélník) -->
+        <section class="page-hero">
+            <div class="container">
+                <div class="page-hero-card">
+                    <div class="page-hero-inner">
+                        <h2 class="services-title"><span class="title-text">Topování inzerátů</span><span class="title-accent"></span></h2>
+                        <p class="page-hero-subtitle">Zvýrazněte svůj inzerát a získejte více zákazníků</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Top Ads Pricing Section -->
+        <section class="top-ads-pricing">
+            <div class="container">
+                <div class="pricing-header">
+                    <h2 class="section-title">Ceník topování</h2>
+                    <p class="section-subtitle">Vyberte si délku topování, která vám vyhovuje</p>
+                </div>
+
+                <div class="pricing-grid">
+                    <!-- 1 den -->
+                    <div class="pricing-card">
+                        <div class="pricing-header">
+                            <h2 style="font-size: 32px; font-weight: 800; color: #111827; margin: 0 0 8px 0;">Základní</h2>
+                            <p style="font-size: 18px; color: #6b7280; margin: 0 0 12px 0;">1 den</p>
+                            <div style="background: rgba(247,124,0,0.1); padding: 8px 16px; border-radius: 8px; margin-bottom: 16px;">
+                                <p style="font-size: 14px; color: #f77c00; font-weight: 600; margin: 0;">
+                                    <i class="fas fa-info-circle"></i> Nejkratší varianta
+                                </p>
+                            </div>
+                            <div class="pricing-price">
+                                <span class="price">19</span>
+                                <span class="currency">Kč</span>
+                            </div>
+                        </div>
+                        <div class="pricing-features">
+                            <ul>
+                                <li><i class="fas fa-check"></i> TOP odznak u inzerátu</li>
+                                <li><i class="fas fa-check"></i> Zlatý rámeček kolem inzerátu</li>
+                                <li><i class="fas fa-check"></i> Zvýraznění v seznamu a v kategorii</li>
+                                <li><i class="fas fa-check"></i> Ideální pro rychlé jednorázové zvýšení viditelnosti</li>
+                            </ul>
+                        </div>
+                        <button class="btn-pricing" data-duration="1" data-price="19">
+                            <i class="fas fa-shopping-cart"></i>
+                            Vybrat
+                        </button>
+                    </div>
+
+                    <!-- 1 týden -->
+                    <div class="pricing-card featured">
+                        <div class="pricing-header">
+                            <h2 style="font-size: 32px; font-weight: 800; color: #111827; margin: 0 0 8px 0;">Pokročilé</h2>
+                            <p style="font-size: 18px; color: #6b7280; margin: 0 0 12px 0;">1 týden</p>
+                            <div style="background: linear-gradient(135deg, rgba(247,124,0,0.15) 0%, rgba(253,240,2,0.15) 100%); padding: 10px 16px; border-radius: 8px; margin-bottom: 16px; border: 1px solid rgba(247,124,0,0.3);">
+                                <p style="font-size: 14px; font-weight: 700; margin: 0; color: #c45a00;">
+                                    <i class="fas fa-piggy-bank"></i>
+                                    Ušetříte 64 Kč vs. denní tarif
+                                </p>
+                            </div>
+                            <div class="pricing-price">
+                                <span class="price">69</span>
+                                <span class="currency">Kč</span>
+                            </div>
+                        </div>
+                        <div class="pricing-features">
+                            <ul>
+                                <li><i class="fas fa-check"></i> TOP odznak u inzerátu</li>
+                                <li><i class="fas fa-check"></i> Zlatý rámeček kolem inzerátu</li>
+                                <li><i class="fas fa-check"></i> Zvýraznění v seznamu a v kategorii</li>
+                                <li><i class="fas fa-check"></i> 7 dní topování</li>
+                            </ul>
+                        </div>
+                        <button class="btn-pricing" data-duration="7" data-price="69">
+                            <i class="fas fa-shopping-cart"></i>
+                            Vybrat
+                        </button>
+                    </div>
+
+                    <!-- 1 měsíc -->
+                    <div class="pricing-card">
+                        <div class="pricing-header">
+                            <h2 style="font-size: 32px; font-weight: 800; color: #111827; margin: 0 0 8px 0;">Premium</h2>
+                            <p style="font-size: 18px; color: #6b7280; margin: 0 0 12px 0;">1 měsíc</p>
+                            <div style="background: linear-gradient(135deg, rgba(247,124,0,0.15) 0%, rgba(253,240,2,0.15) 100%); padding: 10px 16px; border-radius: 8px; margin-bottom: 16px; border: 1px solid rgba(247,124,0,0.3);">
+                                <p style="font-size: 14px; font-weight: 700; margin: 0; color: #c45a00;">
+                                    <i class="fas fa-piggy-bank"></i>
+                                    Ušetříte 391 Kč vs. denní tarif
+                                </p>
+                            </div>
+                            <div class="pricing-price">
+                                <span class="price">179</span>
+                                <span class="currency">Kč</span>
+                            </div>
+                        </div>
+                        <div class="pricing-features">
+                            <ul>
+                                <li><i class="fas fa-check"></i> TOP odznak u inzerátu</li>
+                                <li><i class="fas fa-check"></i> Zlatý rámeček kolem inzerátu</li>
+                                <li><i class="fas fa-check"></i> Zvýraznění v seznamu a v kategorii</li>
+                                <li><i class="fas fa-check"></i> 30 dní topování</li>
+                            </ul>
+                        </div>
+                        <button class="btn-pricing" data-duration="30" data-price="179">
+                            <i class="fas fa-shopping-cart"></i>
+                            Vybrat
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Ad Selection Section -->
+        <section class="ad-selection" id="adSelection" style="display: none;">
+            <div class="container">
+                <div class="selection-header">
+                    <h2 class="section-title">Vyberte inzerát k topování</h2>
+                    <p class="section-subtitle">Vyberte inzerát, který chcete zvýraznit</p>
+                </div>
+
+                <!-- Použij stejné karty jako "Mé inzeráty" -->
+                <div class="ads-grid" id="adsList">
+                    <!-- Ads will be loaded here -->
+                </div>
+
+                <div class="selection-actions">
+                    <button class="btn btn-secondary" onclick="hideAdSelection()">
+                        <i class="fas fa-arrow-left"></i>
+                        Zpět k výběru
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Payment Section -->
+        <section class="payment-section" id="paymentSection" style="display: none; padding: 60px 0; background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);">
+            <div class="container" style="max-width: 700px;">
+                <!-- Hlavička s gradientem -->
+                <div style="text-align: center; margin-bottom: 40px;">
+                    <div style="
+                        display: inline-block;
+                        padding: 8px 20px;
+                        background: linear-gradient(135deg, #f77c00 0%, #fdf002 100%);
+                        border-radius: 20px;
+                        margin-bottom: 16px;
+                    ">
+                        <span style="font-size: 14px; font-weight: 700; color: #111827; text-transform: uppercase; letter-spacing: 1px;">
+                            <i class="fas fa-fire"></i> Objednávka
+                        </span>
+                    </div>
+                    <h2 style="font-size: 32px; font-weight: 700; color: #111827; margin-bottom: 12px;">Dokončení objednávky</h2>
+                    <p style="font-size: 16px; color: #6b7280;">Dokončete platbu pro aktivaci topování</p>
+                </div>
+
+                <!-- Moderní karta se shrnutím -->
+                <div style="
+                    background: white;
+                    border-radius: 24px;
+                    padding: 32px;
+                    box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+                    margin-bottom: 24px;
+                    border: 1px solid #f3f4f6;
+                ">
+                    <h3 style="font-size: 20px; font-weight: 700; color: #111827; margin-bottom: 24px; display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-file-invoice" style="color: #f77c00;"></i>
+                        Shrnutí objednávky
+                    </h3>
+                    
+                    <div style="space-y: 16px;">
+                        <!-- Inzerát -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: #f9fafb; border-radius: 12px; margin-bottom: 12px;">
+                            <span style="font-size: 15px; color: #6b7280; font-weight: 500;">
+                                <i class="fas fa-bullhorn" style="color: #f77c00; margin-right: 8px;"></i>
+                                Inzerát
+                            </span>
+                            <span style="font-size: 16px; font-weight: 700; color: #111827; text-align: right; margin-left: 12px;" id="selectedAdTitle">-</span>
+                        </div>
+                        
+                        <!-- Délka topování -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: #f9fafb; border-radius: 12px; margin-bottom: 12px;">
+                            <span style="font-size: 15px; color: #6b7280; font-weight: 500;">
+                                <i class="fas fa-calendar-day" style="color: #f77c00; margin-right: 8px;"></i>
+                                Délka topování
+                            </span>
+                            <span style="font-size: 15px; color: #111827;" id="selectedDuration">-</span>
+                        </div>
+                        
+                        <!-- Cena - zvýrazněná -->
+                        <div style="
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            padding: 20px;
+                            background: linear-gradient(135deg, rgba(247,124,0,0.1) 0%, rgba(253,240,2,0.1) 100%);
+                            border-radius: 12px;
+                            border: 2px solid #f77c00;
+                            margin-top: 20px;
+                        ">
+                            <span style="font-size: 18px; color: #111827; font-weight: 700;">
+                                <i class="fas fa-credit-card" style="color: #f77c00; margin-right: 8px;"></i>
+                                Celková cena
+                            </span>
+                            <span style="
+                                font-size: 28px;
+                                font-weight: 800;
+                                background: linear-gradient(135deg, #f77c00 0%, #fdf002 100%);
+                                -webkit-background-clip: text;
+                                -webkit-text-fill-color: transparent;
+                                background-clip: text;
+                                text-align: right;
+                                margin-left: 12px;
+                            " id="totalPrice">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tlačítka -->
+                <div class="payment-actions" style="display: flex; gap: 16px; margin-top: 32px;">
+                    <button onclick="hidePayment()" style="
+                        flex: 1;
+                        padding: 16px 32px;
+                        background: white;
+                        border: 2px solid #e5e7eb;
+                        border-radius: 12px;
+                        font-size: 16px;
+                        font-weight: 600;
+                        color: #6b7280;
+                        cursor: pointer;
+                        transition: all 0.2s;
+                    " onmouseover="this.style.borderColor='#9ca3af'; this.style.color='#111827';"
+                    onmouseout="this.style.borderColor='#e5e7eb'; this.style.color='#6b7280';">
+                        <i class="fas fa-arrow-left"></i> Zpět
+                    </button>
+                    
+                    <button onclick="processPayment()" style="
+                        flex: 2;
+                        padding: 18px 40px;
+                        background: linear-gradient(135deg, #f77c00 0%, #fdf002 100%);
+                        border: none;
+                        border-radius: 12px;
+                        font-size: 18px;
+                        font-weight: 700;
+                        color: #111827;
+                        cursor: pointer;
+                        box-shadow: 0 4px 16px rgba(247,124,0,0.3);
+                        transition: all 0.2s;
+                    " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 24px rgba(247,124,0,0.4)';"
+                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 16px rgba(247,124,0,0.3)';">
+                        <i class="fas fa-lock"></i> Zaplatit bezpečně
+                    </button>
+                </div>
+                
+                <!-- Bezpečnostní informace -->
+                <div style="text-align: center; margin-top: 24px; color: #9ca3af; font-size: 13px;">
+                    <i class="fas fa-shield-alt" style="color: #f77c00;"></i>
+                    Platba je zabezpečená SSL šifrováním
+                </div>
+            </div>
+        </section>
+
+        <!-- Success Section -->
+        <section class="success-section" id="successSection" style="display: none;">
+            <div class="container">
+                <div class="success-content">
+                    <div class="success-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h2 class="success-title">Platba úspěšná!</h2>
+                    <p class="success-message">Vaše topování bylo aktivováno. Inzerát je nyní zvýrazněn.</p>
+                    <div class="success-actions">
+                        <button class="btn btn-primary" onclick="window.location.href='my-ads.html'">
+                            <i class="fas fa-list"></i>
+                            Zobrazit mé inzeráty
+                        </button>
+                        <button class="btn btn-secondary" onclick="resetTopAds()">
+                            <i class="fas fa-plus"></i>
+                            Topovat další inzerát
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="container">
+                <div class="footer-content">
+                    <div class="footer-section">
+                        <h3>BULLDOGO</h3>
+                        <p>Profesionální služby pro každého. Spojujeme zákazníky s kvalifikovanými profesionály.</p>
+                    </div>
+                    <div class="footer-section">
+                        <h3>Rychlé odkazy</h3>
+                        <ul>
+                            <li><a href="index.html">Domů</a></li>
+                            <li><a href="services.html">Služby</a></li>
+                            <li><a href="my-ads.html">Mé inzeráty</a></li>
+                            <li><a href="top-ads.html">Topování</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-section">
+                        <h3>Důležité odkazy</h3>
+                        <ul>
+                            <li><a href="#" onclick="return false;" style="cursor: default; text-decoration: none; color: inherit;">Cookies</a></li>
+                            <li><a href="#" onclick="return false;" style="cursor: default; text-decoration: none; color: inherit;">GDPR</a></li>
+                            <li><a href="soubory/podminky.pdf" target="_blank">VOP</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-section">
+                        <h3>Kontakt</h3>
+                        <p><i class="fas fa-phone"></i> +420 605 121 023</p>
+                        <p><a href="https://wa.me/message/KHLC3RTZYZRFE1" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: none;"><i class="fab fa-whatsapp"></i> WhatsApp</a></p>
+                        <p><i class="fas fa-envelope"></i> support@bulldogo.cz</p>
+                    </div>
+                </div>
+                <div class="footer-bottom">
+                    <p>&copy; 2026 BULLDOGO. Všechna práva vyhrazena.</p>
+                    <p>Vytvořilo <a href="https://www.wloom.eu" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: underline;">Kreativní Studio Wloom</a></p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Auth Modal je vytvářen dynamicky v auth.js (createAuthModal) -->
+
+    <script src="script.js?v=2025-12-16-1" defer></script>
+    <script src="auth.js?v=2025-12-16-1" defer></script>
+    <script src="top-ads.js?v=2025-12-16-1" defer></script>
+    <script>
+        // Safeguard: zajisti funkční přihlášení/registraci/chat i na této stránce
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                const btnLogin = document.querySelector('.auth-section .btn-login');
+                const btnRegister = document.querySelector('.auth-section .btn-register');
+                const chatLink = document.querySelector('.nav-menu a[href="chat.html"]');
+                if (btnLogin) btnLogin.addEventListener('click', (e) => { e.preventDefault(); if (typeof showAuthModal === 'function') showAuthModal('login'); });
+                if (btnRegister) btnRegister.addEventListener('click', (e) => { e.preventDefault(); if (typeof showAuthModal === 'function') showAuthModal('register'); });
+                if (chatLink) chatLink.addEventListener('click', (e) => { e.preventDefault(); window.location.href = 'chat.html'; });
+            } catch (_) {}
+        });
+    </script>
+</body>
+</html>

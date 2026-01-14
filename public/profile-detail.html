@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Profil uživatele - Bulldogo</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"></noscript>
+    
+    <noscript><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"></noscript>"></noscript>>
+    <!-- Mailchimp popup (newsletter) -->
+    <script>
+        window.addEventListener('load', function() {
+            if (!document.getElementById('mcjs')) {
+                !function(c,h,i,m,p){m=c.createElement(h),p=c.getElementsByTagName(h)[0],m.async=1,m.src=i,p.parentNode.insertBefore(m,p)}(document,"script","https://chimpstatic.com/mcjs-connected/js/users/e223755f97b06a0750d885407/971d5b572a7403c313f3aacc9.js");
+            }
+        });
+    </script>
+    
+    <style>
+        /* Override styles to make profile content full width */
+        .ad-detail-main {
+            width: 100% !important;
+            max-width: none !important;
+        }
+        
+        .ad-detail-right {
+            width: 100% !important;
+            max-width: none !important;
+        }
+        
+        .ad-title-section,
+        .ad-meta-section,
+        .ad-description-section,
+        .ad-contact-section,
+        .ad-actions {
+            width: 100% !important;
+            max-width: none !important;
+        }
+        
+        .ad-detail-content {
+            width: 100% !important;
+            max-width: none !important;
+        }
+        
+        /* Start Chat Button Styles */
+        #startChatBtn {
+            transition: all 0.3s ease;
+            transform: scale(1);
+            opacity: 1 !important;
+            visibility: visible !important;
+            display: inline-flex !important;
+            background-color: #ffd700 !important;
+            color: white !important;
+        }
+        
+        #startChatBtn i,
+        #startChatBtn span {
+            color: white !important;
+        }
+
+        #startChatBtn:hover {
+            transform: scale(1.05) !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+            display: inline-flex !important;
+            background-color: #ffed4e !important;
+            color: white !important;
+        }
+        
+        #startChatBtn:hover i,
+        #startChatBtn:hover span {
+            color: white !important;
+        }
+        
+        /* Back Button Styles */
+        .back-btn {
+            transition: all 0.3s ease;
+            transform: scale(1);
+            opacity: 1 !important;
+            visibility: visible !important;
+            display: inline-flex !important;
+            background: linear-gradient(135deg, #f77c00 0%, #fdf002 100%) !important;
+            color: white !important;
+            padding: 10px 32px !important;
+            border-radius: 10px !important;
+            font-size: 0.95rem !important;
+            font-weight: 600 !important;
+            gap: 8px !important;
+            min-height: auto !important;
+            height: auto !important;
+            line-height: 1.4 !important;
+        }
+        
+        .back-btn i,
+        .back-btn span {
+            color: white !important;
+        }
+
+        .back-btn:hover {
+            transform: scale(1.05) !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+            display: inline-flex !important;
+            background: linear-gradient(135deg, #e66a00 0%, #fdf002 100%) !important;
+            color: white !important;
+        }
+        
+        .back-btn:hover i,
+        .back-btn:hover span {
+            color: white !important;
+        }
+        
+        /* Ad Title Styles */
+        .ad-title {
+            font-size: 1.3rem !important;
+            font-weight: 700 !important;
+        }
+        
+        /* Category Icons Styles */
+        .ad-category {
+            background: #f88900 !important;
+            color: white !important;
+            padding: 0.2rem 0.6rem !important;
+            border-radius: 12px !important;
+            font-size: 0.8rem !important;
+            font-weight: 500 !important;
+        }
+        
+        /* Profile Chat Button Styles */
+        .profile-chat-section {
+            margin-top: 20px !important;
+            padding: 15px 0 !important;
+        }
+        
+        .profile-chat-btn {
+            width: 100% !important;
+            padding: 12px 20px !important;
+            font-size: 1rem !important;
+            font-weight: 600 !important;
+            border-radius: 10px !important;
+            background: linear-gradient(135deg, #f77c00 0%, #fdf002 100%) !important;
+            color: white !important;
+            border: none !important;
+            cursor: pointer !important;
+            transition: all 0.3s ease !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 8px !important;
+        }
+        
+        .profile-chat-btn:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 6px 20px rgba(247, 124, 0, 0.4) !important;
+            background: linear-gradient(135deg, #e66a00 0%, #fdf002 100%) !important;
+        }
+        
+        .profile-chat-btn:active {
+            transform: translateY(0) !important;
+            box-shadow: 0 2px 8px rgba(247, 124, 0, 0.3) !important;
+        }
+        
+        .profile-chat-btn i {
+            font-size: 1.1rem !important;
+            color: white !important;
+        }
+    </style>
+    
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getFirestore, initializeFirestore } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        
+        // Firebase konfigurace
+        const firebaseConfig = {
+            apiKey: "AIzaSyA1FEmsY458LLKQLGcUaOVXsYr3Ii55QeQ",
+            authDomain: "inzerio-inzerce.firebaseapp.com",
+            projectId: "inzerio-inzerce",
+            storageBucket: "inzerio-inzerce.firebasestorage.app",
+            messagingSenderId: "262039290071",
+            appId: "1:262039290071:web:30af0eb1c65cd75e307092",
+            measurementId: "G-7VD0ZE08M3"
+        };
+        
+        // Inicializace Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        let db;
+        try {
+            // Safari/localhost fix: vynutit long polling a vypnout fetch streams
+            db = initializeFirestore(app, { experimentalForceLongPolling: true, useFetchStreams: false });
+        } catch (e) {
+            db = getFirestore(app);
+        }
+        
+        // Export pro globální použití
+        window.firebaseApp = app;
+        window.firebaseAuth = auth;
+        window.firebaseDb = db;
+    </script>
+</head>
+<body>
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar">
+        <!-- Logo Section -->
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">B</div>
+                <span class="logo-text">
+                    <span class="logo-bull">ULL</span>
+                    <span class="logo-dogo">DOGO</span>
+                </span>
+            </div>
+            <div class="header-buttons">
+            </div>
+        </div>
+
+        <!-- Navigation Section -->
+        <div class="navigation-section">
+            <h3 class="nav-section-title">NAVIGACE</h3>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="index.html" class="nav-link">
+                        <i class="fas fa-home nav-icon"></i>
+                        <span class="nav-text">Domů</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="services.html" class="nav-link">
+                        <i class="fas fa-list-alt nav-icon"></i>
+                        <span class="nav-text">Služby</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="my-ads.html" class="nav-link">
+                        <i class="fas fa-user nav-icon"></i>
+                        <span class="nav-text">Mé inzeráty</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="index.html#features" class="nav-link">
+                        <i class="fas fa-info-circle nav-icon"></i>
+                        <span class="nav-text">O nás</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="index.html#contact" class="nav-link">
+                        <i class="fas fa-envelope nav-icon"></i>
+                        <span class="nav-text">Kontakt</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="chat.html" class="nav-link">
+                        <i class="fas fa-comment-alt nav-icon"></i>
+                        <span class="nav-text">Chat</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="top-ads.html" class="nav-link">
+                        <i class="fas fa-fire nav-icon"></i>
+                        <span class="nav-text">Topování</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="packages.html" class="nav-link">
+                        <i class="fas fa-box nav-icon"></i>
+                        <span class="nav-text">Balíčky</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Auth Buttons Section (shown when not logged in) -->
+        <div class="auth-section" id="authSection">
+            <button class="btn-login" onclick="showAuthModal('login')">
+                <i class="fas fa-sign-in-alt"></i>
+                <span>Přihlášení</span>
+            </button>
+            <button class="btn-register" onclick="showAuthModal('register')">
+                <i class="fas fa-user-plus"></i>
+                <span>Registrace</span>
+            </button>
+        </div>
+
+        <!-- User Profile Section (shown when logged in) -->
+        <div class="user-profile-section" id="userProfileSection" style="display: none;">
+            <button class="btn-profile" onclick="window.location.href='profile.html'">
+                <i class="fas fa-user-circle"></i>
+                <span>Profil</span>
+            </button>
+            <button class="btn-logout" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Odhlásit se</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Mobile Menu Button -->
+    <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Sidebar Toggle Button (when collapsed) -->
+    <button class="sidebar-toggle-btn" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Main Content Wrapper -->
+    <div class="main-content">
+        <!-- Profile Detail Content -->
+        <div class="ad-detail-content">
+            <!-- Back Button -->
+            <div class="ad-detail-header">
+                <button class="back-btn" onclick="console.log('🔙 Button clicked!'); goBack(); return false;" id="backButton">
+                    <i class="fas fa-arrow-left"></i>
+                    Zpět
+                </button>
+            </div>
+
+            <!-- Profile Information -->
+            <div class="profile-detail-main">
+                <!-- Left Column - Profile Info -->
+                <div class="profile-detail-left">
+                    <!-- Profile Title and Stats -->
+                    <div class="ad-title-section">
+                        <div class="profile-header-info">
+                            <div class="profile-avatar-container">
+                                <img id="profileAvatar" src="" alt="Profilová fotka" class="profile-avatar-img" loading="lazy" decoding="async">
+                                <i id="profileAvatarPlaceholder" class="fas fa-user profile-avatar-placeholder"></i>
+                            </div>
+                            <div class="profile-header-text">
+                                <h1 class="ad-detail-title" id="profileName">Jméno uživatele</h1>
+                                <div class="ad-detail-price" id="profileStats">Statistiky</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Profile Meta Information -->
+                    <div class="ad-meta-section">
+                        <div class="ad-meta-item">
+                            <i class="fas fa-calendar"></i>
+                            <span id="profileJoinDate">Registrován</span>
+                        </div>
+                        <!-- Additional Info (ICO, DIČ, Typ podnikání, Web, Město, Lokace) -->
+                        <div id="profileAdditionalInfo">
+                            <!-- Dynamicky přidáno JavaScriptem -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column - About User -->
+                <div class="profile-detail-right">
+                    <!-- Profile Description -->
+                    <div class="ad-description-section">
+                        <h3>O uživateli</h3>
+                        <p class="ad-description" id="profileBio">Popis uživatele</p>
+                    </div>
+
+                    <!-- Contact Information -->
+                    <div class="ad-contact-section">
+                        <h3>Kontaktní informace</h3>
+                        <div class="contact-info" id="profileContactInfo">
+                            <!-- Kontaktní údaje budou dynamicky přidány JavaScriptem -->
+                        </div>
+                    </div>
+
+                    <!-- Chat Button in About User Section -->
+                    <div class="profile-chat-section">
+                        <button class="btn btn-primary profile-chat-btn" id="startChatBtn" onclick="console.log('💬 Chat button clicked!'); startChat(); return false;">
+                            <i class="fas fa-comments"></i>
+                            Začít chat
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Services Section -->
+            <div class="ad-user-profile">
+                <div class="user-other-ads" id="userOtherAds">
+                    <h4>Služby od tohoto uživatele</h4>
+                    <div class="ads-grid" id="userServicesGrid">
+                        <!-- User services will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Reviews Section -->
+            <div class="ad-user-profile" style="margin-top: 2rem;">
+                <div class="user-other-ads" id="userReviewsSection">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h4>Recenze uživatele</h4>
+                        <button onclick="toggleReviewForm()" style="
+                            padding: 10px 20px;
+                            background: linear-gradient(135deg, #f77c00 0%, #fdf002 100%);
+                            border: none;
+                            border-radius: 8px;
+                            font-size: 14px;
+                            font-weight: 600;
+                            color: white;
+                            cursor: pointer;
+                            box-shadow: 0 2px 8px rgba(247,124,0,0.25);
+                            transition: all 0.2s;
+                        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(247,124,0,0.35)';"
+                        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(247,124,0,0.25)';">
+                            <i class="fas fa-star"></i> Napsat recenzi
+                        </button>
+                    </div>
+                
+                    <!-- Review Form (hidden by default) -->
+                    <div id="reviewFormSection" style="display: none; background: white; border-radius: 12px; padding: 24px; margin: 20px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid #e5e7eb;">
+                        <h5 style="font-size: 18px; font-weight: 700; color: #111827; margin: 0 0 16px 0;">
+                            <i class="fas fa-pen" style="color: #f77c00;"></i> Vaše recenze
+                        </h5>
+                        
+                        <!-- Hodnocení hvězdičkami -->
+                        <div style="margin-bottom: 16px;">
+                            <label style="font-size: 14px; font-weight: 600; color: #374151; display: block; margin-bottom: 8px;">
+                                Hodnocení:
+                            </label>
+                            <div id="reviewStars" style="display: flex; gap: 8px; font-size: 28px; cursor: pointer;">
+                                <i class="far fa-star" data-rating="1" style="color: #d1d5db; transition: color 0.2s;" onmouseover="highlightStars(1)" onclick="selectRating(1)"></i>
+                                <i class="far fa-star" data-rating="2" style="color: #d1d5db; transition: color 0.2s;" onmouseover="highlightStars(2)" onclick="selectRating(2)"></i>
+                                <i class="far fa-star" data-rating="3" style="color: #d1d5db; transition: color 0.2s;" onmouseover="highlightStars(3)" onclick="selectRating(3)"></i>
+                                <i class="far fa-star" data-rating="4" style="color: #d1d5db; transition: color 0.2s;" onmouseover="highlightStars(4)" onclick="selectRating(4)"></i>
+                                <i class="far fa-star" data-rating="5" style="color: #d1d5db; transition: color 0.2s;" onmouseover="highlightStars(5)" onclick="selectRating(5)"></i>
+                            </div>
+                        </div>
+                        
+                        <!-- Text recenze -->
+                        <div style="margin-bottom: 16px;">
+                            <label for="reviewText" style="font-size: 14px; font-weight: 600; color: #374151; display: block; margin-bottom: 8px;">
+                                Vaše zkušenost:
+                            </label>
+                            <textarea id="reviewText" rows="4" placeholder="Popište svou zkušenost s tímto uživatelem..." style="
+                                width: 100%;
+                                padding: 12px;
+                                border: 2px solid #e5e7eb;
+                                border-radius: 8px;
+                                font-size: 14px;
+                                font-family: inherit;
+                                resize: vertical;
+                                transition: border-color 0.2s;
+                            " onfocus="this.style.borderColor='#f77c00';" onblur="this.style.borderColor='#e5e7eb';"></textarea>
+                        </div>
+                        
+                        <!-- Tlačítka -->
+                        <div style="display: flex; gap: 12px;">
+                            <button onclick="toggleReviewForm()" style="
+                                flex: 1;
+                                padding: 12px 24px;
+                                background: white;
+                                border: 2px solid #e5e7eb;
+                                border-radius: 8px;
+                                font-size: 14px;
+                                font-weight: 600;
+                                color: #6b7280;
+                                cursor: pointer;
+                                transition: all 0.2s;
+                            " onmouseover="this.style.borderColor='#9ca3af';" onmouseout="this.style.borderColor='#e5e7eb';">
+                                Zrušit
+                            </button>
+                            <button onclick="submitReview()" style="
+                                flex: 2;
+                                padding: 12px 24px;
+                                background: linear-gradient(135deg, #f77c00 0%, #fdf002 100%);
+                                border: none;
+                                border-radius: 8px;
+                                font-size: 14px;
+                                font-weight: 700;
+                                color: white;
+                                cursor: pointer;
+                                box-shadow: 0 2px 8px rgba(247,124,0,0.25);
+                                transition: all 0.2s;
+                            " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(247,124,0,0.35)';"
+                            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(247,124,0,0.25)';">
+                                <i class="fas fa-paper-plane"></i> Odeslat recenzi
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="reviews-list" id="userReviewsGrid">
+                        <!-- User reviews will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>BULLDOGO</h3>
+                    <p>Profesionální služby pro každého. Spojujeme zákazníky s kvalifikovanými profesionály.</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Rychlé odkazy</h3>
+                    <ul>
+                        <li><a href="index.html">Domů</a></li>
+                        <li><a href="services.html">Služby</a></li>
+                        <li><a href="index.html#features">O nás</a></li>
+                        <li><a href="index.html#contact">Kontakt</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>Důležité odkazy</h3>
+                    <ul>
+                        <li><a href="#" onclick="return false;" style="cursor: default; text-decoration: none; color: inherit;">Cookies</a></li>
+                        <li><a href="#" onclick="return false;" style="cursor: default; text-decoration: none; color: inherit;">GDPR</a></li>
+                        <li><a href="soubory/podminky.pdf" target="_blank">VOP</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section" id="contact">
+                    <h3>Kontakt</h3>
+                    <p><i class="fas fa-phone"></i> +420 605 121 023</p>
+                    <p><a href="https://wa.me/message/KHLC3RTZYZRFE1" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: none;"><i class="fab fa-whatsapp"></i> WhatsApp</a></p>
+                    <p><i class="fas fa-envelope"></i> support@bulldogo.cz</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 BULLDOGO. Všechna práva vyhrazena.</p>
+                <p>Vytvořilo <a href="https://www.wloom.eu" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: underline;">Kreativní Studio Wloom</a></p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Auth Modal je vytvářen dynamicky v auth.js (createAuthModal) -->
+
+    <!-- Scripts -->
+    <script src="script.js" defer></script>
+    <script src="auth.js" defer></script>
+    <script src="profile-detail.js" defer></script>
+    
+    <!-- Test script for back button -->
+    <script>
+        // Simple test function
+        function testBackButton() {
+            console.log('🧪 Test back button clicked');
+            alert('Tlačítko Zpět funguje!');
+        }
+        
+        // Make sure goBack function is available globally
+        window.goBack = window.goBack || function() {
+            console.log('🔙 goBack called (fallback)');
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                window.location.href = 'services.html';
+            }
+        };
+        
+        // Make sure startChat function is available globally
+        window.startChat = window.startChat || function() {
+            console.log('💬 startChat called (fallback)');
+            
+            // Check if we're running on file:// protocol
+            if (window.location.protocol === 'file:') {
+                alert('Aplikace musí běžet na HTTP serveru pro správné fungování. Otevřete http://localhost:8000');
+                return;
+            }
+            
+            alert('Funkce chatu není dostupná. Zkuste se přihlásit.');
+        };
+        
+        // Add click listener when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            const backBtn = document.getElementById('backButton');
+            if (backBtn) {
+                console.log('✅ Back button found and ready');
+                // Remove existing onclick and add new one
+                backBtn.onclick = function() {
+                    console.log('🔙 Back button clicked (onclick)');
+                    goBack();
+                };
+            } else {
+                console.error('❌ Back button not found');
+            }
+            
+            const chatBtn = document.getElementById('startChatBtn');
+            if (chatBtn) {
+                console.log('✅ Chat button found and ready');
+                // Add event listener for chat button
+                chatBtn.addEventListener('click', function(e) {
+                    console.log('💬 Chat button clicked (event listener)');
+                    e.preventDefault();
+                    startChat();
+                });
+            } else {
+                console.error('❌ Chat button not found');
+            }
+        });
+    </script>
+</body>
+</html>

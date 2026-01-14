@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Mé inzeráty - BULLDOGO</title>
+    <meta name="description" content="Spravujte své inzeráty na BULLDOGO. Přehled, filtry a statistiky vašich služeb.">
+    <meta name="robots" content="noindex, follow">
+    <link rel="canonical" href="https://bulldogo.cz/my-ads.html">
+    <meta name="theme-color" content="#ff6a00">
+    <link rel="dns-prefetch" href="https://www.gstatic.com">
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+    <link rel="dns-prefetch" href="https://firebasestorage.googleapis.com">
+    <link rel="dns-prefetch" href="https://lh3.googleusercontent.com">
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="preconnect" href="https://firebasestorage.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://lh3.googleusercontent.com" crossorigin>
+    <link rel="preload" as="style" href="styles.css" fetchpriority="high">
+    <link rel="preload" as="image" href="fotky/bulldogo-logo.png" fetchpriority="high">
+    <link rel="icon" type="image/png" href="fotky/bulldogo-logo.png">
+    <link rel="apple-touch-icon" href="fotky/bulldogo-logo.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="BULLDOGO">
+    <meta property="og:title" content="Mé inzeráty - BULLDOGO">
+    <meta property="og:description" content="Přehled a správa vašich zveřejněných služeb.">
+    <meta property="og:url" content="https://bulldogo.cz/my-ads.html">
+    <meta property="og:image" content="https://bulldogo.cz/fotky/bulldogo-logo.png">
+    <!-- CSS načítání - synchronní pro rychlejší zobrazení -->
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"></noscript>
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import { getAnalytics } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js';
+        
+        // Firebase konfigurace
+        const firebaseConfig = {
+            apiKey: "AIzaSyA1FEmsY458LLKQLGcUaOVXsYr3Ii55QeQ",
+            authDomain: "inzerio-inzerce.firebaseapp.com",
+            projectId: "inzerio-inzerce",
+            storageBucket: "inzerio-inzerce.firebasestorage.app",
+            messagingSenderId: "262039290071",
+            appId: "1:262039290071:web:30af0eb1c65cd75e307092",
+            measurementId: "G-7VD0ZE08M3"
+        };
+        
+        // Inicializace Firebase
+        const app = initializeApp(firebaseConfig);
+        const firebaseAuth = getAuth(app);
+        const firebaseDb = getFirestore(app);
+        const analytics = getAnalytics(app);
+        
+        // Export pro globální použití
+        window.firebaseApp = app;
+        window.firebaseAuth = firebaseAuth;
+        window.firebaseDb = firebaseDb;
+    </script>
+</head>
+<body>
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar">
+        <!-- Logo Section -->
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">B</div>
+                <span class="logo-text">
+                    <span class="logo-bull">ULL</span>
+                    <span class="logo-dogo">DOGO</span>
+                </span>
+            </div>
+            <div class="header-buttons">
+            </div>
+        </div>
+
+        <!-- Navigation Section -->
+        <div class="navigation-section">
+            <h3 class="nav-section-title">NAVIGACE</h3>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="index.html" class="nav-link">
+                        <i class="fas fa-home nav-icon"></i>
+                        <span class="nav-text">Domů</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="services.html" class="nav-link">
+                        <i class="fas fa-list-alt nav-icon"></i>
+                        <span class="nav-text">Služby</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="my-ads.html" class="nav-link active">
+                        <i class="fas fa-user nav-icon"></i>
+                        <span class="nav-text">Mé inzeráty</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="index.html#features" class="nav-link">
+                        <i class="fas fa-info-circle nav-icon"></i>
+                        <span class="nav-text">O nás</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="index.html#contact" class="nav-link">
+                        <i class="fas fa-envelope nav-icon"></i>
+                        <span class="nav-text">Kontakt</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="chat.html" class="nav-link">
+                        <i class="fas fa-comment-alt nav-icon"></i>
+                        <span class="nav-text">Chat</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="top-ads.html" class="nav-link">
+                        <i class="fas fa-fire nav-icon"></i>
+                        <span class="nav-text">Topování</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="packages.html" class="nav-link">
+                        <i class="fas fa-box nav-icon"></i>
+                        <span class="nav-text">Balíčky</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Admin Section (shown only for admins) -->
+        <div class="admin-section" id="adminSection" style="display: none;">
+            <h3 class="nav-section-title">ADMIN</h3>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="uzivatele.html" class="nav-link">
+                        <i class="fas fa-users nav-icon"></i>
+                        <span class="nav-text">Uživatelé</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="inzeraty.html" class="nav-link">
+                        <i class="fas fa-list-alt nav-icon"></i>
+                        <span class="nav-text">Inzeráty</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="statistiky.html" class="nav-link">
+                        <i class="fas fa-chart-bar nav-icon"></i>
+                        <span class="nav-text">Statistiky</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="nahlaseni.html" class="nav-link">
+                        <i class="fas fa-flag nav-icon"></i>
+                        <span class="nav-text">Nahlášení</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Auth Buttons Section (shown when not logged in) -->
+        <div class="auth-section" id="authSection">
+            <button class="btn-login" onclick="showAuthModal('login')">
+                <i class="fas fa-sign-in-alt"></i>
+                <span>Přihlášení</span>
+            </button>
+            <button class="btn-register" onclick="showAuthModal('register')">
+                <i class="fas fa-user-plus"></i>
+                <span>Registrace</span>
+            </button>
+        </div>
+
+        <!-- User Profile Section (shown when logged in) -->
+        <div class="user-profile-section" id="userProfileSection" style="display: none;">
+            <button class="btn-profile" onclick="window.location.href='profile.html'">
+                <i class="fas fa-user-circle"></i>
+                <span>Profil</span>
+            </button>
+            <button class="btn-logout" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Odhlásit se</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Mobile Menu Button -->
+    <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Sidebar Toggle Button (for collapsed state) -->
+    <button class="sidebar-toggle-btn" onclick="toggleSidebar()" style="display: none;">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Hero Section (sjednocený obdélník) -->
+        <section class="page-hero">
+            <div class="container">
+                <div class="page-hero-card">
+                    <div class="page-hero-inner">
+                        <h2 class="services-title"><span class="title-text">Mé inzeráty</span><span class="title-accent"></span></h2>
+                        <p class="page-hero-subtitle">Správa vašich publikovaných služeb</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Page Header -->
+        <section class="services-page-header">
+            <div class="container">
+                <div class="page-header-content">
+                    <!-- Stats Section -->
+                    <div class="stats-section">
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-list"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="totalAds">0</h3>
+                                <p>Celkem inzerátů</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="activeAds">0</h3>
+                                <p>Aktivních inzerátů</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="search-filter-bar">
+                        <div class="search-box">
+                            <input type="text" id="searchInput" placeholder="Hledat v mých inzerátech...">
+                            <i class="fas fa-search"></i>
+                        </div>
+                        <div class="filter-dropdown">
+                            <select id="categoryFilter">
+                                <option value="">Všechny kategorie</option>
+                                <option value="home_craftsmen">Domácnost & Řemeslníci</option>
+                                <option value="auto_moto">Auto & Moto</option>
+                                <option value="garden_exterior">Zahrada & Exteriér</option>
+                                <option value="education_tutoring">Vzdělávání & Doučování</option>
+                                <option value="it_technology">IT & technologie</option>
+                                <option value="health_personal_care">Zdraví a Osobní péče</option>
+                                <option value="gastronomy_catering">Gastronomie & Catering</option>
+                                <option value="events_entertainment">Události & Zábava</option>
+                                <option value="personal_small_jobs">Osobní služby & drobné práce</option>
+                                <option value="auto_moto_transport">Auto - moto doprava</option>
+                                <option value="hobby_creative">Hobby & kreativní služby</option>
+                                <option value="law_finance_admin">Právo & finance & administrativa</option>
+                                <option value="pets">Domácí zvířata</option>
+                                <option value="specialized_custom">Specializované služby na přání</option>
+                            </select>
+                        </div>
+                        <div class="filter-dropdown">
+                            <select id="regionFilter">
+                                <option value="">Všechny kraje</option>
+                                <option value="Kdekoliv">Kdekoliv</option>
+                                <option value="CelaCeskaRepublika">Celá Česká republika</option>
+                                <option value="CelaSlovenskaRepublika">Celá Slovenská republika</option>
+                                <option value="Praha">Hlavní město Praha</option>
+                                <option value="Stredocesky">Středočeský kraj</option>
+                                <option value="Jihocesky">Jihočeský kraj</option>
+                                <option value="Plzensky">Plzeňský kraj</option>
+                                <option value="Karlovarsky">Karlovarský kraj</option>
+                                <option value="Ustecky">Ústecký kraj</option>
+                                <option value="Liberecky">Liberecký kraj</option>
+                                <option value="Kralovehradecky">Královéhradecký kraj</option>
+                                <option value="Pardubicky">Pardubický kraj</option>
+                                <option value="Vysocina">Kraj Vysočina</option>
+                                <option value="Jihomoravsky">Jihomoravský kraj</option>
+                                <option value="Olomoucky">Olomoucký kraj</option>
+                                <option value="Zlinsky">Zlínský kraj</option>
+                                <option value="Moravskoslezsky">Moravskoslezský kraj</option>
+                            </select>
+                        </div>
+                        <div class="sort-dropdown">
+                            <select id="sortSelect">
+                                <option value="newest">Nejnovější</option>
+                                <option value="oldest">Nejstarší</option>
+                                <option value="title">Podle názvu</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    <!-- My Ads Section -->
+    <section class="ads-section">
+        <div class="container">
+            <div class="ads-grid" id="myAdsGrid">
+                <div class="loading-services">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Načítám vaše inzeráty...</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>BULLDOGO</h3>
+                    <p>Profesionální služby pro každého. Spojujeme zákazníky s kvalifikovanými profesionály.</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Rychlé odkazy</h3>
+                    <ul>
+                        <li><a href="index.html">Domů</a></li>
+                        <li><a href="services.html">Služby</a></li>
+                        <li><a href="index.html#features">O nás</a></li>
+                        <li><a href="index.html#contact">Kontakt</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>Důležité odkazy</h3>
+                    <ul>
+                        <li><a href="#" onclick="return false;" style="cursor: default; text-decoration: none; color: inherit;">Cookies</a></li>
+                        <li><a href="#" onclick="return false;" style="cursor: default; text-decoration: none; color: inherit;">GDPR</a></li>
+                        <li><a href="soubory/podminky.pdf" target="_blank">VOP</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>Kontakt</h3>
+                    <p><i class="fas fa-phone"></i> +420 605 121 023</p>
+                    <p><a href="https://wa.me/message/KHLC3RTZYZRFE1" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: none;"><i class="fab fa-whatsapp"></i> WhatsApp</a></p>
+                    <p><i class="fas fa-envelope"></i> support@bulldogo.cz</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 BULLDOGO. Všechna práva vyhrazena.</p>
+                <p>Vytvořilo <a href="https://www.wloom.eu" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: underline;">Kreativní Studio Wloom</a></p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Auth Modal je vytvářen dynamicky v auth.js (createAuthModal) -->
+
+    </div> <!-- End main-content -->
+
+    <script src="script.js" defer></script>
+    <script src="auth.js" defer></script>
+    <script src="my-ads.js" defer></script>
+    <script src="click-spark.js" defer></script>
+</body>
+</html>

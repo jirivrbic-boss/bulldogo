@@ -1,0 +1,184 @@
+// Firebase Firestore pravidla pro povolení přístupu
+// Tyto pravidla musí být nastavena v Firebase Console
+// 
+// DŮLEŽITÉ: Zkopírujte tento obsah do Firebase Console → Firestore → Rules → Edit
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper funkce pro kontrolu admin statusu
+    function isAdmin() {
+      return request.auth != null && (
+        // Kontrola přes profil
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)/profile/profile) &&
+        (
+          get(/databases/$(database)/documents/users/$(request.auth.uid)/profile/profile).data.isAdmin == true ||
+          get(/databases/$(database)/documents/users/$(request.auth.uid)/profile/profile).data.role == 'admin'
+        ) ||
+        // Kontrola přes email (fallback)
+        request.auth.token.email in ['admin@bulldogo.cz', 'support@bulldogo.cz']
+      );
+    }
+
+    // ===== PRAVIDLA PRO INZERÁTY (MUSÍ BÝT PRVNÍ PRO COLLECTIONGROUP) =====
+    // DŮLEŽITÉ: Pro collectionGroup("inzeraty") dotazy musí být toto pravidlo explicitní a první
+    match /users/{userId}/inzeraty/{adId} {
+      allow read: if true;  // Veřejné čtení pro všechny (i bez přihlášení)
+      allow create: if request.auth != null && request.auth.uid == userId;
+      // Update: vlastník nebo admin
+      allow update: if request.auth != null && (request.auth.uid == userId || isAdmin());
+      // Delete: vlastník nebo admin (admin může mazat inzeráty jakéhokoli uživatele)
+      allow delete: if request.auth != null && (request.auth.uid == userId || isAdmin());
+    }
+    
+    // Veřejné čtení všech dokumentů uživatelů i bez autentifikace (pro collectionGroup dotazy)
+    // Toto je nutné pro collectionGroup("inzeraty") dotazy, které potřebují přístup k users dokumentům
+    match /users/{userId}/{document=**} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+      // Admin může mazat jakékoli dokumenty uživatelů (včetně inzerátů, profilů, atd.)
+      allow delete: if request.auth != null && (request.auth.uid == userId || isAdmin());
+    }
+    
+    // Explicitně povolit čtení uživatelských dokumentů bez autentifikace
+    match /users/{userId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+      // Admin může mazat jakéhokoli uživatele
+      allow delete: if request.auth != null && isAdmin();
+    }
+    
+    // Admin může mazat profily uživatelů
+    match /users/{userId}/profile/{profileId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+      allow delete: if request.auth != null && isAdmin();
+    }
+    
+    // ===== PRAVIDLA PRO RECENZE =====
+    // DŮLEŽITÉ: Pro collectionGroup("reviews") dotazy musí být všechny cesty explicitně povoleny
+    // Recenze na profilu uživatele
+    match /users/{userId}/reviews/{reviewId} {
+      allow read: if true;  // Veřejné čtení pro všechny (včetně vlastních)
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && (request.auth.uid == resource.data.reviewerId || request.auth.uid == userId);
+      allow delete: if request.auth != null && (request.auth.uid == resource.data.reviewerId || request.auth.uid == userId);
+    }
+    
+    // Recenze na inzerátech
+    match /users/{userId}/inzeraty/{adId}/reviews/{reviewId} {
+      allow read: if true;  // Veřejné čtení pro všechny (včetně vlastních)
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && (request.auth.uid == resource.data.reviewerId || request.auth.uid == userId);
+      allow delete: if request.auth != null && (request.auth.uid == resource.data.reviewerId || request.auth.uid == userId);
+    }
+    
+    // Root kolekce reviews (fallback, pokud existuje)
+    match /reviews/{reviewId} {
+      allow read: if true;  // Veřejné čtení pro všechny
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && request.auth.uid == resource.data.reviewerId;
+      allow delete: if request.auth != null && request.auth.uid == resource.data.reviewerId;
+    }
+    
+    // ===== PRAVIDLA PRO KONVERZACE (NOVÝ CHAT SYSTÉM) =====
+    // Konverzace - přístup pouze pro účastníky
+    match /conversations/{conversationId} {
+      // Helper funkce pro kontrolu přihlášení
+      function isSignedIn() {
+        return request.auth != null;
+      }
+      
+      // Helper funkce pro kontrolu účastníka (pro existující dokument)
+      function isParticipant() {
+        return isSignedIn() && 
+               resource.data.participants != null &&
+               request.auth.uid in resource.data.participants;
+      }
+      
+      // Čtení: povoleno pouze účastníkům
+      allow read: if isParticipant();
+      
+      // Vytvoření: povoleno přihlášeným uživatelům, kteří jsou v participants
+      allow create: if isSignedIn() && 
+                      request.resource.data.participants != null &&
+                      request.resource.data.participants.size() == 2 &&
+                      request.auth.uid in request.resource.data.participants;
+      
+      // Aktualizace: povoleno účastníkům (např. pro lastMessage, lastMessageAt)
+      allow update: if isParticipant() &&
+                      // Participants se nesmí měnit
+                      (!('participants' in request.resource.data) ||
+                       request.resource.data.participants == resource.data.participants);
+      
+      // Smazání: povoleno účastníkům
+      allow delete: if isParticipant();
+      
+      // Zprávy v konverzaci
+      match /messages/{messageId} {
+        // Helper funkce pro kontrolu účastníka konverzace
+        function isConversationParticipant() {
+          let convDoc = get(/databases/$(database)/documents/conversations/$(conversationId));
+          return convDoc != null && 
+                 convDoc.data.participants != null &&
+                 request.auth.uid in convDoc.data.participants;
+        }
+        
+        // Čtení: povoleno účastníkům konverzace
+        allow read: if isSignedIn() && isConversationParticipant();
+        
+        // Vytvoření: povoleno pouze odesílateli (senderId musí být stejný jako auth.uid)
+        // a musí být účastníkem konverzace
+        allow create: if isSignedIn() && 
+                        request.resource.data.senderId == request.auth.uid &&
+                        isConversationParticipant();
+        
+        // Aktualizace a smazání zpráv: pouze vlastník zprávy
+        allow update, delete: if isSignedIn() && 
+                                resource.data.senderId == request.auth.uid;
+      }
+    }
+    
+    // ===== PRAVIDLA PRO PLATBY =====
+    // Platby uživatele
+    match /users/{userId}/payments/{paymentId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && request.auth.uid == userId;
+      allow delete: if false; // Platby nelze mazat
+    }
+    
+    // ===== STRIPE FIRESTORE EXTENSION PRAVIDLA =====
+    // Zákazník vidí pouze svá data; checkout_sessions čitelné/zapisovatelné jen uživatelem
+    match /customers/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      
+      match /checkout_sessions/{id} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+      match /subscriptions/{id} {
+        allow read: if request.auth != null && request.auth.uid == uid;
+      }
+      match /payments/{id} {
+        allow read: if request.auth != null && request.auth.uid == uid;
+      }
+    }
+    
+    // Veřejné čtení produktů a cen synchronizovaných extension (bez zápisu z klienta)
+    match /products/{id} {
+      allow read: if true;
+      allow write: if false;
+      
+      match /prices/{id} {
+        allow read: if true;
+        allow write: if false;
+      }
+      
+      match /tax_rates/{id} {
+        allow read: if true;
+        allow write: if false;
+      }
+    }
+  }
+}

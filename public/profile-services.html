@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Moje služby - BULLDOGO</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"></noscript>
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import { getAnalytics } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js';
+        
+        // Firebase konfigurace
+        const firebaseConfig = {
+            apiKey: "AIzaSyA1FEmsY458LLKQLGcUaOVXsYr3Ii55QeQ",
+            authDomain: "inzerio-inzerce.firebaseapp.com",
+            projectId: "inzerio-inzerce",
+            storageBucket: "inzerio-inzerce.firebasestorage.app",
+            messagingSenderId: "262039290071",
+            appId: "1:262039290071:web:30af0eb1c65cd75e307092",
+            measurementId: "G-7VD0ZE08M3"
+        };
+        
+        // Inicializace Firebase
+        const app = initializeApp(firebaseConfig);
+        const firebaseAuth = getAuth(app);
+        const firebaseDb = getFirestore(app);
+        const analytics = getAnalytics(app);
+        
+        // Export pro globální použití
+        window.firebaseApp = app;
+        window.firebaseAuth = firebaseAuth;
+        window.firebaseDb = firebaseDb;
+    </script>
+</head>
+<body>
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar">
+        <!-- Logo Section -->
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">B</div>
+                <span class="logo-text">
+                    <span class="logo-bull">ULL</span>
+                    <span class="logo-dogo">DOGO</span>
+                </span>
+            </div>
+            <div class="header-buttons">
+            </div>
+        </div>
+
+        <!-- Navigation Section -->
+        <div class="navigation-section">
+            <h3 class="nav-section-title">NAVIGACE</h3>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="index.html" class="nav-link">
+                        <i class="fas fa-home nav-icon"></i>
+                        <span class="nav-text">Domů</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="services.html" class="nav-link">
+                        <i class="fas fa-list-alt nav-icon"></i>
+                        <span class="nav-text">Služby</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="my-ads.html" class="nav-link">
+                        <i class="fas fa-user nav-icon"></i>
+                        <span class="nav-text">Mé inzeráty</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="index.html#features" class="nav-link">
+                        <i class="fas fa-info-circle nav-icon"></i>
+                        <span class="nav-text">O nás</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="index.html#contact" class="nav-link">
+                        <i class="fas fa-envelope nav-icon"></i>
+                        <span class="nav-text">Kontakt</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="chat.html" class="nav-link">
+                        <i class="fas fa-comment-alt nav-icon"></i>
+                        <span class="nav-text">Chat</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="top-ads.html" class="nav-link">
+                        <i class="fas fa-fire nav-icon"></i>
+                        <span class="nav-text">Topování</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="packages.html" class="nav-link">
+                        <i class="fas fa-box nav-icon"></i>
+                        <span class="nav-text">Balíčky</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Auth Buttons Section (shown when not logged in) -->
+        <div class="auth-section" id="authSection">
+            <button class="btn-login" onclick="showAuthModal('login')">
+                <i class="fas fa-sign-in-alt"></i>
+                <span>Přihlášení</span>
+            </button>
+            <button class="btn-register" onclick="showAuthModal('register')">
+                <i class="fas fa-user-plus"></i>
+                <span>Registrace</span>
+            </button>
+        </div>
+
+        <!-- User Profile Section (shown when logged in) -->
+        <div class="user-profile-section" id="userProfileSection" style="display: none;">
+            <button class="btn-profile" onclick="window.location.href='profile.html'">
+                <i class="fas fa-user-circle"></i>
+                <span>Profil</span>
+            </button>
+            <button class="btn-logout" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Odhlásit se</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Mobile Menu Button -->
+    <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Sidebar Toggle Button (when collapsed) -->
+    <button class="sidebar-toggle-btn" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Main Content Wrapper -->
+    <div class="main-content">
+        <!-- Profile Hero Section -->
+        <section class="page-hero">
+            <div class="container">
+                <div class="page-hero-card">
+                    <div class="page-hero-inner">
+                        <h2 class="services-title"><span class="title-text">Moje služby</span><span class="title-accent"></span></h2>
+                        <p class="page-hero-subtitle">Správa vašich nabízených služeb</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Statistics Cards -->
+        <section class="profile-stats-section">
+            <div class="container">
+                <div class="stats-cards">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-list"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-number" id="totalAds">0</div>
+                            <div class="stat-label">Celkem inzerátů</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-number" id="activeAds">0</div>
+                            <div class="stat-label">Aktivních inzerátů</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+            <button class="tab-btn" onclick="window.location.href='profile.html'">Přehled</button>
+            <button class="tab-btn active">Moje služby</button>
+            <button class="tab-btn" onclick="window.location.href='profile-ratings.html'">Hodnocení</button>
+            <button class="tab-btn" onclick="window.location.href='profile-settings.html'">Nastavení</button>
+            <button class="tab-btn" onclick="window.location.href='profile-plan.html'">Spravovat balíček</button>
+            <button class="tab-btn" onclick="window.location.href='top-ads.html'">Topování</button>
+        </div>
+
+        <!-- Services Content -->
+        <div class="services-content">
+            <div class="services-header">
+                <h2 class="services-title">Moje služby</h2>
+                <a class="btn-add-service" href="create-ad.html">
+                    <i class="fas fa-plus"></i>
+                    Přidat službu
+                </a>
+            </div>
+
+            <!-- Search / Filter / Sort -->
+            <div class="search-filter-bar">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Hledat v mých inzerátech...">
+                    <i class="fas fa-search"></i>
+                </div>
+                <div class="filter-dropdown">
+                    <select id="categoryFilter">
+                        <option value="">Všechny kategorie</option>
+                        <option value="home_craftsmen">Domácnost & Řemeslníci</option>
+                        <option value="auto_moto">Auto & Moto</option>
+                        <option value="garden_exterior">Zahrada & Exteriér</option>
+                        <option value="education_tutoring">Vzdělávání & Doučování</option>
+                        <option value="it_technology">IT & technologie</option>
+                        <option value="health_personal_care">Zdraví a Osobní péče</option>
+                        <option value="gastronomy_catering">Gastronomie & Catering</option>
+                        <option value="events_entertainment">Události & Zábava</option>
+                        <option value="personal_small_jobs">Osobní služby & drobné práce</option>
+                        <option value="auto_moto_transport">Auto - moto doprava</option>
+                        <option value="hobby_creative">Hobby & kreativní služby</option>
+                        <option value="law_finance_admin">Právo & finance & administrativa</option>
+                        <option value="pets">Domácí zvířata</option>
+                        <option value="specialized_custom">Specializované služby na přání</option>
+                    </select>
+                </div>
+                <div class="sort-dropdown">
+                    <select id="sortSelect">
+                        <option value="newest">Nejnovější</option>
+                        <option value="oldest">Nejstarší</option>
+                        <option value="title">Podle názvu</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="ads-grid" id="profileServicesGrid">
+                <!-- Služby se načtou dynamicky z Firebase -->
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js" defer></script>
+    <script src="auth.js" defer></script>
+    <script src="cities.js" defer></script>
+    <script src="click-spark.js" defer></script>
+    <script>
+        // Initialize auth state for profile page + opakované načtení při návratu
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 Profile services page loaded');
+            loadUserServices();
+            loadUserProfile();
+        });
+        window.addEventListener('pageshow', () => {
+            // pageshow se vyvolá i při návratu z BFCache – znovu natáhni data
+            loadServicesData();
+            loadUserData?.();
+        });
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                loadServicesData();
+            }
+        });
+
+        // Load user profile data
+        async function loadUserProfile() {
+            console.log('🔧 Loading user profile...');
+            try {
+                // Wait for Firebase to be available
+                const checkFirebase = setInterval(() => {
+                    console.log('🔍 Checking Firebase:', {
+                        firebaseAuth: !!window.firebaseAuth,
+                        firebaseDb: !!window.firebaseDb
+                    });
+                    if (window.firebaseAuth && window.firebaseDb) {
+                        console.log('✅ Firebase available, loading data');
+                        clearInterval(checkFirebase);
+                        loadUserData();
+
+                        // Listen for auth state changes and always refresh services + stats
+                        window.firebaseAuth.onAuthStateChanged((user) => {
+                            console.log('👤 Auth state changed on profile services page:', user ? user.email : 'Not logged in');
+                            if (user) {
+                                // Refresh profile header + stats + services when user is available
+                                loadUserData();
+                                loadServicesData();
+                            } else {
+                                // When user logs out, clear services grid and reset stats
+                                const servicesContainer = document.querySelector('.services-grid');
+                                if (servicesContainer) {
+                                    servicesContainer.innerHTML = `
+                                        <div class="no-services">
+                                            <i class="fas fa-lock"></i>
+                                            <h3>Pro zobrazení vašich služeb se musíte přihlásit</h3>
+                                            <p>Přihlaste se prosím a zkuste to znovu.</p>
+                                            <div class="no-services-actions">
+                                                <button class="btn btn-primary" onclick="showAuthModal('login')">Přihlásit se</button>
+                                            </div>
+                                        </div>
+                                    `;
+                                }
+                                if (typeof updateStatistics === 'function') {
+                                    // Reset counters to 0
+                                    updateStatistics([]);
+                                }
+                            }
+                        });
+                    }
+                }, 100);
+            } catch (error) {
+                console.error('❌ Chyba při načítání profilu:', error);
+            }
+        }
+
+        async function loadUserServices() {
+            try {
+                // Wait for Firebase to be available
+                const checkFirebase = setInterval(() => {
+                    if (window.firebaseAuth && window.firebaseDb) {
+                        clearInterval(checkFirebase);
+                        loadServicesData();
+                    }
+                }, 100);
+            } catch (error) {
+                console.error('Chyba při načítání služeb:', error);
+            }
+        }
+
+        async function loadServicesData() {
+            try {
+                const currentUser = window.firebaseAuth.currentUser;
+                if (!currentUser) {
+                    console.log('Uživatel není přihlášen');
+                    return;
+                }
+
+                console.log('Načítám služby pro uživatele:', currentUser.uid);
+
+                // Load user ads from Firestore
+                const { getDocs, collection } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                const adsRef = collection(window.firebaseDb, 'users', currentUser.uid, 'inzeraty');
+                const adsSnapshot = await getDocs(adsRef);
+                
+                const userAds = [];
+                adsSnapshot.forEach((doc) => {
+                    userAds.push({ id: doc.id, ...doc.data() });
+                });
+
+                // Uložit do cache a vyrenderovat
+                window.__userAdsRaw = userAds;
+                applyFiltersAndRender();
+
+            } catch (error) {
+                console.error('Chyba při načítání dat služeb:', error);
+            }
+        }
+
+        function updateServicesDisplay(userAds) {
+            const servicesContainer = document.getElementById('profileServicesGrid');
+            if (!servicesContainer) return;
+
+            if (userAds.length === 0) {
+                servicesContainer.innerHTML = `
+                    <div class="no-services">
+                        <i class="fas fa-plus-circle"></i>
+                        <h3>Zatím nemáte žádné služby</h3>
+                        <p>Začněte tím, že přidáte svou první službu!</p>
+                        <div class="no-services-actions">
+                            <a href="create-ad.html" class="btn btn-primary">Přidat službu</a>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            servicesContainer.innerHTML = userAds.map(ad => createServiceCard(ad)).join('');
+        }
+
+        function createServiceCard(ad) {
+            const categoryNames = {
+                'home_craftsmen': 'Domácnost & Řemeslníci',
+                'auto_moto': 'Auto & Moto',
+                'garden_exterior': 'Zahrada & Exteriér',
+                'education_tutoring': 'Vzdělávání & Doučování',
+                'it_technology': 'IT & technologie',
+                'health_personal_care': 'Zdraví a Osobní péče',
+                'gastronomy_catering': 'Gastronomie & Catering',
+                'events_entertainment': 'Události & Zábava',
+                'personal_small_jobs': 'Osobní služby & drobné práce',
+                'auto_moto_transport': 'Auto - moto doprava',
+                'hobby_creative': 'Hobby & kreativní služby',
+                'law_finance_admin': 'Právo & finance & administrativa',
+                'pets': 'Domácí zvířata',
+                'specialized_custom': 'Specializované služby na přání'
+            };
+
+            const statusColors = {
+                'active': '#28a745',
+                'inactive': '#dc3545',
+                'paused': '#ffc107'
+            };
+
+            const statusTexts = {
+                'active': 'Aktivní',
+                'inactive': 'Neaktivní',
+                'paused': 'Pozastaveno'
+            };
+
+            // Obrázek inzerátu (pokud existuje) – stejná logika jako u „Mé inzeráty“
+            let imageUrl = 'fotky/team.jpg';
+            if (Array.isArray(ad.images) && ad.images.length > 0) {
+                const first = ad.images[0];
+                if (typeof first === 'string') imageUrl = first;
+                else if (first && first.url) imageUrl = first.url;
+            } else if (ad.image) {
+                if (typeof ad.image === 'string') imageUrl = ad.image;
+                else if (ad.image.url) imageUrl = ad.image.url;
+            } else if (ad.photo && ad.photo.url) {
+                imageUrl = ad.photo.url;
+            }
+
+            const topStyle = ad.isTop
+                ? 'style="border: 3px solid #ff8a00 !important; box-shadow: 0 8px 28px rgba(255, 138, 0, 0.6), 0 0 0 2px rgba(255, 138, 0, 0.4) !important;"'
+                : '';
+
+            return `
+                <article class="ad-card${ad.isTop ? ' is-top' : ''}" ${topStyle}>
+                    <div class="ad-thumb">
+                        <img src="${imageUrl}" alt="Inzerát" loading="lazy" decoding="async" onerror="this.src='fotky/team.jpg'">
+                    </div>
+                    <div class="ad-body">
+                        <h3 class="ad-title">${ad.title || ''}</h3>
+                        <div class="ad-meta">
+                            <span>${ad.location || ''}</span>
+                            •
+                            <span>${categoryNames[ad.category] || ad.category || ''}</span>
+                        </div>
+                        <div class="ad-status" style="background-color: ${statusColors[ad.status]}; color: white; padding: 0.2rem 0.5rem; border-radius: 10px; font-size: 0.8rem; margin-top: 0.5rem; display: inline-block;">
+                            ${statusTexts[ad.status] || ad.status || ''}
+                        </div>
+                    </div>
+                    ${ad.isTop ? `
+                    <div class="ad-badge-top"><i class="fas fa-fire"></i> TOP</div>
+                    <div class="ad-flames" aria-hidden="true"></div>
+                    ` : ''}
+                    <div class="ad-actions">
+                        <button class="btn-edit" onclick="editService('${ad.id}')" title="Upravit">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn-delete" onclick="deleteService('${ad.id}')" title="Smazat">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        ${ad.status === 'active' ? `
+                        <button class="btn-pause" onclick="toggleServiceStatus('${ad.id}', '${ad.status}')" title="Pozastavit">
+                            <i class="fas fa-pause"></i>
+                        </button>
+                        ` : `
+                        <button class="btn-activate" onclick="toggleServiceStatus('${ad.id}', '${ad.status}')" title="Aktivovat">
+                            <i class="fas fa-play"></i>
+                        </button>
+                        `}
+                    </div>
+                </article>
+            `;
+        }
+
+        function getCategoryIcon(category) {
+            const icons = {
+                'home_craftsmen': 'tools',
+                'auto_moto': 'car',
+                'garden_exterior': 'tree',
+                'education_tutoring': 'graduation-cap',
+                'it_technology': 'laptop',
+                'health_personal_care': 'heart',
+                'gastronomy_catering': 'utensils',
+                'events_entertainment': 'music',
+                'personal_small_jobs': 'user-cog',
+                'auto_moto_transport': 'truck',
+                'hobby_creative': 'paint-brush',
+                'law_finance_admin': 'calculator',
+                'pets': 'paw',
+                'specialized_custom': 'cog'
+            };
+            return icons[category] || 'briefcase';
+        }
+
+        // Service management functions
+        function editService(serviceId) {
+            console.log('Edit service:', serviceId);
+            // Redirect to edit page or open modal
+            window.location.href = `my-ads.html?edit=${serviceId}`;
+        }
+
+        async function toggleServiceStatus(serviceId, currentStatus) {
+            // Pozn.: currentStatus z tlačítka může být zastaralý (uživatel klikne rychle),
+            // proto bereme aktuální stav přímo z Firestore.
+            try {
+                if (!window.firebaseAuth?.currentUser) {
+                    notify('Musíte být přihlášeni!', 'error');
+                    return;
+                }
+                window.__toggleServiceBusy = window.__toggleServiceBusy || {};
+                if (window.__toggleServiceBusy[serviceId]) return;
+                window.__toggleServiceBusy[serviceId] = true;
+
+                const { getDoc, updateDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                const ref = doc(window.firebaseDb, 'users', window.firebaseAuth.currentUser.uid, 'inzeraty', serviceId);
+                const snap = await getDoc(ref);
+                const data = snap.exists() ? (snap.data() || {}) : {};
+                const actualStatus = (data.status || currentStatus || 'active').toString().trim().toLowerCase();
+
+                const newStatus = actualStatus === 'active' ? 'inactive' : 'active';
+                await updateDoc(ref, { status: newStatus, updatedAt: new Date() });
+
+                notify(`Služba byla ${newStatus === 'active' ? 'aktivována' : 'deaktivována'}!`, 'success');
+                loadServicesData(); // Reload data
+            } catch (error) {
+                console.error('Chyba při změně stavu služby:', error);
+                notify('Nepodařilo se změnit stav služby.', 'error');
+            } finally {
+                try { if (window.__toggleServiceBusy) window.__toggleServiceBusy[serviceId] = false; } catch (_) {}
+            }
+        }
+
+        async function deleteService(serviceId) {
+            try {
+                if (!confirm('Opravdu chcete smazat tento inzerát? Tuto akci nelze vrátit.')) return;
+                const { deleteDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                await deleteDoc(doc(window.firebaseDb, 'users', window.firebaseAuth.currentUser.uid, 'inzeraty', serviceId));
+                notify('Služba byla smazána.', 'success');
+                loadServicesData();
+            } catch (error) {
+                console.error('Chyba při mazání služby:', error);
+                notify('Nepodařilo se smazat službu.', 'error');
+            }
+        }
+
+        // Oznámení: použij stejné toast oznámení jako auth.js (přihlášení), fallback jen když auth.js není dostupný
+        function notify(message, type = 'info', options = {}) {
+            const globalShow = window.showMessage;
+            if (typeof globalShow === 'function') {
+                return globalShow(message, type, options);
+            }
+            // Fallback (kdyby auth.js nebyl načten)
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message message-${type}`;
+            messageDiv.textContent = message;
+            document.body.appendChild(messageDiv);
+            setTimeout(() => messageDiv.remove(), 5000);
+        }
+
+        // Load actual user data
+        async function loadUserData() {
+            console.log('💾 Loading user data...');
+            try {
+                const currentUser = window.firebaseAuth.currentUser;
+                if (!currentUser) {
+                    console.log('⚠️ Uživatel není přihlášen');
+                    return;
+                }
+
+                console.log('👤 Načítám data pro uživatele:', currentUser.uid);
+
+                // Load user profile from Firestore
+                const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                const profileRef = doc(window.firebaseDb, 'users', currentUser.uid, 'profile', 'profile');
+                const profileSnap = await getDoc(profileRef);
+                
+                let userProfile = null;
+                if (profileSnap.exists()) {
+                    userProfile = profileSnap.data();
+                }
+
+                // Load user ads to get statistics
+                const { getDocs, collection } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                const adsRef = collection(window.firebaseDb, 'users', currentUser.uid, 'inzeraty');
+                const adsSnapshot = await getDocs(adsRef);
+                
+                const userAds = [];
+                adsSnapshot.forEach((doc) => {
+                    userAds.push({ id: doc.id, ...doc.data() });
+                });
+
+                // Update statistics
+                console.log('📊 Calling updateStatistics with:', { userAds: userAds.length, userProfile });
+                updateStatistics(userAds, userProfile);
+                
+                // Load all reviews and update rating after loading
+                loadAllUserReviews(currentUser.uid);
+
+            } catch (error) {
+                console.error('Chyba při načítání dat uživatele:', error);
+            }
+        }
+
+        // Update statistics with real data
+        function updateStatistics(userAds) {
+            const total = userAds ? userAds.length : 0;
+            const active = userAds ? userAds.filter(ad => ad.status === 'active').length : 0;
+            const totalEl = document.getElementById('totalAds');
+            const activeEl = document.getElementById('activeAds');
+            if (totalEl) totalEl.textContent = String(total);
+            if (activeEl) activeEl.textContent = String(active);
+        }
+
+        // Filtrování/třídění/hledání nad cache
+        function applyFiltersAndRender() {
+            const raw = Array.isArray(window.__userAdsRaw) ? window.__userAdsRaw.slice() : [];
+            // Update stats (nezávisle na filtru)
+            updateStatistics(raw);
+            const q = (document.getElementById('searchInput')?.value || '').trim().toLowerCase();
+            const cat = (document.getElementById('categoryFilter')?.value || '').trim();
+            const sort = (document.getElementById('sortSelect')?.value || 'newest').trim();
+            
+            let list = raw.filter(ad => {
+                const title = (ad.title || '').toLowerCase();
+                const desc = (ad.description || '').toLowerCase();
+                const okQ = !q || title.includes(q) || desc.includes(q);
+                const okCat = !cat || ad.category === cat;
+                return okQ && okCat;
+            });
+            
+            if (sort === 'title') {
+                list.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+            } else if (sort === 'oldest') {
+                list.sort((a, b) => (new Date(a.createdAt || 0)) - (new Date(b.createdAt || 0)));
+            } else {
+                // newest
+                list.sort((a, b) => (new Date(b.createdAt || 0)) - (new Date(a.createdAt || 0)));
+            }
+            updateServicesDisplay(list);
+        }
+
+        // Listeners for filters
+        document.addEventListener('DOMContentLoaded', () => {
+            const si = document.getElementById('searchInput');
+            const cf = document.getElementById('categoryFilter');
+            const ss = document.getElementById('sortSelect');
+            si && si.addEventListener('input', () => applyFiltersAndRender());
+            cf && cf.addEventListener('change', () => applyFiltersAndRender());
+            ss && ss.addEventListener('change', () => applyFiltersAndRender());
+        });
+
+        // Export functions for global use
+        window.editService = editService;
+        window.toggleServiceStatus = toggleServiceStatus;
+        window.deleteService = deleteService;
+    </script>
+</body>
+</html>

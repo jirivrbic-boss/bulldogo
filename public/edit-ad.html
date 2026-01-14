@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>BULLDOGO – Upravit inzerát</title>
+    <link rel="preload" as="style" href="/styles.css" fetchpriority="high">
+    <link rel="preload" as="style" href="/electric-border.css">
+    <!-- CSS načítání - synchronní pro rychlejší zobrazení -->
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/electric-border.css">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"></noscript>
+    <style>
+        .ad-create-layout{
+            display:grid;
+            grid-template-columns: 1fr 320px;
+            gap:24px;
+            align-items:start;
+        }
+        @media (max-width: 1024px){
+            .ad-create-layout{ grid-template-columns: 1fr; }
+        }
+        .ad-create-card{
+            background:#fff;
+            border:1px solid #eee;
+            border-radius:12px;
+            padding:18px;
+            box-shadow:0 6px 20px rgba(0,0,0,.05);
+        }
+        .ad-create-aside{
+            position:sticky;
+            top:16px;
+        }
+        .ad-preview{
+            display:flex;
+            flex-direction:column;
+            gap:12px;
+            min-height:460px;
+        }
+        .ad-preview img{
+            width:100%;
+            height:160px;
+            object-fit:cover;
+            border-radius:10px;
+            border:1px solid #eee;
+            background:#fafafa;
+        }
+        .ad-preview .meta{
+            font-size:14px;
+            color:#6b7280;
+        }
+        .ad-actions{
+            display:flex;
+            flex-direction:column;
+            gap:10px;
+            margin-top:auto;
+            padding-top:10px;
+            border-top:1px solid #eee;
+        }
+        .btn-wide{
+            width:100%;
+            display:inline-flex;
+            justify-content:center;
+            align-items:center;
+            gap:8px;
+            padding:12px 16px;
+            font-weight:600;
+            border-radius:10px;
+        }
+        .btn-outline{
+            background:#fff;
+            border:1px solid #e5e7eb;
+            color:#374151;
+        }
+        .form-hint{
+            font-size:13px;
+            color:#6b7280;
+            margin:-6px 0 12px 0;
+        }
+        .field-row{
+            display:grid;
+            grid-template-columns: 1fr 1fr;
+            gap:12px;
+        }
+        @media (max-width: 640px){
+            .field-row{ grid-template-columns: 1fr; }
+        }
+        .required-badge{ color:#ef4444; margin-left:4px; }
+        .guide{
+            margin-bottom:16px;
+            color:#374151;
+            background:#fff7ed;
+            border:1px solid #fed7aa;
+            border-radius:10px;
+            padding:12px 14px;
+            font-size:14px;
+        }
+        /* Price inline row */
+        .price-inline{
+            display:flex;
+            flex-wrap:wrap;
+            align-items:center;
+            gap:12px;
+        }
+        .price-inline .radio-group{
+            display:flex;
+            gap:10px;
+            align-items:center;
+        }
+        .price-inline .inputs{
+            display:flex;
+            gap:10px;
+            align-items:center;
+        }
+        .pill-group{
+            display:flex;
+            gap:8px;
+            align-items:center;
+        }
+        .pill-group label{
+            display:inline-flex;
+            align-items:center;
+            gap:0;
+            padding:0;
+            border:none;
+            cursor:pointer;
+            font-size:13px;
+            color:#374151;
+            background:#fff;
+        }
+        .pill-group input[type="radio"]{ display:none; }
+        .pill-group label span{
+            display:inline-flex;
+            align-items:center;
+            gap:6px;
+            padding:6px 12px;
+            border:1px solid #e5e7eb;
+            border-radius:9999px;
+            transition:border-color .15s ease, box-shadow .15s ease, color .15s ease, background .15s ease;
+        }
+        .pill-group input[type="radio"]:checked + span{
+            color:#111827;
+            font-weight:600;
+            border-color:#f59e0b;
+            box-shadow:0 0 0 2px rgba(245,158,11,.15);
+            background:#fff;
+        }
+        /* Toggle (on/off) */
+        .toggle-row{
+            display:flex;
+            align-items:center;
+            gap:10px;
+            margin-top:8px;
+            user-select:none;
+        }
+        .toggle{
+            position:relative;
+            width:44px;
+            height:24px;
+            display:inline-block;
+        }
+        .toggle input{ display:none; }
+        .toggle-slider{
+            position:absolute;
+            inset:0;
+            background:#e5e7eb;
+            border-radius:9999px;
+            transition:background .2s ease;
+        }
+        .toggle-slider::before{
+            content:"";
+            position:absolute;
+            height:18px;
+            width:18px;
+            left:3px;
+            top:3px;
+            background:#fff;
+            border-radius:9999px;
+            box-shadow:0 1px 2px rgba(0,0,0,.15);
+            transition:transform .2s ease;
+        }
+        .toggle input:checked + .toggle-slider{
+            background:#f59e0b;
+        }
+        .toggle input:checked + .toggle-slider::before{
+            transform:translateX(20px);
+        }
+        .toggle-label{
+            font-size:14px;
+            color:#374151;
+        }
+    </style>
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo" onclick="window.location.href='index.html'" style="cursor:pointer;">
+                <div class="logo-icon">B</div>
+                <span class="logo-text">
+                    <span class="logo-bull">ULL</span>
+                    <span class="logo-dogo">DOGO</span>
+                </span>
+            </div>
+            <div class="header-buttons"></div>
+        </div>
+        <div class="navigation-section">
+            <h3 class="nav-section-title">NAVIGACE</h3>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="index.html" class="nav-link">
+                        <i class="fas fa-home nav-icon"></i>
+                        <span class="nav-text">Domů</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="services.html" class="nav-link">
+                        <i class="fas fa-list-alt nav-icon"></i>
+                        <span class="nav-text">Služby</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="my-ads.html" class="nav-link">
+                        <i class="fas fa-user nav-icon"></i>
+                        <span class="nav-text">Mé inzeráty</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="index.html#features" class="nav-link">
+                        <i class="fas fa-info-circle nav-icon"></i>
+                        <span class="nav-text">O nás</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="index.html#contact" class="nav-link">
+                        <i class="fas fa-envelope nav-icon"></i>
+                        <span class="nav-text">Kontakt</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="chat.html" class="nav-link">
+                        <i class="fas fa-comment-alt nav-icon"></i>
+                        <span class="nav-text">Chat</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="top-ads.html" class="nav-link">
+                        <i class="fas fa-fire nav-icon"></i>
+                        <span class="nav-text">Topování</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="packages.html" class="nav-link">
+                        <i class="fas fa-box nav-icon"></i>
+                        <span class="nav-text">Balíčky</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Mobile Menu Button -->
+    <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Sidebar Toggle Button (for collapsed state) -->
+    <button class="sidebar-toggle-btn" onclick="toggleSidebar()" style="display: none;">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <div class="main-content" style="padding: 24px;">
+        <!-- Hero ve stylu ostatních stránek -->
+        <section class="page-hero" style="margin-bottom:16px;">
+            <div class="container">
+                <div class="page-hero-card">
+                    <div class="page-hero-inner">
+                        <h2 class="services-title"><span class="title-text">Upravit inzerát</span><span class="title-accent"></span></h2>
+                        <p class="page-hero-subtitle">Upravte údaje vaší služby</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <div class="container">
+            <div class="guide">
+                Upravte název, kategorii, popis, cenu, kraj a fotografie. Vpravo vidíte náhled karty inzerátu. Položky označené <span class="required-badge">*</span> jsou povinné.
+            </div>
+
+        <div class="ad-create-layout">
+            <div id="editServiceModal" style="display:block; background:none;">
+                <form id="editServiceForm" class="service-form ad-create-card" novalidate>
+                    <div class="form-group">
+                        <label class="form-label">Název služby <span class="required-badge">*</span></label>
+                        <input type="text" id="editServiceTitle" name="title" placeholder="Např. Instalace nábytku / Fotograf / Doučování matematiky" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Vyberte kategorii <span class="required-badge">*</span></label>
+                        <select id="editServiceCategory" name="category" required>
+                            <option value="">Vyberte kategorii</option>
+                            <option value="home_craftsmen">Domácnost & Řemeslníci</option>
+                            <option value="auto_moto">Auto & Moto</option>
+                            <option value="garden_exterior">Zahrada & Exteriér</option>
+                            <option value="education_tutoring">Vzdělávání & Doučování</option>
+                            <option value="it_technology">IT & technologie</option>
+                            <option value="health_personal_care">Zdraví a Osobní péče</option>
+                            <option value="gastronomy_catering">Gastronomie & Catering</option>
+                            <option value="events_entertainment">Události & Zábava</option>
+                            <option value="personal_small_jobs">Osobní služby & drobné práce</option>
+                            <option value="auto_moto_transport">Auto - moto doprava</option>
+                            <option value="hobby_creative">Hobby & kreativní služby</option>
+                            <option value="law_finance_admin">Právo & finance & administrativa</option>
+                            <option value="pets">Domácí zvířata</option>
+                            <option value="specialized_custom">Specializované služby / na přání</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Popis služby <span class="required-badge">*</span></label>
+                        <textarea id="editServiceDescription" name="description" placeholder="Co přesně nabízíte, jak probíhá práce, zkušenosti, dostupnost…" rows="4" maxlength="600" required></textarea>
+                        <div class="char-counter"><span id="editServiceDescriptionCounter">600</span> znaků zbývá</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Cena</label>
+                        <div class="price-inline">
+                            <div class="radio-group">
+                                <label><input type="radio" id="editPriceTypeFixed" name="editPriceType" value="fixed"> Fixní</label>
+                                <label><input type="radio" id="editPriceTypeRange" name="editPriceType" value="range"> Rozmezí</label>
+                                <label><input type="radio" id="editPriceTypeNegotiable" name="editPriceType" value="negotiable"> Dohodou</label>
+                            </div>
+                            <div class="inputs">
+                                <input type="number" min="0" step="1" id="editServicePrice" name="price" placeholder="Cena" style="display:none; width:180px;">
+                                <input type="number" min="0" step="1" id="editServicePriceFrom" name="priceFrom" placeholder="Od" style="display:none; width:180px;">
+                                <input type="number" min="0" step="1" id="editServicePriceTo" name="priceTo" placeholder="Do" style="display:none; width:180px;">
+                            </div>
+                            <div class="pill-group" id="editUnitPills" style="display:none;">
+                                <label><input type="radio" name="editPriceUnit" value="hour" checked><span>Kč / hod</span></label>
+                                <label><input type="radio" name="editPriceUnit" value="work"><span>Kč / práci</span></label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Kraj (ČR/SR) <span class="required-badge">*</span></label>
+                        <select id="editServiceLocation" name="location" required>
+                            <option value="">Vyberte kraj (ČR/SR)</option>
+                            <option value="Kdekoliv">Kdekoliv</option>
+                            <optgroup label="Česká republika">
+                                <option value="CelaCeskaRepublika">Celá Česká republika</option>
+                                <option value="Praha">Hlavní město Praha</option>
+                                <option value="Stredocesky">Středočeský kraj</option>
+                                <option value="Jihocesky">Jihočeský kraj</option>
+                                <option value="Plzensky">Plzeňský kraj</option>
+                                <option value="Karlovarsky">Karlovarský kraj</option>
+                                <option value="Ustecky">Ústecký kraj</option>
+                                <option value="Liberecky">Liberecký kraj</option>
+                                <option value="Kralovehradecky">Královéhradecký kraj</option>
+                                <option value="Pardubicky">Pardubický kraj</option>
+                                <option value="Vysocina">Kraj Vysočina</option>
+                                <option value="Jihomoravsky">Jihomoravský kraj</option>
+                                <option value="Olomoucky">Olomoucký kraj</option>
+                                <option value="Zlinsky">Zlínský kraj</option>
+                                <option value="Moravskoslezsky">Moravskoslezský kraj</option>
+                            </optgroup>
+                            <optgroup label="Slovenská republika">
+                                <option value="CelaSlovenskaRepublika">Celá Slovenská republika</option>
+                                <option value="Bratislavsky">Bratislavský kraj</option>
+                                <option value="Trnavsky">Trnavský kraj</option>
+                                <option value="Trenciansky">Trenčianský kraj</option>
+                                <option value="Nitriansky">Nitriansky kraj</option>
+                                <option value="Zilinsky">Žilinský kraj</option>
+                                <option value="Banskobystricky">Banskobystrický kraj</option>
+                                <option value="Presovsky">Prešovský kraj</option>
+                                <option value="Kosicky">Košický kraj</option>
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-image"></i> Náhledový obrázek <span class="required-badge">*</span></label>
+                        <input type="file" id="editPreviewImage" name="previewImage" accept="image/*">
+                        <div class="image-preview" id="editPreviewImagePreview"></div>
+                        <div class="toggle-row">
+                            <label class="toggle" title="Použít výchozí logo místo nahrání souboru">
+                                <input type="checkbox" id="editNoPreviewImage">
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <span class="toggle-label">Bez náhledového obrázku (použít výchozí logo)</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-images"></i> Další fotky (volitelné, max 10)</label>
+                        <input type="file" id="editAdditionalImages" name="additionalImages" accept="image/*" multiple>
+                        <div class="images-grid" id="editAdditionalImagesPreview"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Stav <span class="required-badge">*</span></label>
+                        <select id="editServiceStatus" name="status" required>
+                            <option value="active">Aktivní</option>
+                            <option value="inactive">Neaktivní</option>
+                            <option value="paused">Pozastaveno</option>
+                        </select>
+                    </div>
+
+                </form>
+            </div>
+
+            <!-- Náhled a akce vpravo -->
+            <aside class="ad-create-aside">
+                <div class="ad-create-card ad-preview">
+                    <img id="previewCardImage" alt="Náhled obrázku">
+                    <div>
+                        <h3 id="previewCardTitle" style="margin:0 0 4px 0;">Název inzerátu</h3>
+                        <div class="meta">
+                            <span id="previewCardLocation">Kraj</span> •
+                            <span id="previewCardCategory">Kategorie</span>
+                        </div>
+                        <div id="previewCardPrice" style="margin-top:6px; font-weight:700; color:#f59e0b;"></div>
+                    </div>
+                </div>
+                
+                <!-- Sekce pro tlačítka -->
+                <div class="ad-create-actions-section">
+                    <div class="ad-create-card">
+                        <div class="ad-create-actions">
+                            <button id="saveEditBtn" class="btn btn-primary" form="editServiceForm" type="submit">
+                                <i class="fas fa-save"></i> Uložit změny
+                            </button>
+                            <a class="btn btn-outline" href="my-ads.html">
+                                <i class="fas fa-arrow-left"></i> Zpět
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+        </div> <!-- /container -->
+    </div>
+
+    <script type="module" src="/firebase-init.js" defer></script>
+    <script src="/auth.js" defer></script>
+    <script src="/script.js" defer></script>
+    <script src="/edit-ad.js" defer></script>
+</body>
+</html>
+
