@@ -4915,6 +4915,170 @@ export const createBillingPortalSession = functions
   });
 
 /**
+ * Vytvoří Stripe Checkout Session s backend kontrolou trial historie
+ * Zajišťuje, že trial se nastaví pouze pokud uživatel ještě trial neměl
+ */
+export const createCheckoutSession = functions
+  .region("europe-west1")
+  .runWith({ secrets: ["STRIPE_SECRET_KEY"] })
+  .https.onRequest(async (req, res) => {
+    corsHandler(req, res, async () => {
+      try {
+        functions.logger.info("📥 createCheckoutSession called", {
+          method: req.method,
+          hasBody: !!req.body
+        });
+
+        if (req.method !== "POST") {
+          res.status(405).json({ error: "Method not allowed" });
+          return;
+        }
+
+        const body = req.body || {};
+        const { priceId, planId, successUrl, cancelUrl, uid } = body;
+
+        // Validace vstupů
+        if (!priceId || typeof priceId !== 'string') {
+          res.status(400).json({ error: "Missing or invalid priceId" });
+          return;
+        }
+        if (!successUrl || typeof successUrl !== 'string') {
+          res.status(400).json({ error: "Missing or invalid successUrl" });
+          return;
+        }
+        if (!cancelUrl || typeof cancelUrl !== 'string') {
+          res.status(400).json({ error: "Missing or invalid cancelUrl" });
+          return;
+        }
+
+        // Získat UID z Authorization header nebo z requestu
+        let userId: string | null = uid || null;
+        const authHeader = req.headers.authorization;
+        if (authHeader && typeof authHeader === 'string' && authHeader.startsWith("Bearer ")) {
+          try {
+            const token = authHeader.substring(7).trim();
+            if (token && /^[A-Za-z0-9._-]+$/.test(token)) {
+              const decodedToken = await admin.auth().verifyIdToken(token);
+              userId = decodedToken.uid;
+            }
+          } catch (error) {
+            functions.logger.warn("⚠️ Could not verify token", { error });
+          }
+        }
+
+        if (!userId) {
+          res.status(401).json({ error: "Unauthorized - missing user ID" });
+          return;
+        }
+
+        const db = admin.firestore();
+
+        // BACKEND KONTROLA: Zkontrolovat, zda uživatel už někdy měl trial
+        let hasUsedTrial = false;
+        try {
+          const subsRef = db.collection("customers").doc(userId).collection("subscriptions");
+          const subsSnap = await subsRef.get();
+          
+          if (!subsSnap.empty) {
+            for (const subDoc of subsSnap.docs) {
+              const subData = subDoc.data() as AnyObj;
+              
+              // Kontrola 1: Status je "trialing"
+              if (subData.status === 'trialing') {
+                hasUsedTrial = true;
+                break;
+              }
+              
+              // Kontrola 2: Subscription má trial_period_start nebo trial_period_end
+              if (subData.trial_start || subData.trial_end) {
+                hasUsedTrial = true;
+                break;
+              }
+              
+              // Kontrola 3: Subscription má trial_start nebo trial_end v items
+              if (subData.items && Array.isArray(subData.items)) {
+                for (const item of subData.items) {
+                  if (item.trial_start || item.trial_end) {
+                    hasUsedTrial = true;
+                    break;
+                  }
+                }
+              }
+            }
+          }
+        } catch (error) {
+          functions.logger.error("❌ Error checking trial history", { error, userId });
+          // V případě chyby raději nepovolit trial (bezpečnější)
+          hasUsedTrial = true;
+        }
+
+        functions.logger.info("🔍 Trial check result", {
+          userId,
+          hasUsedTrial,
+          planId
+        });
+
+        // Připravit data pro Checkout Session
+        const sessionData: AnyObj = {
+          price: priceId,
+          mode: 'subscription',
+          success_url: successUrl,
+          cancel_url: cancelUrl,
+          allow_promotion_codes: true,
+          invoice_creation: {
+            enabled: true,
+            invoice_data: {
+              description: planId === 'business' ? 'Měsíční předplatné - Firma' : 'Měsíční předplatné - Hobby uživatel',
+              custom_fields: [
+                {
+                  name: 'Typ faktury',
+                  value: 'Předplatné'
+                }
+              ],
+              // Explicitně povolit automatické finalizování faktur (Stripe automaticky pošle zákazníkovi)
+              auto_advance: true
+            }
+          }
+        };
+
+        // Nastavit trial POUZE pokud uživatel ještě trial neměl
+        if ((planId === 'hobby' || planId === 'business') && !hasUsedTrial) {
+          sessionData.trial_period_days = 30;
+          functions.logger.info("✅ Trial period nastaven", { userId, planId });
+        } else if (hasUsedTrial) {
+          functions.logger.info("⚠️ Trial period NENÍ nastaven - uživatel už trial použil", { userId, planId });
+        }
+
+        // Vytvořit Checkout Session dokument (Firebase Extension to zpracuje)
+        const checkoutRef = await db
+          .collection("customers")
+          .doc(userId)
+          .collection("checkout_sessions")
+          .add(sessionData);
+
+        functions.logger.info("✅ Checkout session dokument vytvořen", {
+          userId,
+          checkoutSessionId: checkoutRef.id,
+          hasTrial: !!sessionData.trial_period_days
+        });
+
+        // Vrátit ID checkout session (frontend bude pollovat URL)
+        res.status(200).json({
+          checkoutSessionId: checkoutRef.id,
+          hasTrial: !!sessionData.trial_period_days
+        });
+
+      } catch (error: any) {
+        functions.logger.error("❌ Chyba při vytváření checkout session", {
+          error: error?.message,
+          stack: error?.stack
+        });
+        res.status(500).json({ error: error?.message || "Internal server error" });
+      }
+    });
+  });
+
+/**
  * Firestore trigger: Odešle email upozornění při nové zprávě v chatu
  * Spouští se automaticky při vytvoření nové zprávy v messages kolekci
  */

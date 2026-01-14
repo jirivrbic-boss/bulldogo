@@ -546,7 +546,7 @@ async function processPayment() {
         sessionStorage.setItem('package_pending', JSON.stringify({ planId, startedAt: Date.now() }));
     } catch (_) {}
     try {
-        const { addDoc, collection, getDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        const { addDoc, collection, getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
         const successUrl = `${window.location.origin}/packages.html?payment=success`;
         const cancelUrl = `${window.location.origin}/packages.html?payment=canceled`;
         // Připravit data pro Checkout Session – Stripe (Firebase Extension)
@@ -572,30 +572,78 @@ async function processPayment() {
                 }
             }
         };
-        // Nastavit 30denní trial pro Hobby i Firmu - POUZE pokud uživatel ještě trial neměl
-        if (planId === 'hobby' || planId === 'business') {
-            const hasUsedTrial = await hasUserUsedTrial(user.uid);
-            if (!hasUsedTrial) {
-                sessionData.trial_period_days = 30;
-                console.log('✅ Trial period nastaven: uživatel ještě trial neměl');
-            } else {
-                console.log('⚠️ Trial period NENÍ nastaven: uživatel už trial použil');
-            }
-        }
         // Podpora pro URL parametr ?promo=KOD (předvyplní promo kód)
         const urlParams = new URLSearchParams(window.location.search);
         const promoCode = urlParams.get('promo') || urlParams.get('coupon');
         if (promoCode) {
-            // Pokud chceš použít konkrétní kupón, použij discounts místo allow_promotion_codes
-            // sessionData.discounts = [{ coupon: promoCode }];
-            // Pro teď jen povolíme promo codes field - uživatel zadá kód ve Stripe checkoutu
             console.log('💳 Promo kód detekován v URL:', promoCode, '(uživatel ho zadá ve Stripe checkoutu)');
         }
-        // Vytvořit Checkout Session dokument
-        const checkoutRef = await addDoc(
-            collection(window.firebaseDb, 'customers', user.uid, 'checkout_sessions'),
-            sessionData
-        );
+        
+        // Vytvořit Checkout Session přes Cloud Function (backend kontrola trial historie)
+        // Získat Firebase project ID z konfigurace
+        let projectId = 'inzerio-inzerce'; // fallback
+        if (window.firebaseApp && window.firebaseApp.options && window.firebaseApp.options.projectId) {
+            projectId = window.firebaseApp.options.projectId;
+        }
+        
+        // Získat auth token pro autentizaci
+        let authToken = null;
+        if (user && typeof user.getIdToken === 'function') {
+            try {
+                authToken = await user.getIdToken();
+            } catch (tokenError) {
+                console.warn('Could not get auth token:', tokenError);
+            }
+        }
+        
+        // Zavolat Cloud Function pro vytvoření checkout session
+        const functionsUrl = `https://europe-west1-${projectId}.cloudfunctions.net/createCheckoutSession`;
+        
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+        
+        if (authToken && typeof authToken === 'string' && authToken.trim().length > 0) {
+            headers['Authorization'] = `Bearer ${authToken}`;
+        }
+        
+        const functionResponse = await fetch(functionsUrl, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify({
+                priceId: priceId,
+                planId: planId,
+                successUrl: successUrl,
+                cancelUrl: cancelUrl,
+                uid: user.uid
+            })
+        });
+        
+        if (!functionResponse.ok) {
+            const errorData = await functionResponse.json().catch(() => ({ error: 'Unknown error' }));
+            throw new Error(errorData.error || `HTTP error! status: ${functionResponse.status}`);
+        }
+        
+        const functionData = await functionResponse.json();
+        
+        if (functionData.error) {
+            console.error('Cloud Function error:', functionData.error);
+            showMessage(`Chyba při vytváření platby: ${functionData.error}`, "error");
+            if (payButton && originalText) {
+                payButton.innerHTML = originalText;
+                payButton.disabled = false;
+            }
+            return;
+        }
+        
+        // Cloud Function vytvořila checkout session dokument, teď musíme počkat na URL
+        const checkoutSessionId = functionData.checkoutSessionId;
+        if (!checkoutSessionId) {
+            throw new Error('Cloud Function nevrátila checkoutSessionId');
+        }
+        
+        // Reference na checkout session dokument
+        const checkoutRef = doc(window.firebaseDb, 'customers', user.uid, 'checkout_sessions', checkoutSessionId);
         // Čekat na URL bez realtime listeneru (Safari často blokuje Listen/channel)
         const startedAt = Date.now();
         const timeoutMs = 60_000;
