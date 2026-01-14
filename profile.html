@@ -1135,7 +1135,7 @@
             }
         }
 
-        // Load all user reviews (profile + ads)
+        // Load all user reviews (profile + ads) - zjednodušená verze podle profile-detail.js
         async function loadAllUserReviews(userId) {
             console.log('⭐ Loading all reviews for user:', userId);
             try {
@@ -1148,150 +1148,51 @@
 
                 const { getDocs, collection, collectionGroup, getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
                 
-                // Load profile reviews
-                const profileReviewsRef = collection(window.firebaseDb, 'users', userId, 'reviews');
-                let profileSnap;
+                const allReviews = [];
+                
+                // 1. Načíst recenze na profilu uživatele (users/{userId}/reviews) - stejně jako v profile-detail.js
                 try {
-                    profileSnap = await getDocs(profileReviewsRef);
-                    console.log('📖 Načteno recenzí z profilu:', profileSnap.size);
+                    const profileReviewsRef = collection(window.firebaseDb, 'users', userId, 'reviews');
+                    const profileReviewsSnap = await getDocs(profileReviewsRef);
+                    console.log('📖 Načteno recenzí z profilu:', profileReviewsSnap.size);
+                    
+                    profileReviewsSnap.forEach(doc => {
+                        const reviewData = doc.data();
+                        reviewData.id = doc.id;
+                        reviewData.type = 'profile';
+                        allReviews.push(reviewData);
+                    });
                 } catch (error) {
                     console.error('❌ Error loading profile reviews:', error);
-                    console.error('Error details:', {
-                        code: error.code,
-                        message: error.message,
-                        path: `users/${userId}/reviews`
-                    });
-                    // Nevyhodit chybu, ale pokračovat s prázdným seznamem
-                    profileSnap = { docs: [] };
-                }
-                
-                const profileReviews = [];
-                
-                for (const docSnap of profileSnap.docs) {
-                    const reviewData = docSnap.data();
-                    
-                    // Load reviewer info if reviewerId exists
-                    if (reviewData.reviewerId) {
-                        try {
-                            // Try loading from user's profile/profile document
-                            const userDocRef = doc(window.firebaseDb, 'users', reviewData.reviewerId, 'profile', 'profile');
-                            const userDocSnap = await getDoc(userDocRef);
-                            if (userDocSnap.exists()) {
-                                const userData = userDocSnap.data();
-                                
-                                let reviewerName = 'Anonymní';
-                                if (userData.firstName && userData.lastName) {
-                                    reviewerName = `${userData.firstName} ${userData.lastName}`;
-                                } else if (userData.firstName) {
-                                    reviewerName = userData.firstName;
-                                } else if (userData.lastName) {
-                                    reviewerName = userData.lastName;
-                                } else if (userData.email) {
-                                    reviewerName = userData.email.split('@')[0];
-                                } else if (reviewData.reviewerEmail) {
-                                    reviewerName = reviewData.reviewerEmail.split('@')[0];
-                                }
-                                
-                                reviewData.reviewerName = reviewerName;
-                            } else if (reviewData.reviewerEmail) {
-                                // Fallback to email if user doc doesn't exist
-                                reviewData.reviewerName = reviewData.reviewerEmail.split('@')[0];
-                            }
-                        } catch (error) {
-                            console.log('⚠️ Could not load reviewer profile:', error);
-                            // Fallback to email
-                            if (reviewData.reviewerEmail) {
-                                reviewData.reviewerName = reviewData.reviewerEmail.split('@')[0];
-                            }
-                        }
-                    } else if (reviewData.reviewerEmail) {
-                        // Fallback to email if no reviewerId
-                        reviewData.reviewerName = reviewData.reviewerEmail.split('@')[0];
-                    }
-                    
-                    profileReviews.push({ 
-                        id: docSnap.id, 
-                        ...reviewData,
-                        type: 'profile'
-                    });
+                    // Pokračovat i při chybě
                 }
 
-                // Load ad reviews using collectionGroup
-                const adReviewsGroup = collectionGroup(window.firebaseDb, 'reviews');
-                const adReviews = [];
-                let groupSnap;
+                // 2. Načíst recenze na inzerátech uživatele pomocí collectionGroup
                 try {
-                    groupSnap = await getDocs(adReviewsGroup);
-                } catch (error) {
-                    console.error('❌ Error loading ad reviews via collectionGroup:', error);
-                    // Continue without ad reviews if collectionGroup fails
-                    groupSnap = { docs: [] };
-                }
-                
-                for (const docSnap of groupSnap.docs) {
-                    const parent = docSnap.ref.parent; // reviews collection
-                    const adDoc = parent?.parent; // adId document
-                    const inzeraty = adDoc?.parent; // 'inzeraty' collection
-                    const userDoc = inzeraty?.parent; // user uid document
+                    const adReviewsGroup = collectionGroup(window.firebaseDb, 'reviews');
+                    const adReviewsSnap = await getDocs(adReviewsGroup);
+                    console.log('📖 Načteno recenzí z inzerátů (collectionGroup):', adReviewsSnap.size);
                     
-                    if (userDoc && userDoc.id === userId && inzeraty.id === 'inzeraty') {
+                    adReviewsSnap.forEach(docSnap => {
                         const reviewData = docSnap.data();
+                        const parent = docSnap.ref.parent; // reviews collection
+                        const adDoc = parent?.parent; // adId document
+                        const inzeraty = adDoc?.parent; // 'inzeraty' collection
+                        const userDoc = inzeraty?.parent; // user uid document
                         
-                        // Load reviewer info if reviewerId exists
-                        if (reviewData.reviewerId) {
-                            try {
-                                // Try loading from user's profile/profile document
-                                const userDocRef = doc(window.firebaseDb, 'users', reviewData.reviewerId, 'profile', 'profile');
-                                const userDocSnap = await getDoc(userDocRef);
-                                if (userDocSnap.exists()) {
-                                    const userData = userDocSnap.data();
-                                    
-                                    let reviewerName = 'Anonymní';
-                                    if (userData.firstName && userData.lastName) {
-                                        reviewerName = `${userData.firstName} ${userData.lastName}`;
-                                    } else if (userData.firstName) {
-                                        reviewerName = userData.firstName;
-                                    } else if (userData.lastName) {
-                                        reviewerName = userData.lastName;
-                                    } else if (userData.email) {
-                                        reviewerName = userData.email.split('@')[0];
-                                    } else if (reviewData.reviewerEmail) {
-                                        reviewerName = reviewData.reviewerEmail.split('@')[0];
-                                    }
-                                    
-                                    reviewData.reviewerName = reviewerName;
-                                } else if (reviewData.reviewerEmail) {
-                                    // Fallback to email if user doc doesn't exist
-                                    reviewData.reviewerName = reviewData.reviewerEmail.split('@')[0];
-                                }
-                            } catch (error) {
-                                console.log('⚠️ Could not load reviewer profile:', error);
-                                // Fallback to email
-                                if (reviewData.reviewerEmail) {
-                                    reviewData.reviewerName = reviewData.reviewerEmail.split('@')[0];
-                                }
-                            }
-                        } else if (reviewData.reviewerEmail) {
-                            // Fallback to email if no reviewerId
-                            reviewData.reviewerName = reviewData.reviewerEmail.split('@')[0];
+                        if (userDoc && userDoc.id === userId && inzeraty.id === 'inzeraty') {
+                            reviewData.id = docSnap.id;
+                            reviewData.type = 'ad';
+                            reviewData.adId = adDoc.id;
+                            allReviews.push(reviewData);
                         }
-                        
-                        adReviews.push({ 
-                            id: docSnap.id, 
-                            ...reviewData,
-                            type: 'ad',
-                            adId: adDoc.id
-                        });
-                    }
+                    });
+                } catch (error) {
+                    console.error('❌ Error loading ad reviews:', error);
+                    // Pokračovat i při chybě
                 }
 
-                // Combine all reviews
-                const allReviews = [...profileReviews, ...adReviews];
-                console.log('📊 Found reviews with user info:', { 
-                    profile: profileReviews.length, 
-                    ads: adReviews.length, 
-                    total: allReviews.length
-                });
+                console.log('📊 Celkem načteno recenzí:', allReviews.length);
                 
                 if (allReviews.length > 0) {
                     console.log('📊 První recenze:', {
@@ -1307,7 +1208,6 @@
 
                 // Sort by date (newest first)
                 allReviews.sort((a, b) => {
-                    // Použít updatedAt nebo createdAt (priorita updatedAt)
                     const dateA = a.updatedAt?.toDate?.() || a.updatedAt || 
                                   a.createdAt?.toDate?.() || a.createdAt || 
                                   new Date(0);
@@ -1317,8 +1217,8 @@
                     return new Date(dateB) - new Date(dateA);
                 });
 
-                // Render reviews
-                renderAllReviews(allReviews, container);
+                // Render reviews - načíst jména recenzentů až při renderování
+                await renderAllReviews(allReviews, container);
                 
                 // Update rating in statistics after loading reviews
                 updateRatingFromReviews(allReviews);
@@ -1332,7 +1232,6 @@
                 });
                 const container = document.getElementById('allReviewsContainer');
                 if (container) {
-                    // Zkusit zobrazit prázdný stav místo chybové hlášky
                     container.innerHTML = `
                         <div class="no-reviews">
                             <i class="fas fa-star"></i>
@@ -1372,8 +1271,8 @@
             }
         }
 
-        // Render all reviews
-        function renderAllReviews(reviews, container) {
+        // Render all reviews - asynchronní verze podle profile-detail.js
+        async function renderAllReviews(reviews, container) {
             console.log('🎨 Rendering reviews:', reviews?.length || 0, 'reviews');
             if (!container) {
                 console.error('❌ Container not provided to renderAllReviews');
@@ -1392,6 +1291,37 @@
             }
             
             console.log('✅ Rendering', reviews.length, 'reviews');
+            
+            // Načíst jména recenzentů asynchronně - stejně jako v profile-detail.js
+            const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+            const reviewsWithNames = await Promise.all(
+                reviews.map(async (review) => {
+                    let reviewerName = review.reviewerName || review.reviewerEmail?.split('@')[0] || 'Anonymní';
+                    
+                    // Pokud máme reviewerId, zkus načíst jméno z profilu
+                    if (review.reviewerId && !review.reviewerName) {
+                        try {
+                            const reviewerProfileRef = doc(window.firebaseDb, 'users', review.reviewerId, 'profile', 'profile');
+                            const reviewerProfileSnap = await getDoc(reviewerProfileRef);
+                            
+                            if (reviewerProfileSnap.exists()) {
+                                const reviewerData = reviewerProfileSnap.data();
+                                reviewerName = reviewerData.name || 
+                                               (reviewerData.firstName && reviewerData.lastName 
+                                                ? `${reviewerData.firstName} ${reviewerData.lastName}`.trim()
+                                                : reviewerData.email?.split('@')[0] || reviewerName);
+                            }
+                        } catch (error) {
+                            console.warn('⚠️ Nepodařilo se načíst jméno recenzenta:', error);
+                        }
+                    }
+                    
+                    return {
+                        ...review,
+                        reviewerName: reviewerName
+                    };
+                })
+            );
 
             // Calculate average rating
             const avgRating = (reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviews.length).toFixed(1);
@@ -1488,7 +1418,7 @@
                     </div>
                 </div>
                 <div class="reviews-list">
-                    ${reviews.map(review => createReviewCard(review)).join('')}
+                    ${reviewsWithNames.map(review => createReviewCard(review)).join('')}
                 </div>
             `;
         }

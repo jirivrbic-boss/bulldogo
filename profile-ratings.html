@@ -807,28 +807,21 @@
             console.log('✅ Statistics updated');
         }
 
-        // Load user reviews (stejně jako v profile-detail.js)
+        // Load user reviews (stejně jako v profile-detail.js) - zjednodušená verze
         async function loadUserReviews(userId) {
             try {
                 const { getDocs, collection, collectionGroup } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
                 
                 userReviews = [];
                 
-                // 1. Načíst recenze na profilu uživatele (users/{userId}/reviews)
+                // 1. Načíst recenze na profilu uživatele (users/{userId}/reviews) - stejně jako v profile-detail.js
                 try {
                     const profileReviewsRef = collection(window.firebaseDb, 'users', userId, 'reviews');
                     const profileReviewsSnap = await getDocs(profileReviewsRef);
-                    console.log('📖 Načítám recenze z profilu, nalezeno:', profileReviewsSnap.size);
+                    console.log('📖 Načteno recenzí z profilu:', profileReviewsSnap.size);
+                    
                     profileReviewsSnap.forEach(doc => {
                         const reviewData = doc.data();
-                        console.log('📖 Recenze z profilu:', {
-                            id: doc.id,
-                            rating: reviewData.rating,
-                            text: reviewData.text?.substring(0, 30),
-                            createdAt: reviewData.createdAt,
-                            updatedAt: reviewData.updatedAt,
-                            reviewerId: reviewData.reviewerId
-                        });
                         reviewData.id = doc.id;
                         reviewData.type = 'profile';
                         userReviews.push(reviewData);
@@ -836,11 +829,7 @@
                     console.log('✅ Profile reviews loaded:', profileReviewsSnap.size);
                 } catch (profileError) {
                     console.error('❌ Error loading profile reviews:', profileError);
-                    console.error('Error details:', {
-                        code: profileError.code,
-                        message: profileError.message,
-                        path: `users/${userId}/reviews`
-                    });
+                    // Pokračovat i při chybě
                 }
                 
                 // 2. Načíst recenze na inzerátech uživatele - projít všechny inzeráty
