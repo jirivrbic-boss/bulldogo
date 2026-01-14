@@ -2542,21 +2542,22 @@ body {
     align-items: center; /* Vycentrovat obsah */
 }
 
-/* Rozšíření containeru na stránce uživatelů přes celou obrazovku */
+/* Rozšíření containeru na stránce uživatelů přes celou obrazovku - upraveno aby se vešlo */
 body:has(.users-container) .main-content .container,
 .main-content:has(.users-container) .container {
-    max-width: calc(100% - 70px) !important;
-    width: calc(100% - 70px) !important;
-    padding: 0 2rem !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 1.5rem !important;
     margin: 0 !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
 }
 
 body:has(.users-container) .users-container,
 .main-content:has(.users-container) .users-container {
     width: 100% !important;
     max-width: 100% !important;
+    box-sizing: border-box !important;
 }
 
 /* Mobilní optimalizace pro container */
@@ -3698,8 +3699,12 @@ body:has(.users-container) .users-container,
 .main-content {
     margin-left: 70px;
     min-height: 100vh;
-    background: #ffffff; /* sjednocené bílé pozadí, žádné „oříznuté“ okraje */
+    background: #ffffff; /* sjednocené bílé pozadí, žádné „oříznuté" okraje */
     transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    width: calc(100% - 70px);
+    max-width: calc(100% - 70px);
+    box-sizing: border-box;
+    overflow-x: hidden;
 }
 
 .main-content.sidebar-collapsed {
@@ -9949,22 +9954,27 @@ html {
     overflow: hidden;
     width: 100%;
     max-width: 100%;
+    box-sizing: border-box;
 }
 
 /* Rozšíření containeru na stránce uživatelů přes celou obrazovku */
 body:has(.users-container) .main-content,
 .main-content:has(.users-container) {
-    max-width: calc(100vw - 70px) !important;
-    width: calc(100vw - 70px) !important;
+    max-width: calc(100% - 70px) !important;
+    width: calc(100% - 70px) !important;
     padding: 0 !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
 }
 
 body:has(.users-container) .main-content .container,
 .main-content:has(.users-container) .container {
     max-width: 100% !important;
     width: 100% !important;
-    padding: 2rem !important;
+    padding: 1.5rem !important;
     margin: 0 !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
 }
 
 .users-header {
@@ -9988,6 +9998,10 @@ body:has(.users-container) .main-content .container,
     grid-template-columns: repeat(4, 1fr);
     gap: 1.5rem;
     padding: 1.5rem;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
 }
 
 /* Na menších obrazovkách upravit počet sloupců */
