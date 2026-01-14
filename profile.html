@@ -1153,9 +1153,16 @@
                 let profileSnap;
                 try {
                     profileSnap = await getDocs(profileReviewsRef);
+                    console.log('📖 Načteno recenzí z profilu:', profileSnap.size);
                 } catch (error) {
                     console.error('❌ Error loading profile reviews:', error);
-                    throw error; // Re-throw to be caught by outer try-catch
+                    console.error('Error details:', {
+                        code: error.code,
+                        message: error.message,
+                        path: `users/${userId}/reviews`
+                    });
+                    // Nevyhodit chybu, ale pokračovat s prázdným seznamem
+                    profileSnap = { docs: [] };
                 }
                 
                 const profileReviews = [];
@@ -1283,15 +1290,31 @@
                 console.log('📊 Found reviews with user info:', { 
                     profile: profileReviews.length, 
                     ads: adReviews.length, 
-                    total: allReviews.length,
-                    reviews: allReviews
+                    total: allReviews.length
                 });
+                
+                if (allReviews.length > 0) {
+                    console.log('📊 První recenze:', {
+                        id: allReviews[0].id,
+                        rating: allReviews[0].rating,
+                        text: allReviews[0].text?.substring(0, 50),
+                        createdAt: allReviews[0].createdAt,
+                        updatedAt: allReviews[0].updatedAt
+                    });
+                } else {
+                    console.log('⚠️ Žádné recenze nenalezeny pro uživatele:', userId);
+                }
 
                 // Sort by date (newest first)
                 allReviews.sort((a, b) => {
-                    const dateA = new Date(a.updatedAt?.toDate?.() || a.updatedAt || 0);
-                    const dateB = new Date(b.updatedAt?.toDate?.() || b.updatedAt || 0);
-                    return dateB - dateA;
+                    // Použít updatedAt nebo createdAt (priorita updatedAt)
+                    const dateA = a.updatedAt?.toDate?.() || a.updatedAt || 
+                                  a.createdAt?.toDate?.() || a.createdAt || 
+                                  new Date(0);
+                    const dateB = b.updatedAt?.toDate?.() || b.updatedAt || 
+                                  b.createdAt?.toDate?.() || b.createdAt || 
+                                  new Date(0);
+                    return new Date(dateB) - new Date(dateA);
                 });
 
                 // Render reviews
@@ -1351,11 +1374,24 @@
 
         // Render all reviews
         function renderAllReviews(reviews, container) {
-            console.log('🎨 Rendering reviews:', reviews);
-            if (!reviews || reviews.length === 0) {
-                container.innerHTML = '<p class="no-reviews">Uživatel nemá žádné recenze.</p>';
+            console.log('🎨 Rendering reviews:', reviews?.length || 0, 'reviews');
+            if (!container) {
+                console.error('❌ Container not provided to renderAllReviews');
                 return;
             }
+            if (!reviews || reviews.length === 0) {
+                console.log('⚠️ No reviews to render, showing empty state');
+                container.innerHTML = `
+                    <div class="no-reviews">
+                        <i class="fas fa-star"></i>
+                        <h4>Zatím nemáte žádné recenze</h4>
+                        <p>Jakmile získáte první hodnocení od zákazníků, zobrazí se zde.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            console.log('✅ Rendering', reviews.length, 'reviews');
 
             // Calculate average rating
             const avgRating = (reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviews.length).toFixed(1);
