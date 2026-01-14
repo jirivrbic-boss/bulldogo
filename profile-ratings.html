@@ -845,6 +845,13 @@
 
         // Load user reviews - jen z profilu (users/{userId}/reviews)
         async function loadUserReviews(userId) {
+            // Zkontrolovat, zda je Firebase připraven
+            if (!window.firebaseDb) {
+                console.error('❌ Firebase Firestore není inicializován!');
+                userReviews = [];
+                return 0;
+            }
+
             try {
                 const { getDocs, collection } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
                 
@@ -852,24 +859,40 @@
                 
                 // Načíst jen recenze na profilu uživatele (users/{userId}/reviews)
                 try {
+                    console.log('📖 Načítám recenze z cesty: users/' + userId + '/reviews');
                     const profileReviewsRef = collection(window.firebaseDb, 'users', userId, 'reviews');
                     const profileReviewsSnap = await getDocs(profileReviewsRef);
                     console.log('📖 Načteno recenzí z profilu:', profileReviewsSnap.size);
                     
-                    profileReviewsSnap.forEach(doc => {
-                        const reviewData = doc.data();
-                        reviewData.id = doc.id;
-                        reviewData.type = 'profile';
-                        userReviews.push(reviewData);
-                    });
+                    if (profileReviewsSnap.empty) {
+                        console.log('⚠️ Kolekce reviews je prázdná nebo neexistuje');
+                    } else {
+                        profileReviewsSnap.forEach(doc => {
+                            const reviewData = doc.data();
+                            console.log('📖 Recenze nalezena:', {
+                                id: doc.id,
+                                rating: reviewData.rating,
+                                text: reviewData.text?.substring(0, 30),
+                                reviewerId: reviewData.reviewerId
+                            });
+                            reviewData.id = doc.id;
+                            reviewData.type = 'profile';
+                            userReviews.push(reviewData);
+                        });
+                    }
                     console.log('✅ Profile reviews loaded:', profileReviewsSnap.size);
                 } catch (profileError) {
                     console.error('❌ Error loading profile reviews:', profileError);
                     console.error('Error details:', {
                         code: profileError.code,
                         message: profileError.message,
-                        path: `users/${userId}/reviews`
+                        path: `users/${userId}/reviews`,
+                        stack: profileError.stack
                     });
+                    
+                    if (profileError.code === 'permission-denied') {
+                        console.error('❌ PERMISSION DENIED - zkontrolujte Firestore Security Rules!');
+                    }
                     // Pokračovat i při chybě
                 }
                 
