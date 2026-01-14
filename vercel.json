@@ -120,6 +120,11 @@
       "source": "/failed.html",
       "destination": "/failed",
       "permanent": true
+    },
+    {
+      "source": "/reset-password.html",
+      "destination": "/reset-password",
+      "permanent": true
     }
   ],
   "rewrites": [
@@ -214,6 +219,10 @@
     {
       "source": "/failed",
       "destination": "/failed.html"
+    },
+    {
+      "source": "/reset-password",
+      "destination": "/reset-password.html"
     },
     {
       "source": "/(.*)",

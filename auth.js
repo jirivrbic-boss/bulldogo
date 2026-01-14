@@ -2143,9 +2143,9 @@ async function handleForgotPassword() {
         console.log('📧 Odesílám email pro obnovení hesla na:', email);
         
         await sendPasswordResetEmail(firebaseAuth, email, {
-            // URL pro redirect po kliknutí na odkaz (volitelné)
-            url: window.location.origin + '/auth-action.html',
-            // Handle kódy v URL (můžete použít vlastní stránku)
+            // URL pro redirect po kliknutí na odkaz
+            url: window.location.origin + '/reset-password',
+            // Handle kódy v URL (můžeme použít vlastní stránku)
             handleCodeInApp: false
         });
         
