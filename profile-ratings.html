@@ -373,8 +373,20 @@
                 console.log('🎨 Reviews container:', reviewsContainer ? 'found' : 'NOT FOUND');
                 
                 // Vždy zobrazit recenze (i když jsou prázdné)
-                await displayUserReviews();
-                console.log('✅ Recenze zobrazeny (nebo prázdný stav)');
+                try {
+                    await displayUserReviews();
+                    console.log('✅ Recenze zobrazeny (nebo prázdný stav)');
+                } catch (displayError) {
+                    console.error('❌ Error displaying reviews:', displayError);
+                    if (reviewsContainer) {
+                        reviewsContainer.innerHTML = `
+                            <div style="text-align: center; padding: 60px 20px; background: white; border-radius: 16px; border: 2px dashed #e5e7eb;">
+                                <i class="fas fa-star" style="font-size: 48px; color: #d1d5db; margin-bottom: 16px;"></i>
+                                <p style="font-size: 16px; color: #6b7280; margin: 0; font-weight: 500;">Chyba při načítání recenzí. Zkuste obnovit stránku.</p>
+                            </div>
+                        `;
+                    }
+                }
 
             } catch (error) {
                 console.error('❌ Chyba při načítání dat hodnocení:', error);
@@ -943,6 +955,19 @@
                 }
                 
                 console.log('✅ Total user reviews loaded:', userReviews.length);
+                
+                // Seřadit recenze podle data (nejnovější první)
+                userReviews.sort((a, b) => {
+                    const dateA = a.updatedAt?.toDate?.() || a.updatedAt || 
+                                  a.createdAt?.toDate?.() || a.createdAt || 
+                                  new Date(0);
+                    const dateB = b.updatedAt?.toDate?.() || b.updatedAt || 
+                                  b.createdAt?.toDate?.() || b.createdAt || 
+                                  new Date(0);
+                    return new Date(dateB) - new Date(dateA);
+                });
+                
+                console.log('✅ Reviews sorted by date');
                 
                 // Vrátit počet načtených recenzí pro debug
                 return userReviews.length;

@@ -1218,7 +1218,21 @@
                 });
 
                 // Render reviews - načíst jména recenzentů až při renderování
-                await renderAllReviews(allReviews, container);
+                try {
+                    await renderAllReviews(allReviews, container);
+                    console.log('✅ Recenze zobrazeny');
+                } catch (renderError) {
+                    console.error('❌ Error rendering reviews:', renderError);
+                    if (container) {
+                        container.innerHTML = `
+                            <div class="no-reviews">
+                                <i class="fas fa-star"></i>
+                                <h4>Zatím nemáte žádné recenze</h4>
+                                <p>Jakmile získáte první hodnocení od zákazníků, zobrazí se zde.</p>
+                            </div>
+                        `;
+                    }
+                }
                 
                 // Update rating in statistics after loading reviews
                 updateRatingFromReviews(allReviews);
@@ -1324,8 +1338,11 @@
             );
 
             // Calculate average rating
-            const avgRating = (reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviews.length).toFixed(1);
-            const totalReviews = reviews.length;
+            const avgRating = (reviewsWithNames.reduce((sum, r) => sum + (r.rating || 0), 0) / reviewsWithNames.length).toFixed(1);
+            const totalReviews = reviewsWithNames.length;
+            
+            // Zobrazit jen 5 nejnovějších recenzí
+            const latestReviews = reviewsWithNames.slice(0, 5);
 
             // Helper function to get time ago
             function getTimeAgo(date) {
@@ -1418,8 +1435,11 @@
                     </div>
                 </div>
                 <div class="reviews-list">
-                    ${reviewsWithNames.map(review => createReviewCard(review)).join('')}
+                    ${latestReviews.map(review => createReviewCard(review)).join('')}
                 </div>
+                ${totalReviews > 5 ? `<div style="text-align: center; margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                    <p style="margin: 0; color: #666;">Zobrazeno 5 z ${totalReviews} recenzí. <a href="profile-ratings.html" style="color: #f77c00; text-decoration: none; font-weight: 600;">Zobrazit všechny →</a></p>
+                </div>` : ''}
             `;
         }
 
