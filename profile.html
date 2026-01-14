@@ -975,9 +975,9 @@
 
         // Load actual user data
         async function loadUserData() {
-            console.log('💾 Loading user data...');
+            console.log('💾💾💾 loadUserData VOLÁNO 💾💾💾');
             try {
-                const currentUser = window.firebaseAuth.currentUser;
+                const currentUser = window.firebaseAuth?.currentUser;
                 if (!currentUser) {
                     console.log('⚠️ Uživatel není přihlášen - zobrazuji prázdné údaje');
                     showEmptyProfile();
@@ -985,6 +985,8 @@
                 }
 
                 console.log('👤 Načítám data pro uživatele:', currentUser.uid);
+                console.log('👤 Firebase Auth:', !!window.firebaseAuth);
+                console.log('👤 Firebase DB:', !!window.firebaseDb);
 
                 // Load user profile from Firestore
                 const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
@@ -1021,7 +1023,9 @@
                 updateStatistics(userAds, userProfile);
                 
                 // Load all reviews and update rating after loading
+                console.log('📚📚📚 VOLÁM loadAllUserReviews pro:', currentUser.uid);
                 await loadAllUserReviews(currentUser.uid);
+                console.log('📚📚📚 loadAllUserReviews DOKONČENO');
 
             } catch (error) {
                 console.error('❌ Chyba při načítání dat uživatele:', error);
@@ -1153,13 +1157,16 @@
 
         // Load all user reviews (profile + ads) - zjednodušená verze podle profile-detail.js
         async function loadAllUserReviews(userId) {
-            console.log('⭐ Loading all reviews for user:', userId);
+            console.log('⭐⭐⭐ loadAllUserReviews VOLÁNO pro userId:', userId);
+            console.log('⭐ Firebase DB dostupný:', !!window.firebaseDb);
+            console.log('⭐ Firebase Auth dostupný:', !!window.firebaseAuth);
+            
             const container = document.getElementById('allReviewsContainer');
             if (!container) {
-                console.error('❌ allReviewsContainer not found!');
+                console.error('❌❌❌ allReviewsContainer not found!');
                 return;
             }
-            console.log('✅ allReviewsContainer found');
+            console.log('✅ allReviewsContainer found:', container);
 
             // Zkontrolovat, zda je Firebase připraven
             if (!window.firebaseDb) {

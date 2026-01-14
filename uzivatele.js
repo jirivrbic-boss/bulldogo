@@ -451,6 +451,7 @@ async function deleteUser(userId) {
         }
 
         // 9. Smazat Firebase Auth uživatele pomocí Cloud Function
+        let authDeleted = false;
         try {
             const currentAdmin = window.firebaseAuth.currentUser;
             if (!currentAdmin) {
@@ -462,6 +463,8 @@ async function deleteUser(userId) {
 
             // Zavolat Cloud Function pro smazání Auth uživatele
             const functionsUrl = 'https://europe-west1-inzerio-inzerce.cloudfunctions.net/deleteUserAuth';
+            console.log('   📞 Volám Cloud Function:', functionsUrl);
+            
             const response = await fetch(functionsUrl, {
                 method: 'POST',
                 headers: {
@@ -474,45 +477,65 @@ async function deleteUser(userId) {
                 })
             });
 
+            console.log('   📥 Response status:', response.status, response.statusText);
+
             if (!response.ok) {
                 let errorMessage = 'Chyba při mazání z Authentication';
+                let errorDetails = null;
+                
                 try {
                     const result = await response.json();
                     errorMessage = result.error || result.message || errorMessage;
+                    errorDetails = result;
+                    console.error('   ❌ Error response:', result);
                 } catch (e) {
                     // Pokud není JSON response, použít status text
                     errorMessage = response.statusText || `HTTP ${response.status}`;
+                    console.error('   ❌ Non-JSON error response:', response.statusText);
                 }
                 
                 if (response.status === 404) {
                     errorMessage = 'Cloud Function deleteUserAuth není nasazena. Prosím nasaďte ji pomocí: firebase deploy --only functions:deleteUserAuth';
+                    throw new Error(errorMessage);
                 }
                 
-                throw new Error(errorMessage);
+                // Pro ostatní chyby také vyhodit výjimku, aby uživatel viděl, co se stalo
+                throw new Error(`${errorMessage}${errorDetails ? ' - ' + JSON.stringify(errorDetails) : ''}`);
             }
 
             const result = await response.json();
             console.log('   ✓ Firebase Auth uživatel smazán:', result);
+            authDeleted = true;
         } catch (error) {
             console.error('   ❌ Chyba při mazání z Firebase Auth:', error);
+            console.error('   ❌ Error details:', {
+                message: error.message,
+                stack: error.stack,
+                name: error.name
+            });
             
-            // Pokud je to 404, zobrazit uživatelsky přívětivou zprávu
-            if (error.message && error.message.includes('404')) {
-                showMessage('⚠️ Cloud Function není nasazena. Data z Firestore a Storage byla smazána, ale Auth uživatel zůstal. Pro úplné smazání nasaďte Cloud Function.', 'warning');
+            // Zobrazit konkrétní chybu uživateli
+            const errorMsg = error.message || 'Neznámá chyba při mazání z Authentication';
+            
+            if (error.message && (error.message.includes('404') || error.message.includes('není nasazena'))) {
+                showMessage(`⚠️ Cloud Function není nasazena nebo není dostupná.\n\nData z Firestore a Storage byla smazána, ale Auth uživatel zůstal.\n\nChyba: ${errorMsg}\n\nPro úplné smazání nasaďte Cloud Function pomocí:\nfirebase deploy --only functions:deleteUserAuth`, 'warning');
             } else {
-                // Nevyhodit chybu - data z Firestore a Storage jsou smazána
-                console.log('   ⚠️ Data z Firestore a Storage byla smazána, ale Auth uživatel zůstal');
+                showMessage(`⚠️ Nepodařilo se smazat uživatele z Firebase Authentication.\n\nData z Firestore a Storage byla smazána, ale Auth uživatel zůstal.\n\nChyba: ${errorMsg}\n\nZkontrolujte konzoli pro více detailů.`, 'error');
             }
         }
         
-        console.log('✅ Uživatel úspěšně smazán ze všech částí Firebase');
+        if (authDeleted) {
+            console.log('✅ Uživatel úspěšně smazán ze všech částí Firebase');
+            showMessage('✅ Uživatel úspěšně smazán ze všech částí Firebase (Firestore, Storage, Authentication).', 'success');
+        } else {
+            console.log('⚠️ Uživatel smazán z Firestore a Storage, ale Auth uživatel zůstal');
+        }
         
         // Odstranit z lokálních dat
         allUsers = allUsers.filter(u => (u.uid || u.id) !== userId);
         allAds = allAds.filter(ad => ad.userId !== userId);
         
         displayUsers(allUsers);
-        showMessage('✅ Uživatel úspěšně smazán ze všech částí Firebase (Firestore, Storage, Authentication).', 'success');
     } catch (error) {
         console.error('❌ Chyba při mazání uživatele:', error);
         showMessage(`Nepodařilo se smazat uživatele: ${error.message}`, 'error');
