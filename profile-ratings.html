@@ -384,8 +384,10 @@
                 
                 // Zobrazit recenze - POČKAT až se rating aktualizuje
                 console.log('🎨 Zobrazuji recenze, userReviews.length:', userReviews.length);
-                const reviewsContainer = document.querySelector('.reviews-list');
-                console.log('🎨 Reviews container:', reviewsContainer ? 'found' : 'NOT FOUND');
+                
+                // Resetovat sortedReviews, aby se znovu seřadily
+                sortedReviews = [];
+                currentPage = 1;
                 
                 // Vždy zobrazit recenze (i když jsou prázdné)
                 try {
@@ -393,6 +395,8 @@
                     console.log('✅ Recenze zobrazeny (nebo prázdný stav)');
                 } catch (displayError) {
                     console.error('❌ Error displaying reviews:', displayError);
+                    console.error('Error stack:', displayError.stack);
+                    const reviewsContainer = document.getElementById('reviewsListContainer');
                     if (reviewsContainer) {
                         reviewsContainer.innerHTML = `
                             <div style="text-align: center; padding: 60px 20px; background: white; border-radius: 16px; border: 2px dashed #e5e7eb;">
@@ -1161,13 +1165,37 @@
                 return;
             }
             
-            // Pokud ještě nejsou seřazené, seřadit podle výchozího nastavení
-            if (sortedReviews.length === 0) {
-                sortAndDisplayReviews();
-                return;
+            // Pokud ještě nejsou seřazené a máme recenze, seřadit podle výchozího nastavení
+            if (sortedReviews.length === 0 && userReviews.length > 0) {
+                // Inicializovat sortedReviews bez volání sortAndDisplayReviews (aby se nevytvořila smyčka)
+                const sortValue = document.getElementById('sortReviews')?.value || 'newest';
+                sortedReviews = [...userReviews];
+                
+                switch(sortValue) {
+                    case 'newest':
+                        sortedReviews.sort((a, b) => {
+                            const dateA = a.updatedAt?.toDate?.() || a.updatedAt || a.createdAt?.toDate?.() || a.createdAt || new Date(0);
+                            const dateB = b.updatedAt?.toDate?.() || b.updatedAt || b.createdAt?.toDate?.() || b.createdAt || new Date(0);
+                            return new Date(dateB) - new Date(dateA);
+                        });
+                        break;
+                    case 'oldest':
+                        sortedReviews.sort((a, b) => {
+                            const dateA = a.updatedAt?.toDate?.() || a.updatedAt || a.createdAt?.toDate?.() || a.createdAt || new Date(0);
+                            const dateB = b.updatedAt?.toDate?.() || b.updatedAt || b.createdAt?.toDate?.() || b.createdAt || new Date(0);
+                            return new Date(dateA) - new Date(dateB);
+                        });
+                        break;
+                    case 'highest':
+                        sortedReviews.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+                        break;
+                    case 'lowest':
+                        sortedReviews.sort((a, b) => (a.rating || 0) - (b.rating || 0));
+                        break;
+                }
             }
             
-            console.log('📝 displayUserReviews called, sortedReviews.length:', sortedReviews.length);
+            console.log('📝 displayUserReviews called, sortedReviews.length:', sortedReviews.length, 'userReviews.length:', userReviews.length);
             
             if (sortedReviews.length === 0) {
                 reviewsGrid.innerHTML = `
@@ -1187,39 +1215,49 @@
             const pageReviews = sortedReviews.slice(startIndex, endIndex);
             
             // Načíst jména recenzentů pro aktuální stránku
-            const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
-            const reviewsWithNames = await Promise.all(
-                pageReviews.map(async (review) => {
-                    const reviewerId = review.reviewerId || review.fromUserId;
-                    const reviewerEmail = review.reviewerEmail || review.fromUserEmail;
-                    
-                    let reviewerName = review.reviewerName || reviewerEmail?.split('@')[0] || 'Anonymní';
-                    
-                    if (reviewerId && !review.reviewerName) {
-                        try {
-                            const reviewerProfileRef = doc(window.firebaseDb, 'users', reviewerId, 'profile', 'profile');
-                            const reviewerProfileSnap = await getDoc(reviewerProfileRef);
-                            
-                            if (reviewerProfileSnap.exists()) {
-                                const reviewerData = reviewerProfileSnap.data();
-                                reviewerName = reviewerData.name || 
-                                               (reviewerData.firstName && reviewerData.lastName 
-                                                ? `${reviewerData.firstName} ${reviewerData.lastName}`.trim()
-                                                : reviewerData.email?.split('@')[0] || reviewerName);
+            let reviewsWithNames = [];
+            try {
+                const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                reviewsWithNames = await Promise.all(
+                    pageReviews.map(async (review) => {
+                        const reviewerId = review.reviewerId || review.fromUserId;
+                        const reviewerEmail = review.reviewerEmail || review.fromUserEmail;
+                        
+                        let reviewerName = review.reviewerName || reviewerEmail?.split('@')[0] || 'Anonymní';
+                        
+                        if (reviewerId && !review.reviewerName) {
+                            try {
+                                const reviewerProfileRef = doc(window.firebaseDb, 'users', reviewerId, 'profile', 'profile');
+                                const reviewerProfileSnap = await getDoc(reviewerProfileRef);
+                                
+                                if (reviewerProfileSnap.exists()) {
+                                    const reviewerData = reviewerProfileSnap.data();
+                                    reviewerName = reviewerData.name || 
+                                                   (reviewerData.firstName && reviewerData.lastName 
+                                                    ? `${reviewerData.firstName} ${reviewerData.lastName}`.trim()
+                                                    : reviewerData.email?.split('@')[0] || reviewerName);
+                                }
+                            } catch (error) {
+                                console.warn('⚠️ Nepodařilo se načíst jméno recenzenta:', error);
                             }
-                        } catch (error) {
-                            console.warn('⚠️ Nepodařilo se načíst jméno recenzenta:', error);
                         }
-                    }
-                    
-                    return {
-                        ...review,
-                        reviewerId: reviewerId,
-                        reviewerEmail: reviewerEmail,
-                        reviewerName: reviewerName
-                    };
-                })
-            );
+                        
+                        return {
+                            ...review,
+                            reviewerId: reviewerId,
+                            reviewerEmail: reviewerEmail,
+                            reviewerName: reviewerName
+                        };
+                    })
+                );
+            } catch (error) {
+                console.error('❌ Error loading reviewer names:', error);
+                // Použít recenze bez jmen
+                reviewsWithNames = pageReviews.map(review => ({
+                    ...review,
+                    reviewerName: review.reviewerName || review.reviewerEmail?.split('@')[0] || 'Anonymní'
+                }));
+            }
             
             reviewsGrid.innerHTML = reviewsWithNames.map(review => createReviewCard(review)).join('');
             
