@@ -3939,7 +3939,8 @@ function setupEventListeners() {
     // Event listener pro formulář přidání služby - pouze pro modaly na jiných stránkách
     // Na stránce create-ad.html se používá create-ad.js, ne tento listener
     const addServiceForm = document.getElementById('addServiceForm');
-    if (addServiceForm && !window.location.pathname.includes('create-ad.html')) {
+    if (addServiceForm && !window.location.pathname.includes('create-ad.html') && !addServiceForm.hasAttribute('data-submit-handler')) {
+        addServiceForm.setAttribute('data-submit-handler', 'true');
         addServiceForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
