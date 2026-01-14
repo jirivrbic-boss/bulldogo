@@ -404,6 +404,53 @@ function updatePaymentSummary() {
     }
 }
 
+// Zkontrolovat, zda uživatel už někdy měl trial subscription
+async function hasUserUsedTrial(userId) {
+    try {
+        if (!window.firebaseDb || !userId) return false;
+        
+        const { collection, query, getDocs } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        
+        // Zkontrolovat všechny subscriptions uživatele (včetně těch, které už skončily)
+        const subsRef = collection(window.firebaseDb, 'customers', userId, 'subscriptions');
+        const subsSnap = await getDocs(subsRef);
+        
+        if (subsSnap.empty) return false;
+        
+        // Projít všechny subscriptions a zkontrolovat, zda některá měla trial
+        for (const subDoc of subsSnap.docs) {
+            const subData = subDoc.data() || {};
+            
+            // Kontrola 1: Status je "trialing" (i když už skončil, znamená to, že trial měl)
+            if (subData.status === 'trialing') {
+                return true;
+            }
+            
+            // Kontrola 2: Subscription má trial_period_start nebo trial_period_end
+            // To znamená, že trial byl aktivován
+            if (subData.trial_start || subData.trial_end) {
+                return true;
+            }
+            
+            // Kontrola 3: Subscription má trial_start nebo trial_end v items
+            if (subData.items && Array.isArray(subData.items)) {
+                for (const item of subData.items) {
+                    if (item.trial_start || item.trial_end) {
+                        return true;
+                    }
+                }
+            }
+        }
+        
+        return false;
+    } catch (error) {
+        console.error('❌ Error checking trial history:', error);
+        // V případě chyby raději vrátit false, aby se trial nenastavil
+        // (bezpečnější varianta - raději žádný trial než opakovaný trial)
+        return true; // Považujeme za "už použil", aby se trial nenastavil
+    }
+}
+
 async function processPayment() {
     // Kontrola in-app browseru
     if (typeof window.isInAppBrowser === 'function' && window.isInAppBrowser()) {
@@ -525,9 +572,15 @@ async function processPayment() {
                 }
             }
         };
-        // Nastavit 30denní trial pro Hobby i Firmu
+        // Nastavit 30denní trial pro Hobby i Firmu - POUZE pokud uživatel ještě trial neměl
         if (planId === 'hobby' || planId === 'business') {
-            sessionData.trial_period_days = 30;
+            const hasUsedTrial = await hasUserUsedTrial(user.uid);
+            if (!hasUsedTrial) {
+                sessionData.trial_period_days = 30;
+                console.log('✅ Trial period nastaven: uživatel ještě trial neměl');
+            } else {
+                console.log('⚠️ Trial period NENÍ nastaven: uživatel už trial použil');
+            }
         }
         // Podpora pro URL parametr ?promo=KOD (předvyplní promo kód)
         const urlParams = new URLSearchParams(window.location.search);
