@@ -2533,15 +2533,26 @@ async function checkActiveSubscription(uid) {
 window.checkActiveSubscription = checkActiveSubscription;
 
 // Přidání služby
+let isAddingService = false; // Flag pro prevenci duplicitního odesílání
 async function addService(serviceData) {
+    // Prevence duplicitního odesílání
+    if (isAddingService) {
+        console.warn('⚠️ Inzerát se již přidává, ignoruji duplicitní požadavek');
+        return false;
+    }
+    
+    isAddingService = true;
+    
     try {
         if (!authCurrentUser) {
+            isAddingService = false;
             showMessage('Musíte být přihlášeni pro přidání služby.', 'error');
             return false;
         }
 
         const db = firebaseDb || window.firebaseDb;
         if (!db) {
+            isAddingService = false;
             showMessage('Chyba: Databáze není dostupná.', 'error');
             return false;
         }
@@ -2564,6 +2575,7 @@ async function addService(serviceData) {
             setTimeout(() => {
                 window.location.href = 'packages.html';
             }, 2000);
+            isAddingService = false;
             return false; // DŮLEŽITÉ: vrátit false pro zastavení
         }
 
@@ -2579,6 +2591,7 @@ async function addService(serviceData) {
                 console.warn('🚫 Blokováno zakázanými slovy:', bannedWords);
                 console.warn('🚫 Detaily:', profanityCheck.fields);
                 showMessage(`⚠️ Váš text obsahuje nevhodný obsah: "${bannedWords}". Prosím upravte název nebo popis inzerátu.`, 'error');
+                isAddingService = false;
                 return false;
             }
         }
@@ -2761,10 +2774,12 @@ async function addService(serviceData) {
         closeAddServiceModal();
         
         // Real-time listener automaticky aktualizuje seznam
+        isAddingService = false;
         return true; // Úspěch
     } catch (error) {
         console.error('Chyba při přidávání služby:', error);
         showMessage('Došlo k chybě při přidávání služby.', 'error');
+        isAddingService = false;
         return false; // Neúspěch
     }
 }
