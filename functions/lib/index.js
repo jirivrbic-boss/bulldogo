@@ -4157,55 +4157,181 @@ Faktura byla automaticky vytvořena Stripe a odeslána zákazníkovi.
             // Vytvořit email pro zákazníka
             const customerEmailHTML = `
 <!DOCTYPE html>
-<html>
+<html lang="cs">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <meta name="supported-color-schemes" content="light">
+  <!--[if mso]>
+  <style type="text/css">
+    body, table { background-color: #f5f5f5 !important; }
+    .email-body { background-color: #f5f5f5 !important; }
+    .email-container { background-color: #f5f5f5 !important; }
+    .email-card { background-color: #ffffff !important; }
+    .email-text { color: #1a1a1a !important; }
+  </style>
+  <![endif]-->
   <style>
-    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    .header { background: linear-gradient(135deg, #f77c00 0%, #fdf002 100%); color: #111827; padding: 30px 20px; text-align: center; border-radius: 10px 10px 0 0; }
-    .content { padding: 30px 20px; background-color: #ffffff; }
-    .info-box { background-color: #f9fafb; padding: 20px; margin: 20px 0; border-radius: 8px; border: 1px solid #e5e7eb; }
-    .amount-box { background: linear-gradient(135deg, #f77c00 0%, #fdf002 100%); color: #111827; padding: 20px; margin: 20px 0; border-radius: 8px; text-align: center; font-size: 24px; font-weight: bold; }
-    .button { display: inline-block; padding: 12px 30px; background-color: #f77c00; color: white; text-decoration: none; border-radius: 6px; margin: 20px 0; font-weight: bold; }
-    .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 12px; background-color: #f9fafb; border-radius: 0 0 10px 10px; }
+    /* Vynutit světlý režim pro lepší čitelnost */
+    body { 
+      font-family: Arial, sans-serif; 
+      line-height: 1.6; 
+      color: #1a1a1a !important; 
+      background-color: #f5f5f5 !important;
+      margin: 0;
+      padding: 0;
+    }
+    .email-body { 
+      background-color: #f5f5f5 !important; 
+      padding: 20px 0;
+    }
+    .container { 
+      max-width: 600px; 
+      margin: 0 auto; 
+      background-color: #ffffff !important;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .header { 
+      background: linear-gradient(135deg, #f77c00 0%, #fdf002 100%) !important; 
+      color: #111827 !important; 
+      padding: 30px 20px; 
+      text-align: center; 
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 28px;
+      color: #111827 !important;
+    }
+    .content { 
+      padding: 30px 20px; 
+      background-color: #ffffff !important; 
+      color: #1a1a1a !important;
+    }
+    .content p {
+      color: #1a1a1a !important;
+      margin: 15px 0;
+    }
+    .info-box { 
+      background-color: #f9fafb !important; 
+      padding: 20px; 
+      margin: 20px 0; 
+      border-radius: 8px; 
+      border: 1px solid #e5e7eb !important;
+    }
+    .info-box h2 {
+      margin-top: 0;
+      color: #111827 !important;
+    }
+    .info-box p {
+      color: #1a1a1a !important;
+      margin: 10px 0;
+    }
+    .info-box strong {
+      color: #000000 !important;
+    }
+    .amount-box { 
+      background: linear-gradient(135deg, #f77c00 0%, #fdf002 100%) !important; 
+      color: #111827 !important; 
+      padding: 20px; 
+      margin: 20px 0; 
+      border-radius: 8px; 
+      text-align: center; 
+      font-size: 24px; 
+      font-weight: bold;
+    }
+    .button { 
+      display: inline-block; 
+      padding: 12px 30px; 
+      background-color: #f77c00 !important; 
+      color: #ffffff !important; 
+      text-decoration: none; 
+      border-radius: 6px; 
+      margin: 20px 0; 
+      font-weight: bold;
+    }
+    .footer { 
+      text-align: center; 
+      padding: 20px; 
+      color: #6b7280 !important; 
+      font-size: 12px; 
+      background-color: #f9fafb !important;
+    }
+    a {
+      color: #f77c00 !important;
+    }
+    /* Vynutit světlý režim i v tmavém módu */
+    @media (prefers-color-scheme: dark) {
+      body { 
+        background-color: #f5f5f5 !important; 
+        color: #1a1a1a !important;
+      }
+      .email-body { 
+        background-color: #f5f5f5 !important; 
+      }
+      .container { 
+        background-color: #ffffff !important; 
+      }
+      .content { 
+        background-color: #ffffff !important; 
+        color: #1a1a1a !important;
+      }
+      .content p {
+        color: #1a1a1a !important;
+      }
+      .info-box { 
+        background-color: #f9fafb !important; 
+        border-color: #e5e7eb !important;
+      }
+      .info-box p {
+        color: #1a1a1a !important;
+      }
+      .footer { 
+        background-color: #f9fafb !important; 
+        color: #6b7280 !important;
+      }
+    }
   </style>
 </head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1 style="margin: 0; font-size: 28px;">Faktura - BULLDOGO</h1>
-    </div>
-    <div class="content">
-      <p>Dobrý den ${userName},</p>
-      <p>děkujeme za využívání našich služeb. Připravili jsme pro vás fakturu za ${invoiceType.toLowerCase()}.</p>
-      
-      <div class="info-box">
-        <h2 style="margin-top: 0; color: #111827;">Detaily faktury</h2>
-        <p><strong>Číslo faktury:</strong> ${invoiceNumber}</p>
-        <p><strong>Typ služby:</strong> ${invoiceType}</p>
-        ${subscriptionId ? `<p><strong>Předplatné:</strong> Aktivní</p>` : ""}
+<body style="background-color: #f5f5f5; margin: 0; padding: 0;">
+  <div class="email-body">
+    <div class="container">
+      <div class="header">
+        <h1 style="margin: 0; font-size: 28px; color: #111827 !important;">Faktura - BULLDOGO</h1>
       </div>
+      <div class="content">
+        <p style="color: #1a1a1a !important;">Dobrý den ${userName},</p>
+        <p style="color: #1a1a1a !important;">děkujeme za využívání našich služeb. Připravili jsme pro vás fakturu za ${invoiceType.toLowerCase()}.</p>
+        
+        <div class="info-box">
+          <h2 style="margin-top: 0; color: #111827 !important;">Detaily faktury</h2>
+          <p style="color: #1a1a1a !important;"><strong style="color: #000000 !important;">Číslo faktury:</strong> ${invoiceNumber}</p>
+          <p style="color: #1a1a1a !important;"><strong style="color: #000000 !important;">Typ služby:</strong> ${invoiceType}</p>
+          ${subscriptionId ? `<p style="color: #1a1a1a !important;"><strong style="color: #000000 !important;">Předplatné:</strong> Aktivní</p>` : ""}
+        </div>
 
-      <div class="amount-box">
-        Částka: ${amountFormatted} ${currency}
+        <div class="amount-box">
+          Částka: ${amountFormatted} ${currency}
+        </div>
+
+        ${invoicePdf ? `
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${invoicePdf}" class="button" style="display: inline-block; padding: 12px 30px; background-color: #f77c00 !important; color: #ffffff !important; text-decoration: none; border-radius: 6px; margin: 20px 0; font-weight: bold;">Stáhnout PDF faktury</a>
+        </div>
+        ` : ""}
+
+        <p style="color: #1a1a1a !important;">Faktura byla automaticky vygenerována a je k dispozici ve vašem účtu.</p>
+        
+        <p style="color: #1a1a1a !important;">Pokud máte jakékoliv dotazy, neváhejte nás kontaktovat na <a href="mailto:info@bulldogo.cz" style="color: #f77c00 !important;">info@bulldogo.cz</a>.</p>
+        
+        <p style="color: #1a1a1a !important;">S pozdravem,<br>Tým BULLDOGO</p>
       </div>
-
-      ${invoicePdf ? `
-      <div style="text-align: center; margin: 30px 0;">
-        <a href="${invoicePdf}" class="button">Stáhnout PDF faktury</a>
+      <div class="footer">
+        <p style="color: #6b7280 !important; margin: 5px 0;">© 2026 BULLDOGO.CZ</p>
+        <p style="color: #6b7280 !important; margin: 5px 0;">Tento email byl automaticky vygenerován systémem.</p>
       </div>
-      ` : ""}
-
-      <p>Faktura byla automaticky vygenerována a je k dispozici ve vašem účtu.</p>
-      
-      <p>Pokud máte jakékoliv dotazy, neváhejte nás kontaktovat na <a href="mailto:info@bulldogo.cz">info@bulldogo.cz</a>.</p>
-      
-      <p>S pozdravem,<br>Tým BULLDOGO</p>
-    </div>
-    <div class="footer">
-      <p>© 2026 BULLDOGO.CZ</p>
-      <p>Tento email byl automaticky vygenerován systémem.</p>
     </div>
   </div>
 </body>
