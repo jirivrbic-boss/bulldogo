@@ -924,11 +924,13 @@
 
         // Load user profile data
         async function loadUserProfile() {
-            console.log('🔧 Loading user profile...');
+            console.log('🔧🔧🔧 loadUserProfile VOLÁNO 🔧🔧🔧');
             try {
                 // Wait for Firebase to be available
+                let checkCount = 0;
                 const checkFirebase = setInterval(() => {
-                    console.log('🔍 Checking Firebase:', {
+                    checkCount++;
+                    console.log('🔍 Checking Firebase (pokus ' + checkCount + '):', {
                         firebaseAuth: !!window.firebaseAuth,
                         firebaseDb: !!window.firebaseDb
                     });
@@ -949,6 +951,7 @@
                             return;
                         }
                         
+                        console.log('✅ Uživatel přihlášen, volám loadUserData...');
                         loadUserData();
                         
                         // Listen for auth state changes
