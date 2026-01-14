@@ -1021,7 +1021,7 @@
                 updateStatistics(userAds, userProfile);
                 
                 // Load all reviews and update rating after loading
-                loadAllUserReviews(currentUser.uid);
+                await loadAllUserReviews(currentUser.uid);
 
             } catch (error) {
                 console.error('Chyba při načítání dat uživatele:', error);
@@ -1302,12 +1302,19 @@
 
             } catch (error) {
                 console.error('❌ Error loading reviews:', error);
+                console.error('Error details:', {
+                    code: error.code,
+                    message: error.message,
+                    stack: error.stack
+                });
                 const container = document.getElementById('allReviewsContainer');
                 if (container) {
+                    // Zkusit zobrazit prázdný stav místo chybové hlášky
                     container.innerHTML = `
-                        <div class="error-message">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            <p>Nepodařilo se načíst recenze</p>
+                        <div class="no-reviews">
+                            <i class="fas fa-star"></i>
+                            <h4>Zatím nemáte žádné recenze</h4>
+                            <p>Jakmile získáte první hodnocení od zákazníků, zobrazí se zde.</p>
                         </div>
                     `;
                 }

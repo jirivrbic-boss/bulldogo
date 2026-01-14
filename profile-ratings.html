@@ -338,8 +338,8 @@
 
                 // Načíst recenze PRVNÍ - před aktualizací display
                 console.log('📚 Začínám načítat recenze...');
-                await loadUserReviews(currentUser.uid);
-                console.log('📚 Načteno recenzí:', userReviews.length);
+                const reviewsCount = await loadUserReviews(currentUser.uid);
+                console.log('📚 Načteno recenzí:', userReviews.length, '(funkce vrátila:', reviewsCount, ')');
                 if (userReviews.length > 0) {
                     console.log('📚 První recenze:', userReviews[0]);
                 } else {
@@ -363,15 +363,17 @@
                 } else {
                     // Pokud nejsou recenze, použít data z profilu
                     console.log('📊 Používám data z profilu (žádné recenze)');
-                updateRatingsDisplay(userProfile);
+                    updateRatingsDisplay(userProfile);
                 }
                 
                 // Zobrazit recenze - POČKAT až se rating aktualizuje
                 console.log('🎨 Zobrazuji recenze, userReviews.length:', userReviews.length);
                 const reviewsContainer = document.querySelector('.reviews-list');
                 console.log('🎨 Reviews container:', reviewsContainer ? 'found' : 'NOT FOUND');
+                
+                // Vždy zobrazit recenze (i když jsou prázdné)
                 await displayUserReviews();
-                console.log('✅ Recenze zobrazeny');
+                console.log('✅ Recenze zobrazeny (nebo prázdný stav)');
 
             } catch (error) {
                 console.error('❌ Chyba při načítání dat hodnocení:', error);
@@ -937,6 +939,9 @@
                 }
                 
                 console.log('✅ Total user reviews loaded:', userReviews.length);
+                
+                // Vrátit počet načtených recenzí pro debug
+                return userReviews.length;
 
             } catch (error) {
                 console.error('❌ Error loading user reviews:', error);
@@ -945,6 +950,7 @@
                     message: error.message
                 });
                 userReviews = [];
+                return 0;
             }
         }
 

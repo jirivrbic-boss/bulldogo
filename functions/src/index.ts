@@ -5034,9 +5034,7 @@ export const createCheckoutSession = functions
                   name: 'Typ faktury',
                   value: 'Předplatné'
                 }
-              ],
-              // Explicitně povolit automatické finalizování faktur (Stripe automaticky pošle zákazníkovi)
-              auto_advance: true
+              ]
             }
           }
         };
