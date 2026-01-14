@@ -479,42 +479,51 @@ async function deleteUser(userId) {
 
             console.log('   📥 Response status:', response.status, response.statusText);
             console.log('   📥 Response headers:', Object.fromEntries(response.headers.entries()));
-            
-            // Pokud je response prázdný nebo není JSON, zkusit získat text
-            const responseText = await response.clone().text();
-            console.log('   📥 Response text:', responseText);
 
             if (!response.ok) {
                 let errorMessage = 'Chyba při mazání z Authentication';
                 let errorDetails = null;
                 
+                // Zkusit získat JSON response
                 try {
-                    const result = await response.json();
-                    errorMessage = result.error || result.message || errorMessage;
-                    errorDetails = result;
-                    console.error('   ❌ Error response JSON:', result);
-                } catch (e) {
-                    // Pokud není JSON response, použít status text nebo text response
+                    const responseText = await response.text();
+                    console.log('   📥 Response text:', responseText);
+                    
                     try {
-                        const textResponse = await response.text();
-                        errorMessage = textResponse || response.statusText || `HTTP ${response.status}`;
-                        console.error('   ❌ Error response text:', textResponse);
-                    } catch (textError) {
-                        errorMessage = response.statusText || `HTTP ${response.status}`;
-                        console.error('   ❌ Non-JSON error response:', response.statusText);
+                        const result = JSON.parse(responseText);
+                        errorMessage = result.error || result.message || errorMessage;
+                        errorDetails = result;
+                        console.error('   ❌ Error response JSON:', result);
+                    } catch (parseError) {
+                        // Pokud není JSON, použít text jako chybovou zprávu
+                        errorMessage = responseText || response.statusText || `HTTP ${response.status}`;
+                        console.error('   ❌ Error response text (not JSON):', responseText);
                     }
+                } catch (e) {
+                    errorMessage = response.statusText || `HTTP ${response.status}`;
+                    console.error('   ❌ Chyba při čtení response:', e);
                 }
                 
+                // Pro 404 zobrazit specifickou zprávu
                 if (response.status === 404) {
-                    errorMessage = 'Cloud Function deleteUserAuth není nasazena nebo není dostupná. Prosím nasaďte ji pomocí: firebase deploy --only functions:deleteUserAuth';
+                    errorMessage = `Cloud Function není dostupná (404). URL: ${functionsUrl}\n\nZkontrolujte, že je Cloud Function nasazena pomocí:\nfirebase deploy --only functions:deleteUserAuth`;
                     throw new Error(errorMessage);
                 }
                 
-                // Pro ostatní chyby také vyhodit výjimku, aby uživatel viděl, co se stalo
+                // Pro ostatní chyby zobrazit konkrétní chybu z Cloud Function
                 throw new Error(`${errorMessage}${errorDetails ? ' - ' + JSON.stringify(errorDetails) : ''}`);
             }
 
-            const result = await response.json();
+            const responseText = await response.text();
+            console.log('   📥 Response text:', responseText);
+            
+            let result;
+            try {
+                result = JSON.parse(responseText);
+            } catch (e) {
+                result = { message: responseText, success: true };
+            }
+            
             console.log('   ✓ Firebase Auth uživatel smazán:', result);
             authDeleted = true;
         } catch (error) {
@@ -525,14 +534,11 @@ async function deleteUser(userId) {
                 name: error.name
             });
             
-            // Zobrazit konkrétní chybu uživateli
+            // Zobrazit konkrétní chybu uživateli - vždy zobrazit skutečnou chybu
             const errorMsg = error.message || 'Neznámá chyba při mazání z Authentication';
             
-            if (error.message && (error.message.includes('404') || error.message.includes('není nasazena'))) {
-                showMessage(`⚠️ Cloud Function není nasazena nebo není dostupná.\n\nData z Firestore a Storage byla smazána, ale Auth uživatel zůstal.\n\nChyba: ${errorMsg}\n\nPro úplné smazání nasaďte Cloud Function pomocí:\nfirebase deploy --only functions:deleteUserAuth`, 'warning');
-            } else {
-                showMessage(`⚠️ Nepodařilo se smazat uživatele z Firebase Authentication.\n\nData z Firestore a Storage byla smazána, ale Auth uživatel zůstal.\n\nChyba: ${errorMsg}\n\nZkontrolujte konzoli pro více detailů.`, 'error');
-            }
+            // Zobrazit skutečnou chybu, ne generickou zprávu
+            showMessage(`⚠️ Nepodařilo se smazat uživatele z Firebase Authentication.\n\nData z Firestore a Storage byla smazána, ale Auth uživatel zůstal.\n\nChyba: ${errorMsg}\n\nZkontrolujte konzoli prohlížeče (F12) pro více detailů.`, 'error');
         }
         
         if (authDeleted) {
