@@ -174,7 +174,7 @@
                     <!-- Reviews Section -->
                     <div class="content-section">
                         <h3 class="section-title">
-                            <i class="fas fa-star"></i> Všechny recenze
+                            <i class="fas fa-star"></i> Nedávné recenze
                         </h3>
                         <div id="allReviewsContainer" class="reviews-list-container">
                             <div class="loading-reviews">
@@ -1150,7 +1150,7 @@
                 
                 const allReviews = [];
                 
-                // 1. Načíst recenze na profilu uživatele (users/{userId}/reviews) - stejně jako v profile-detail.js
+                // Načíst jen recenze na profilu uživatele (users/{userId}/reviews)
                 try {
                     const profileReviewsRef = collection(window.firebaseDb, 'users', userId, 'reviews');
                     const profileReviewsSnap = await getDocs(profileReviewsRef);
@@ -1164,31 +1164,11 @@
                     });
                 } catch (error) {
                     console.error('❌ Error loading profile reviews:', error);
-                    // Pokračovat i při chybě
-                }
-
-                // 2. Načíst recenze na inzerátech uživatele pomocí collectionGroup
-                try {
-                    const adReviewsGroup = collectionGroup(window.firebaseDb, 'reviews');
-                    const adReviewsSnap = await getDocs(adReviewsGroup);
-                    console.log('📖 Načteno recenzí z inzerátů (collectionGroup):', adReviewsSnap.size);
-                    
-                    adReviewsSnap.forEach(docSnap => {
-                        const reviewData = docSnap.data();
-                        const parent = docSnap.ref.parent; // reviews collection
-                        const adDoc = parent?.parent; // adId document
-                        const inzeraty = adDoc?.parent; // 'inzeraty' collection
-                        const userDoc = inzeraty?.parent; // user uid document
-                        
-                        if (userDoc && userDoc.id === userId && inzeraty.id === 'inzeraty') {
-                            reviewData.id = docSnap.id;
-                            reviewData.type = 'ad';
-                            reviewData.adId = adDoc.id;
-                            allReviews.push(reviewData);
-                        }
+                    console.error('Error details:', {
+                        code: error.code,
+                        message: error.message,
+                        path: `users/${userId}/reviews`
                     });
-                } catch (error) {
-                    console.error('❌ Error loading ad reviews:', error);
                     // Pokračovat i při chybě
                 }
 

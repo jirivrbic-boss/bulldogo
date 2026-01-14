@@ -221,12 +221,27 @@
             </div>
 
             <div class="reviews-section">
-                <h3 class="section-title">Recenze</h3>
-                <div class="reviews-list">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 class="section-title" style="margin: 0;">Recenze</h3>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <label style="font-size: 14px; color: #666;">Řazení:</label>
+                        <select id="sortReviews" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; cursor: pointer;" onchange="sortAndDisplayReviews()">
+                            <option value="newest">Nejnovější</option>
+                            <option value="oldest">Nejstarší</option>
+                            <option value="highest">Nejvyšší hodnocení</option>
+                            <option value="lowest">Nejnižší hodnocení</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="reviews-list" id="reviewsListContainer">
                     <!-- Hodnocení se načtou dynamicky z Firebase -->
-                            </div>
-                        </div>
-                        </div>
+                </div>
+                <div id="paginationContainer" style="display: none; margin-top: 20px; text-align: center;">
+                    <button id="prevPageBtn" onclick="changePage(-1)" style="padding: 10px 20px; margin: 0 10px; background: #f77c00; color: white; border: none; border-radius: 6px; cursor: pointer; display: none;">Předchozí</button>
+                    <span id="pageInfo" style="margin: 0 15px; color: #666;"></span>
+                    <button id="nextPageBtn" onclick="changePage(1)" style="padding: 10px 20px; margin: 0 10px; background: #f77c00; color: white; border: none; border-radius: 6px; cursor: pointer; display: none;">Další</button>
+                </div>
+            </div>
                     </div>
 
     <script src="script.js" defer></script>
@@ -819,14 +834,19 @@
             console.log('✅ Statistics updated');
         }
 
-        // Load user reviews (stejně jako v profile-detail.js) - zjednodušená verze
+        // Globální proměnné pro paginaci
+        let currentPage = 1;
+        const reviewsPerPage = 20;
+        let sortedReviews = [];
+
+        // Load user reviews - jen z profilu (users/{userId}/reviews)
         async function loadUserReviews(userId) {
             try {
-                const { getDocs, collection, collectionGroup } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                const { getDocs, collection } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
                 
                 userReviews = [];
                 
-                // 1. Načíst recenze na profilu uživatele (users/{userId}/reviews) - stejně jako v profile-detail.js
+                // Načíst jen recenze na profilu uživatele (users/{userId}/reviews)
                 try {
                     const profileReviewsRef = collection(window.firebaseDb, 'users', userId, 'reviews');
                     const profileReviewsSnap = await getDocs(profileReviewsRef);
@@ -841,123 +861,21 @@
                     console.log('✅ Profile reviews loaded:', profileReviewsSnap.size);
                 } catch (profileError) {
                     console.error('❌ Error loading profile reviews:', profileError);
+                    console.error('Error details:', {
+                        code: profileError.code,
+                        message: profileError.message,
+                        path: `users/${userId}/reviews`
+                    });
                     // Pokračovat i při chybě
                 }
                 
-                // 2. Načíst recenze na inzerátech uživatele - projít všechny inzeráty
-                try {
-                    // Nejdříve zkusit collectionGroup (rychlejší, ale může selhat kvůli oprávněním)
-                    try {
-                const adReviewsGroup = collectionGroup(window.firebaseDb, 'reviews');
-                        const adReviewsSnap = await getDocs(adReviewsGroup);
-                        let adReviewsCount = 0;
-                        adReviewsSnap.forEach(docSnap => {
-                            const reviewData = docSnap.data();
-                            // Zkontrolovat, zda recenze patří k inzerátu tohoto uživatele
-                    const parent = docSnap.ref.parent; // reviews collection
-                    const adDoc = parent?.parent; // adId document
-                    const inzeraty = adDoc?.parent; // 'inzeraty' collection
-                    const userDoc = inzeraty?.parent; // user uid document
-                    
-                    if (userDoc && userDoc.id === userId && inzeraty.id === 'inzeraty') {
-                                reviewData.id = docSnap.id;
-                                reviewData.type = 'ad';
-                                reviewData.adId = adDoc.id;
-                                userReviews.push(reviewData);
-                                adReviewsCount++;
-                            }
-                        });
-                        console.log('✅ Ad reviews loaded from collectionGroup:', adReviewsCount);
-                    } catch (collectionGroupError) {
-                        console.warn('⚠️ CollectionGroup failed, trying alternative method:', collectionGroupError.message);
-                        
-                        // Alternativní metoda: projít všechny inzeráty uživatele
-                        const inzeratyRef = collection(window.firebaseDb, 'users', userId, 'inzeraty');
-                        const inzeratySnap = await getDocs(inzeratyRef);
-                        console.log('📋 Found ads for user:', inzeratySnap.size);
-                        
-                        let adReviewsCount = 0;
-                        for (const adDoc of inzeratySnap.docs) {
-                            try {
-                                const adId = adDoc.id;
-                                const adData = adDoc.data();
-                                console.log(`📋 Checking ad ${adId}:`, adData.title || 'No title');
-                                
-                                const reviewsRef = collection(window.firebaseDb, 'users', userId, 'inzeraty', adId, 'reviews');
-                                console.log(`📋 Reviews collection path: users/${userId}/inzeraty/${adId}/reviews`);
-                                const reviewsSnap = await getDocs(reviewsRef);
-                                console.log(`📋 Found ${reviewsSnap.size} reviews for ad ${adId}`);
-                                
-                                if (reviewsSnap.size === 0) {
-                                    console.log(`⚠️ No reviews found for ad ${adId}, checking if collection exists...`);
-                                    // Zkusit zkontrolovat, jestli kolekce vůbec existuje
-                                    console.log(`📋 Reviews collection reference:`, reviewsRef.path);
-                                }
-                                
-                                reviewsSnap.forEach(reviewDoc => {
-                                    const reviewData = reviewDoc.data();
-                                    console.log(`📋 Review from ad ${adId} (ID: ${reviewDoc.id}):`, reviewData);
-                                    // Normalizovat pole - podporovat obě varianty
-                                    if (reviewData.fromUserId && !reviewData.reviewerId) {
-                                        reviewData.reviewerId = reviewData.fromUserId;
-                                    }
-                                    if (reviewData.fromUserEmail && !reviewData.reviewerEmail) {
-                                        reviewData.reviewerEmail = reviewData.fromUserEmail;
-                                    }
-                                    reviewData.id = reviewDoc.id;
-                                    reviewData.type = 'ad';
-                                    reviewData.adId = adId;
-                                    userReviews.push(reviewData);
-                                    adReviewsCount++;
-                                });
-                            } catch (reviewError) {
-                                console.warn(`⚠️ Error loading reviews for ad ${adDoc.id}:`, reviewError.message);
-                                console.warn(`⚠️ Error details:`, reviewError);
-                            }
-                        }
-                        console.log('✅ Ad reviews loaded via alternative method:', adReviewsCount);
-                    }
-                } catch (adReviewsError) {
-                    console.warn('⚠️ Error loading ad reviews:', adReviewsError);
-                }
-                
-                // 3. Fallback: zkusit root kolekci reviews (pokud existuje)
-                try {
-                    const rootReviewsRef = collection(window.firebaseDb, 'reviews');
-                    const rootReviewsSnap = await getDocs(rootReviewsRef);
-                    console.log('📋 Root reviews collection size:', rootReviewsSnap.size);
-                    let rootReviewsCount = 0;
-                    rootReviewsSnap.forEach(doc => {
-                        const reviewData = doc.data();
-                        console.log('📋 Root review:', doc.id, reviewData);
-                        // Zkontrolovat různé možné pole pro userId
-                        const matchesUserId = 
-                            reviewData.reviewedUserId === userId ||
-                            reviewData.userId === userId ||
-                            reviewData.targetUserId === userId ||
-                            (reviewData.toUserId === userId);
-                        
-                        if (matchesUserId) {
-                            // Zkontrolovat, zda už není v seznamu
-                            const exists = userReviews.some(r => r.id === doc.id);
-                            if (!exists) {
-                                reviewData.id = doc.id;
-                                reviewData.type = reviewData.type || 'unknown';
-                                userReviews.push(reviewData);
-                                rootReviewsCount++;
-                                console.log('📋 Added root review:', doc.id);
-                            }
-                        }
-                    });
-                    console.log('✅ Root reviews checked, added:', rootReviewsCount);
-                } catch (rootError) {
-                    console.warn('⚠️ Error loading root reviews (this is OK if collection doesn\'t exist):', rootError.message);
-                }
+                // Načítáme jen recenze z profilu (users/{userId}/reviews), ne z inzerátů
                 
                 console.log('✅ Total user reviews loaded:', userReviews.length);
                 
-                // Seřadit recenze podle data (nejnovější první)
-                userReviews.sort((a, b) => {
+                // Inicializovat seřazené recenze (výchozí řazení: nejnovější)
+                sortedReviews = [...userReviews];
+                sortedReviews.sort((a, b) => {
                     const dateA = a.updatedAt?.toDate?.() || a.updatedAt || 
                                   a.createdAt?.toDate?.() || a.createdAt || 
                                   new Date(0);
@@ -1010,13 +928,24 @@
             // Update overall rating display
             const ratingNumber = document.querySelector('.rating-number');
             if (ratingNumber) {
-                    ratingNumber.textContent = avgRating.toFixed(1);
+                ratingNumber.textContent = avgRating.toFixed(1);
             }
 
             const ratingCount = document.querySelector('.rating-count');
             if (ratingCount) {
-                    ratingCount.textContent = `Založeno na ${reviews.length} hodnoceních`;
+                ratingCount.textContent = `Založeno na ${reviews.length} hodnoceních`;
             }
+            
+            // Update star display
+            const ratingStars = document.querySelectorAll('.rating-stars .fas.fa-star');
+            const filledStars = Math.round(avgRating);
+            ratingStars.forEach((star, index) => {
+                if (index < filledStars) {
+                    star.style.color = '#fbbf24';
+                } else {
+                    star.style.color = '#d1d5db';
+                }
+            });
             
             // Update rating breakdown
             updateRatingBreakdownFromData(breakdown, reviews.length);
@@ -1179,50 +1108,95 @@
             `;
         }
 
-        // Display user reviews (stejně jako v profile-detail.js)
+        // Sort reviews function
+        function sortAndDisplayReviews() {
+            const sortValue = document.getElementById('sortReviews')?.value || 'newest';
+            console.log('🔄 Sorting reviews by:', sortValue);
+            
+            sortedReviews = [...userReviews];
+            
+            switch(sortValue) {
+                case 'newest':
+                    sortedReviews.sort((a, b) => {
+                        const dateA = a.updatedAt?.toDate?.() || a.updatedAt || a.createdAt?.toDate?.() || a.createdAt || new Date(0);
+                        const dateB = b.updatedAt?.toDate?.() || b.updatedAt || b.createdAt?.toDate?.() || b.createdAt || new Date(0);
+                        return new Date(dateB) - new Date(dateA);
+                    });
+                    break;
+                case 'oldest':
+                    sortedReviews.sort((a, b) => {
+                        const dateA = a.updatedAt?.toDate?.() || a.updatedAt || a.createdAt?.toDate?.() || a.createdAt || new Date(0);
+                        const dateB = b.updatedAt?.toDate?.() || b.updatedAt || b.createdAt?.toDate?.() || b.createdAt || new Date(0);
+                        return new Date(dateA) - new Date(dateB);
+                    });
+                    break;
+                case 'highest':
+                    sortedReviews.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+                    break;
+                case 'lowest':
+                    sortedReviews.sort((a, b) => (a.rating || 0) - (b.rating || 0));
+                    break;
+            }
+            
+            currentPage = 1;
+            displayUserReviews();
+        }
+
+        // Change page function
+        function changePage(direction) {
+            const totalPages = Math.ceil(sortedReviews.length / reviewsPerPage);
+            const newPage = currentPage + direction;
+            
+            if (newPage >= 1 && newPage <= totalPages) {
+                currentPage = newPage;
+                displayUserReviews();
+            }
+        }
+
+        // Display user reviews with pagination
         async function displayUserReviews() {
-            const reviewsGrid = document.querySelector('.reviews-list');
+            const reviewsGrid = document.getElementById('reviewsListContainer');
             if (!reviewsGrid) {
-                console.error('❌ Reviews container (.reviews-list) not found!');
+                console.error('❌ Reviews container (#reviewsListContainer) not found!');
                 return;
             }
             
-            console.log('📝 displayUserReviews called, userReviews.length:', userReviews.length);
+            // Pokud ještě nejsou seřazené, seřadit podle výchozího nastavení
+            if (sortedReviews.length === 0) {
+                sortAndDisplayReviews();
+                return;
+            }
             
-            if (userReviews.length === 0) {
+            console.log('📝 displayUserReviews called, sortedReviews.length:', sortedReviews.length);
+            
+            if (sortedReviews.length === 0) {
                 reviewsGrid.innerHTML = `
-                    <div style="
-                        text-align: center;
-                        padding: 60px 20px;
-                        background: white;
-                        border-radius: 16px;
-                        border: 2px dashed #e5e7eb;
-                    ">
+                    <div style="text-align: center; padding: 60px 20px; background: white; border-radius: 16px; border: 2px dashed #e5e7eb;">
                         <i class="fas fa-star" style="font-size: 48px; color: #d1d5db; margin-bottom: 16px;"></i>
-                        <p style="
-                            font-size: 16px;
-                            color: #6b7280;
-                            margin: 0;
-                            font-weight: 500;
-                        ">Uživatel zatím nemá žádné recenze.</p>
+                        <p style="font-size: 16px; color: #6b7280; margin: 0; font-weight: 500;">Uživatel zatím nemá žádné recenze.</p>
                     </div>
                 `;
+                document.getElementById('paginationContainer').style.display = 'none';
                 return;
             }
             
-            // Načíst jména recenzentů
+            // Paginace
+            const totalPages = Math.ceil(sortedReviews.length / reviewsPerPage);
+            const startIndex = (currentPage - 1) * reviewsPerPage;
+            const endIndex = startIndex + reviewsPerPage;
+            const pageReviews = sortedReviews.slice(startIndex, endIndex);
+            
+            // Načíst jména recenzentů pro aktuální stránku
+            const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
             const reviewsWithNames = await Promise.all(
-                userReviews.map(async (review) => {
-                    // Podporovat obě varianty polí: reviewerId/reviewerEmail i fromUserId/fromUserEmail
+                pageReviews.map(async (review) => {
                     const reviewerId = review.reviewerId || review.fromUserId;
                     const reviewerEmail = review.reviewerEmail || review.fromUserEmail;
                     
                     let reviewerName = review.reviewerName || reviewerEmail?.split('@')[0] || 'Anonymní';
                     
-                    // Pokud máme reviewerId, zkus načíst jméno z profilu
                     if (reviewerId && !review.reviewerName) {
                         try {
-                            const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
                             const reviewerProfileRef = doc(window.firebaseDb, 'users', reviewerId, 'profile', 'profile');
                             const reviewerProfileSnap = await getDoc(reviewerProfileRef);
                             
@@ -1248,7 +1222,23 @@
             );
             
             reviewsGrid.innerHTML = reviewsWithNames.map(review => createReviewCard(review)).join('');
-            console.log('✅ Reviews displayed:', reviewsWithNames.length);
+            
+            // Zobrazit paginaci
+            const paginationContainer = document.getElementById('paginationContainer');
+            const prevBtn = document.getElementById('prevPageBtn');
+            const nextBtn = document.getElementById('nextPageBtn');
+            const pageInfo = document.getElementById('pageInfo');
+            
+            if (totalPages > 1) {
+                paginationContainer.style.display = 'block';
+                prevBtn.style.display = currentPage > 1 ? 'inline-block' : 'none';
+                nextBtn.style.display = currentPage < totalPages ? 'inline-block' : 'none';
+                pageInfo.textContent = `Stránka ${currentPage} z ${totalPages} (celkem ${sortedReviews.length} recenzí)`;
+            } else {
+                paginationContainer.style.display = 'none';
+            }
+            
+            console.log('✅ Reviews displayed:', reviewsWithNames.length, 'on page', currentPage);
         }
         
         // Render all reviews function (stejně jako v profile.html)
