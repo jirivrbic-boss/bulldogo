@@ -2542,6 +2542,23 @@ body {
     align-items: center; /* Vycentrovat obsah */
 }
 
+/* Rozšíření containeru na stránce uživatelů přes celou obrazovku */
+body:has(.users-container) .main-content .container,
+.main-content:has(.users-container) .container {
+    max-width: calc(100% - 70px) !important;
+    width: calc(100% - 70px) !important;
+    padding: 0 2rem !important;
+    margin: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+body:has(.users-container) .users-container,
+.main-content:has(.users-container) .users-container {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
 /* Mobilní optimalizace pro container */
 @media (max-width: 768px) {
     .container {
@@ -9930,6 +9947,24 @@ html {
     border-radius: 15px;
     box-shadow: 0 5px 20px rgba(0,0,0,0.1);
     overflow: hidden;
+    width: 100%;
+    max-width: 100%;
+}
+
+/* Rozšíření containeru na stránce uživatelů přes celou obrazovku */
+body:has(.users-container) .main-content,
+.main-content:has(.users-container) {
+    max-width: calc(100vw - 70px) !important;
+    width: calc(100vw - 70px) !important;
+    padding: 0 !important;
+}
+
+body:has(.users-container) .main-content .container,
+.main-content:has(.users-container) .container {
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 2rem !important;
+    margin: 0 !important;
 }
 
 .users-header {
@@ -9950,21 +9985,27 @@ html {
 
 .users-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: repeat(4, 1fr);
     gap: 1.5rem;
     padding: 1.5rem;
 }
 
-/* Na větších obrazovkách zobrazit více sloupců */
-@media (min-width: 1200px) {
+/* Na menších obrazovkách upravit počet sloupců */
+@media (max-width: 1600px) {
     .users-grid {
-        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        grid-template-columns: repeat(3, 1fr);
     }
 }
 
-@media (min-width: 1600px) {
+@media (max-width: 1200px) {
     .users-grid {
-        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .users-grid {
+        grid-template-columns: 1fr;
     }
 }
 

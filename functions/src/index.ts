@@ -4397,11 +4397,11 @@ export const stripeInvoiceWebhook = functions
           }
         }
 
-        // Vytvořit email s kopií faktury
+        // Vytvořit email s kopií faktury pro účetní
         const amountFormatted = (amount / 100).toFixed(2); // Stripe ukládá v centech
         const invoiceType = amount === 0 ? "Free Trial" : subscriptionId ? "Předplatné" : "Topování inzerátu";
 
-        const emailHTML = `
+        const accountingEmailHTML = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -4443,7 +4443,7 @@ export const stripeInvoiceWebhook = functions
 </html>
         `;
 
-        const emailText = `
+        const accountingEmailText = `
 Kopie faktury - BULLDOGO
 
 Číslo faktury: ${invoiceNumber}
@@ -4461,6 +4461,128 @@ Faktura byla automaticky vytvořena Stripe a odeslána zákazníkovi.
 © 2026 BULLDOGO.CZ
         `;
 
+        // Vytvořit email pro zákazníka
+        const customerEmailHTML = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: linear-gradient(135deg, #f77c00 0%, #fdf002 100%); color: #111827; padding: 30px 20px; text-align: center; border-radius: 10px 10px 0 0; }
+    .content { padding: 30px 20px; background-color: #ffffff; }
+    .info-box { background-color: #f9fafb; padding: 20px; margin: 20px 0; border-radius: 8px; border: 1px solid #e5e7eb; }
+    .amount-box { background: linear-gradient(135deg, #f77c00 0%, #fdf002 100%); color: #111827; padding: 20px; margin: 20px 0; border-radius: 8px; text-align: center; font-size: 24px; font-weight: bold; }
+    .button { display: inline-block; padding: 12px 30px; background-color: #f77c00; color: white; text-decoration: none; border-radius: 6px; margin: 20px 0; font-weight: bold; }
+    .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 12px; background-color: #f9fafb; border-radius: 0 0 10px 10px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1 style="margin: 0; font-size: 28px;">Faktura - BULLDOGO</h1>
+    </div>
+    <div class="content">
+      <p>Dobrý den ${userName},</p>
+      <p>děkujeme za využívání našich služeb. Připravili jsme pro vás fakturu za ${invoiceType.toLowerCase()}.</p>
+      
+      <div class="info-box">
+        <h2 style="margin-top: 0; color: #111827;">Detaily faktury</h2>
+        <p><strong>Číslo faktury:</strong> ${invoiceNumber}</p>
+        <p><strong>Typ služby:</strong> ${invoiceType}</p>
+        ${subscriptionId ? `<p><strong>Předplatné:</strong> Aktivní</p>` : ""}
+      </div>
+
+      <div class="amount-box">
+        Částka: ${amountFormatted} ${currency}
+      </div>
+
+      ${invoicePdf ? `
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${invoicePdf}" class="button">Stáhnout PDF faktury</a>
+      </div>
+      ` : ""}
+
+      <p>Faktura byla automaticky vygenerována a je k dispozici ve vašem účtu.</p>
+      
+      <p>Pokud máte jakékoliv dotazy, neváhejte nás kontaktovat na <a href="mailto:info@bulldogo.cz">info@bulldogo.cz</a>.</p>
+      
+      <p>S pozdravem,<br>Tým BULLDOGO</p>
+    </div>
+    <div class="footer">
+      <p>© 2026 BULLDOGO.CZ</p>
+      <p>Tento email byl automaticky vygenerován systémem.</p>
+    </div>
+  </div>
+</body>
+</html>
+        `;
+
+        const customerEmailText = `
+Faktura - BULLDOGO
+
+Dobrý den ${userName},
+
+děkujeme za využívání našich služeb. Připravili jsme pro vás fakturu za ${invoiceType.toLowerCase()}.
+
+Detaily faktury:
+Číslo faktury: ${invoiceNumber}
+Typ služby: ${invoiceType}
+${subscriptionId ? "Předplatné: Aktivní" : ""}
+Částka: ${amountFormatted} ${currency}
+
+${invoicePdf ? `PDF faktury: ${invoicePdf}` : ""}
+
+Faktura byla automaticky vygenerována a je k dispozici ve vašem účtu.
+
+Pokud máte jakékoliv dotazy, neváhejte nás kontaktovat na info@bulldogo.cz.
+
+S pozdravem,
+Tým BULLDOGO
+
+© 2026 BULLDOGO.CZ
+        `;
+
+        // Odeslat email zákazníkovi (pokud má email)
+        if (userEmail && userEmail.trim().length > 0) {
+          try {
+            const customerMailOptions = {
+              from: {
+                name: "BULLDOGO",
+                address: "info@bulldogo.cz",
+              },
+              to: userEmail,
+              subject: `Faktura ${invoiceNumber} - BULLDOGO`,
+              html: customerEmailHTML,
+              text: customerEmailText,
+            };
+
+            await smtpTransporter.sendMail(customerMailOptions);
+            functions.logger.info("✅ Faktura odeslána zákazníkovi", {
+              invoiceId,
+              invoiceNumber,
+              customerEmail: userEmail,
+              userId,
+              userName,
+              invoiceType,
+            });
+          } catch (customerEmailError: any) {
+            functions.logger.error("❌ Chyba při odesílání faktury zákazníkovi", {
+              error: customerEmailError?.message,
+              customerEmail: userEmail,
+              invoiceId,
+            });
+            // Pokračujeme i když se nepodařilo poslat zákazníkovi - účetní email musí být odeslán
+          }
+        } else {
+          functions.logger.warn("⚠️ Zákazník nemá email, faktura nebyla odeslána", {
+            invoiceId,
+            customerId,
+            userId,
+          });
+        }
+
         // Odeslat email na účetní
         const accountingMailOptions = {
           from: {
@@ -4469,8 +4591,8 @@ Faktura byla automaticky vytvořena Stripe a odeslána zákazníkovi.
           },
           to: accountingEmail,
           subject: `Kopie faktury ${invoiceNumber} - ${userName}${userId ? ` (UID: ${userId})` : ""}`,
-          html: emailHTML,
-          text: emailText,
+          html: accountingEmailHTML,
+          text: accountingEmailText,
         };
 
         await smtpTransporter.sendMail(accountingMailOptions);

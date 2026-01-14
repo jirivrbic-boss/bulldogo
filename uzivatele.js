@@ -478,6 +478,11 @@ async function deleteUser(userId) {
             });
 
             console.log('   📥 Response status:', response.status, response.statusText);
+            console.log('   📥 Response headers:', Object.fromEntries(response.headers.entries()));
+            
+            // Pokud je response prázdný nebo není JSON, zkusit získat text
+            const responseText = await response.clone().text();
+            console.log('   📥 Response text:', responseText);
 
             if (!response.ok) {
                 let errorMessage = 'Chyba při mazání z Authentication';
@@ -487,15 +492,21 @@ async function deleteUser(userId) {
                     const result = await response.json();
                     errorMessage = result.error || result.message || errorMessage;
                     errorDetails = result;
-                    console.error('   ❌ Error response:', result);
+                    console.error('   ❌ Error response JSON:', result);
                 } catch (e) {
-                    // Pokud není JSON response, použít status text
-                    errorMessage = response.statusText || `HTTP ${response.status}`;
-                    console.error('   ❌ Non-JSON error response:', response.statusText);
+                    // Pokud není JSON response, použít status text nebo text response
+                    try {
+                        const textResponse = await response.text();
+                        errorMessage = textResponse || response.statusText || `HTTP ${response.status}`;
+                        console.error('   ❌ Error response text:', textResponse);
+                    } catch (textError) {
+                        errorMessage = response.statusText || `HTTP ${response.status}`;
+                        console.error('   ❌ Non-JSON error response:', response.statusText);
+                    }
                 }
                 
                 if (response.status === 404) {
-                    errorMessage = 'Cloud Function deleteUserAuth není nasazena. Prosím nasaďte ji pomocí: firebase deploy --only functions:deleteUserAuth';
+                    errorMessage = 'Cloud Function deleteUserAuth není nasazena nebo není dostupná. Prosím nasaďte ji pomocí: firebase deploy --only functions:deleteUserAuth';
                     throw new Error(errorMessage);
                 }
                 
