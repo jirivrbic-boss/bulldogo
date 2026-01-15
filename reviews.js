@@ -191,12 +191,15 @@ async function createReview({ targetUserId, rating, text, files = [], listingId 
         }
         
         // Vytvořit recenzi v Firestore
+        // Zajistit, že photoUrls je pole (ne null, ne undefined)
+        const finalPhotoUrls = Array.isArray(photoUrls) ? photoUrls : (photoUrls ? [photoUrls] : []);
+        
         const reviewData = {
             authorId: currentUser.uid,
             targetUserId: targetUserId,
             rating: rating,
             text: text.trim(),
-            photoUrls: photoUrls,
+            photoUrls: finalPhotoUrls, // Vždy pole, i když prázdné
             listingId: listingId,
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
@@ -205,9 +208,14 @@ async function createReview({ targetUserId, rating, text, files = [], listingId 
         };
         
         console.log('💾 Saving review to Firestore with data:', {
-            ...reviewData,
-            photoUrls: photoUrls,
-            photoUrlsCount: photoUrls.length
+            authorId: reviewData.authorId,
+            targetUserId: reviewData.targetUserId,
+            rating: reviewData.rating,
+            textLength: reviewData.text.length,
+            photoUrls: finalPhotoUrls,
+            photoUrlsCount: finalPhotoUrls.length,
+            photoUrlsIsArray: Array.isArray(finalPhotoUrls),
+            listingId: reviewData.listingId
         });
         
         const reviewsRef = collection(window.firebaseDb, REVIEWS_COLLECTION);
