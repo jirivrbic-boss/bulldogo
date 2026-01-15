@@ -1053,17 +1053,23 @@ function openReviewPhotoLightbox(photoUrls, startIndex = 0) {
     const modal = document.createElement('div');
     modal.className = 'review-photo-lightbox';
     modal.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.95);
-        z-index: 10000;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: rgba(0, 0, 0, 0.95) !important;
+        z-index: 99999 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        cursor: pointer !important;
+        overflow: hidden !important;
+        box-sizing: border-box !important;
     `;
     
     let currentIndex = startIndex;
@@ -1178,30 +1184,60 @@ function openReviewPhotoLightbox(photoUrls, startIndex = 0) {
     modal.appendChild(closeBtn);
     
     modal.appendChild(img);
+    
+    // Zajistit, že body nemá overflow, který by mohl omezit modal
+    const originalBodyOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    
+    // Funkce pro zavření modalu
+    const closeModal = () => {
+        document.body.style.overflow = originalBodyOverflow;
+        modal.remove();
+    };
+    
+    // Při zavření obnovit původní overflow
+    closeBtn.onclick = (e) => {
+        e.stopPropagation();
+        closeModal();
+    };
+    
     modal.onclick = (e) => {
-        if (e.target === modal) modal.remove();
+        if (e.target === modal) {
+            closeModal();
+        }
     };
     
     // Klávesnice
     const handleKey = (e) => {
-        if (e.key === 'Escape') modal.remove();
+        if (e.key === 'Escape') {
+            closeModal();
+            document.removeEventListener('keydown', handleKey);
+        }
         if (e.key === 'ArrowLeft' && photoUrls.length > 1) {
             currentIndex = (currentIndex - 1 + photoUrls.length) % photoUrls.length;
             updateImage();
-            updateCounter();
+            if (photoUrls.length > 1) updateCounter();
         }
         if (e.key === 'ArrowRight' && photoUrls.length > 1) {
             currentIndex = (currentIndex + 1) % photoUrls.length;
             updateImage();
-            updateCounter();
+            if (photoUrls.length > 1) updateCounter();
         }
     };
     document.addEventListener('keydown', handleKey);
-    modal.addEventListener('remove', () => {
-        document.removeEventListener('keydown', handleKey);
-    });
     
+    // Přidat modal přímo do body, ne do žádného kontejneru
     document.body.appendChild(modal);
+    
+    // Cleanup při odstranění modalu
+    const observer = new MutationObserver(() => {
+        if (!document.body.contains(modal)) {
+            document.removeEventListener('keydown', handleKey);
+            document.body.style.overflow = originalBodyOverflow;
+            observer.disconnect();
+        }
+    });
+    observer.observe(document.body, { childList: true });
 }
 
 // Export funkcí pro globální použití
