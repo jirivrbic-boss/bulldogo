@@ -1428,6 +1428,9 @@ function createAuthModal() {
                     <button type="button" id="btnForgotPassword" class="btn btn-link forgot-password-btn" style="font-size: 0.9rem; padding: 0.5rem 0; color: #6b7280; text-decoration: underline; cursor: pointer;">
                         Zapomněli jste heslo?
                     </button>
+                    <p style="font-size: 0.85rem; color: #9ca3af; margin-top: 0.5rem; margin-bottom: 0; text-align: center;">
+                        Zadejte email a klikněte na tlačítko pro zaslání odkazu na obnovu hesla.
+                    </p>
                 </div>
 
                 <div class="form-group">
