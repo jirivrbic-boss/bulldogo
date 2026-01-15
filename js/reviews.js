@@ -305,8 +305,21 @@ async function fetchReviewsForTarget(targetUserId, options = {}) {
             }
         }
         
-        // Vytvořit dotaz - použít jen jeden where pro targetUserId (aby nepotřeboval index)
-        let q = query(reviewsRef, where('targetUserId', '==', targetUserId));
+        // Vytvořit dotaz
+        // Pro nepřihlášené uživatele filtrovat isHidden == false přímo v dotazu
+        // (aby Firestore rules neblokovaly dotaz kvůli skrytým recenzím)
+        let q;
+        if (!currentUser || (!userIsAdmin && !options.includeHidden)) {
+            // Nepřihlášený nebo běžný uživatel - filtrovat skryté recenze v dotazu
+            q = query(
+                reviewsRef, 
+                where('targetUserId', '==', targetUserId),
+                where('isHidden', '==', false)
+            );
+        } else {
+            // Admin nebo includeHidden - načíst všechny recenze
+            q = query(reviewsRef, where('targetUserId', '==', targetUserId));
+        }
         
         // Limit pro dotaz (max 1000, pak filtrujeme na klientovi)
         const queryLimit = options.limit ? Math.min(options.limit * 2, 1000) : 1000;
@@ -316,12 +329,43 @@ async function fetchReviewsForTarget(targetUserId, options = {}) {
         let reviews = [];
         
         snapshot.forEach(doc => {
+            const docData = doc.data();
             const reviewData = {
                 id: doc.id,
-                ...doc.data()
+                ...docData
             };
             
-            // Filtrovat skryté recenze na klientovi (pokud není admin)
+            // Debug: detailní logování photoUrls
+            console.log('📸 Review data loaded:', {
+                id: reviewData.id,
+                photoUrls: reviewData.photoUrls,
+                photoUrlsType: typeof reviewData.photoUrls,
+                isArray: Array.isArray(reviewData.photoUrls),
+                photoUrlsLength: reviewData.photoUrls?.length || 0,
+                allKeys: Object.keys(docData)
+            });
+            
+            // Zajistit, že photoUrls je pole
+            if (reviewData.photoUrls && !Array.isArray(reviewData.photoUrls)) {
+                console.warn('⚠️ photoUrls is not an array, converting:', reviewData.photoUrls);
+                // Pokud je to string, zkusit parsovat
+                if (typeof reviewData.photoUrls === 'string') {
+                    try {
+                        reviewData.photoUrls = JSON.parse(reviewData.photoUrls);
+                    } catch (e) {
+                        reviewData.photoUrls = [reviewData.photoUrls];
+                    }
+                } else {
+                    reviewData.photoUrls = [reviewData.photoUrls];
+                }
+            }
+            
+            // Debug: logovat photoUrls po normalizaci
+            if (reviewData.photoUrls && Array.isArray(reviewData.photoUrls) && reviewData.photoUrls.length > 0) {
+                console.log('✅ Review has photos (normalized):', reviewData.id, 'photoUrls count:', reviewData.photoUrls.length, 'URLs:', reviewData.photoUrls);
+            }
+            
+            // Filtrovat skryté recenze na klientovi (pokud není admin a nebylo filtrováno v dotazu)
             if (userIsAdmin || options.includeHidden || !reviewData.isHidden) {
                 reviews.push(reviewData);
             }
