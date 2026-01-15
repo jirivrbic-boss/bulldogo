@@ -4027,6 +4027,11 @@ function setupImagePreviews() {
         return;
     }
     
+    // Na stránkách create-ad.html a edit-ad.html se používá vlastní logika, ne tuto
+    if (window.location.pathname.includes('create-ad.html') || window.location.pathname.includes('edit-ad.html')) {
+        return;
+    }
+    
     const previewImageInput = document.getElementById('previewImage');
     const additionalImagesInput = document.getElementById('additionalImages');
     const previewImagePreview = document.getElementById('previewImagePreview');

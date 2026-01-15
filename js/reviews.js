@@ -901,7 +901,6 @@ async function renderReviews(containerEl, reviews, options = {}) {
                                 <img src="${url}" 
                                      alt="Foto ${idx + 1}" 
                                      class="review-photo-thumbnail"
-                                     style="width: 100%; height: 100%; object-fit: cover; object-position: center; min-width: 100%; min-height: 100%; transform: scale(1.1);"
                                      loading="lazy"
                                      onerror="console.error('❌ Error loading photo:', this.src); this.style.display='none';">
                             </div>
