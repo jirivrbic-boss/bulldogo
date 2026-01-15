@@ -13,14 +13,37 @@ const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 /**
  * Zkontroluje, zda je uživatel admin
+ * Kontroluje: /admins/{uid}, /users/{uid}/profile/profile, a admin emaily
  */
 async function isAdmin(userId) {
     if (!userId || !window.firebaseDb) return false;
     try {
         const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        
+        // 1. Kontrola přes /admins/{uid} (priorita)
         const adminRef = doc(window.firebaseDb, 'admins', userId);
         const adminSnap = await getDoc(adminRef);
-        return adminSnap.exists();
+        if (adminSnap.exists()) {
+            return true;
+        }
+        
+        // 2. Kontrola přes profil (fallback pro kompatibilitu)
+        const profileRef = doc(window.firebaseDb, 'users', userId, 'profile', 'profile');
+        const profileSnap = await getDoc(profileRef);
+        if (profileSnap.exists()) {
+            const profileData = profileSnap.data();
+            if (profileData.isAdmin === true || profileData.role === 'admin') {
+                return true;
+            }
+        }
+        
+        // 3. Kontrola přes email (fallback)
+        const adminEmails = ['admin@bulldogo.cz', 'support@bulldogo.cz'];
+        if (window.firebaseAuth?.currentUser?.email && adminEmails.includes(window.firebaseAuth.currentUser.email.toLowerCase())) {
+            return true;
+        }
+        
+        return false;
     } catch (error) {
         console.error('Error checking admin status:', error);
         return false;
