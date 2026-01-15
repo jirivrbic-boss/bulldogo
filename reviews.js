@@ -1293,13 +1293,16 @@ function openReviewPhotoLightbox(photoUrls, startIndex = 0) {
     
     // Cleanup při odstranění modalu
     const observer = new MutationObserver(() => {
-        if (!document.body.contains(modal)) {
+        if (!document.documentElement.contains(modal) && !document.body.contains(modal)) {
             document.removeEventListener('keydown', handleKey);
             document.body.style.overflow = originalBodyOverflow;
             observer.disconnect();
         }
     });
-    observer.observe(document.body, { childList: true });
+    observer.observe(document.documentElement, { childList: true });
+    if (document.body) {
+        observer.observe(document.body, { childList: true });
+    }
 }
 
 // Export funkcí pro globální použití

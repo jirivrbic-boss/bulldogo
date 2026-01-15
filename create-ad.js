@@ -744,6 +744,9 @@
                 cropperInstance = null;
             }
             
+            // Nejdřív zobrazit modal
+            modal.style.display = 'flex';
+            
             // Resetovat obrázek - odstranit src, aby se vynutilo nové načtení
             // Nejdřív odstranit handlery, pak src
             cropImage.onload = null;
@@ -752,17 +755,6 @@
             cropImage.style.display = 'none';
             cropImage.style.visibility = 'hidden';
             cropImage.style.opacity = '0';
-            
-            // Vynutit reset - přidat malé zpoždění
-            setTimeout(() => {
-                // Zajistit, že src je prázdný
-                if (cropImage.src) {
-                    cropImage.src = '';
-                }
-            }, 10);
-            
-            // Nejdřív zobrazit modal
-            modal.style.display = 'flex';
             
             // Funkce pro inicializaci cropperu
             const initCropper = () => {
