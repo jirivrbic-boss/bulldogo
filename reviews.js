@@ -175,14 +175,29 @@ async function createReview({ targetUserId, rating, text, files = [], listingId 
                 const storageRef = ref(window.firebaseStorage, fileName);
                 
                 try {
+                    console.log('📸 Attempting to upload to:', fileName);
+                    console.log('📸 Storage ref:', storageRef);
+                    console.log('📸 File details:', { name: file.name, type: file.type, size: file.size });
+                    
                     await uploadBytes(storageRef, file);
-                    console.log('✅ Photo uploaded to storage:', fileName);
+                    console.log('✅ Photo uploaded to storage successfully:', fileName);
+                    
                     const downloadURL = await getDownloadURL(storageRef);
                     console.log('✅ Download URL obtained:', downloadURL);
+                    console.log('✅ Adding URL to photoUrls array. Current length:', photoUrls.length);
+                    
                     photoUrls.push(downloadURL);
+                    console.log('✅ photoUrls after push:', photoUrls);
                 } catch (uploadError) {
                     console.error('❌ Error uploading photo:', uploadError);
-                    throw new Error(`Chyba při nahrávání fotky ${i + 1}: ${uploadError.message}`);
+                    console.error('❌ Error details:', {
+                        code: uploadError.code,
+                        message: uploadError.message,
+                        serverResponse: uploadError.serverResponse,
+                        fileName: fileName,
+                        storageRef: storageRef
+                    });
+                    throw new Error(`Chyba při nahrávání fotky ${i + 1}: ${uploadError.message} (kód: ${uploadError.code || 'neznámý'})`);
                 }
             }
             console.log('📸 All photos uploaded. Total photoUrls:', photoUrls.length, photoUrls);
@@ -232,8 +247,19 @@ async function createReview({ targetUserId, rating, text, files = [], listingId 
             console.log('✅ Verified saved review data:', {
                 id: docRef.id,
                 photoUrls: savedData.photoUrls,
-                photoUrlsCount: savedData.photoUrls?.length || 0
+                photoUrlsType: typeof savedData.photoUrls,
+                photoUrlsIsArray: Array.isArray(savedData.photoUrls),
+                photoUrlsCount: savedData.photoUrls?.length || 0,
+                photoUrlsContent: savedData.photoUrls
             });
+            
+            // Pokud se photoUrls neuložilo správně, zkusit to znovu
+            if (!savedData.photoUrls || (Array.isArray(savedData.photoUrls) && savedData.photoUrls.length === 0 && finalPhotoUrls.length > 0)) {
+                console.warn('⚠️ photoUrls not saved correctly, attempting to update...');
+                const { updateDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                await updateDoc(savedReviewRef, { photoUrls: finalPhotoUrls });
+                console.log('✅ photoUrls updated in Firestore');
+            }
         }
         
         return docRef.id;
