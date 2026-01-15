@@ -1235,42 +1235,60 @@ function openReviewPhotoLightbox(photoUrls, startIndex = 0) {
     };
     document.addEventListener('keydown', handleKey);
     
-    // Přidat modal přímo do body, ne do žádného kontejneru
-    // Zkontrolovat, zda body existuje a není omezen
-    if (document.body) {
-        document.body.appendChild(modal);
-    } else {
-        // Fallback - přidat do html elementu
-        document.documentElement.appendChild(modal);
-    }
+    // Přidat modal přímo do documentElement (html), ne do body
+    // Tím se vyhneme jakýmkoliv omezením z parent elementů
+    document.documentElement.appendChild(modal);
     
     // Zajistit, že modal je skutečně přes celou obrazovku
-    // Použít requestAnimationFrame pro zajištění, že DOM je aktualizován
+    // Použít více requestAnimationFrame pro zajištění, že DOM je aktualizován
     requestAnimationFrame(() => {
-        const rect = modal.getBoundingClientRect();
-        const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
-        const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
-        
-        console.log('🔍 Modal dimensions check:', {
-            modalWidth: rect.width,
-            modalHeight: rect.height,
-            viewportWidth: viewportWidth,
-            viewportHeight: viewportHeight,
-            modalLeft: rect.left,
-            modalTop: rect.top
-        });
-        
-        // Pokud modal není přes celou obrazovku, vynutit to
-        if (rect.width < viewportWidth || rect.height < viewportHeight || rect.left !== 0 || rect.top !== 0) {
-            console.warn('⚠️ Modal is not fullscreen, forcing dimensions...');
+        requestAnimationFrame(() => {
+            const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+            const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+            
+            // Vynutit rozměry pomocí inset (modernější způsob)
             modal.style.setProperty('position', 'fixed', 'important');
-            modal.style.setProperty('top', '0', 'important');
-            modal.style.setProperty('left', '0', 'important');
+            modal.style.setProperty('inset', '0', 'important');
             modal.style.setProperty('width', `${viewportWidth}px`, 'important');
             modal.style.setProperty('height', `${viewportHeight}px`, 'important');
+            modal.style.setProperty('max-width', 'none', 'important');
+            modal.style.setProperty('max-height', 'none', 'important');
+            modal.style.setProperty('min-width', `${viewportWidth}px`, 'important');
+            modal.style.setProperty('min-height', `${viewportHeight}px`, 'important');
             modal.style.setProperty('margin', '0', 'important');
             modal.style.setProperty('padding', '0', 'important');
-        }
+            modal.style.setProperty('left', '0', 'important');
+            modal.style.setProperty('top', '0', 'important');
+            modal.style.setProperty('right', '0', 'important');
+            modal.style.setProperty('bottom', '0', 'important');
+            
+            // Zkontrolovat výsledek
+            const rect = modal.getBoundingClientRect();
+            console.log('🔍 Modal dimensions after force:', {
+                modalWidth: rect.width,
+                modalHeight: rect.height,
+                viewportWidth: viewportWidth,
+                viewportHeight: viewportHeight,
+                modalLeft: rect.left,
+                modalTop: rect.top,
+                computedStyle: window.getComputedStyle(modal).position
+            });
+            
+            // Pokud stále není přes celou obrazovku, zkusit ještě jednou
+            if (Math.abs(rect.width - viewportWidth) > 1 || Math.abs(rect.height - viewportHeight) > 1 || Math.abs(rect.left) > 1 || Math.abs(rect.top) > 1) {
+                console.warn('⚠️ Modal still not fullscreen, trying again...');
+                // Zkusit odstranit a přidat znovu
+                const parent = modal.parentNode;
+                modal.remove();
+                document.documentElement.appendChild(modal);
+                
+                // Znovu nastavit všechny styly
+                modal.style.setProperty('position', 'fixed', 'important');
+                modal.style.setProperty('inset', '0', 'important');
+                modal.style.setProperty('width', `${viewportWidth}px`, 'important');
+                modal.style.setProperty('height', `${viewportHeight}px`, 'important');
+            }
+        });
     });
     
     // Cleanup při odstranění modalu

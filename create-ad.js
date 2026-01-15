@@ -745,11 +745,21 @@
             }
             
             // Resetovat obrázek - odstranit src, aby se vynutilo nové načtení
+            // Nejdřív odstranit handlery, pak src
+            cropImage.onload = null;
+            cropImage.onerror = null;
             cropImage.src = '';
             cropImage.style.display = 'none';
             cropImage.style.visibility = 'hidden';
-            cropImage.onload = null;
-            cropImage.onerror = null;
+            cropImage.style.opacity = '0';
+            
+            // Vynutit reset - přidat malé zpoždění
+            setTimeout(() => {
+                // Zajistit, že src je prázdný
+                if (cropImage.src) {
+                    cropImage.src = '';
+                }
+            }, 10);
             
             // Nejdřív zobrazit modal
             modal.style.display = 'flex';
@@ -867,47 +877,65 @@
             
             // Nastavit onload handler - před nastavením src
             let imageLoaded = false;
-            cropImage.onload = function() {
+            const handleImageLoad = function() {
                 if (imageLoaded) return; // Zabraň duplicitnímu volání
                 imageLoaded = true;
                 console.log('✅ Obrázek načten, inicializuji cropper');
-                initCropper();
+                // Zkontrolovat, zda je obrázek skutečně načtený
+                if (cropImage.complete && cropImage.naturalWidth > 0) {
+                    initCropper();
+                } else {
+                    console.warn('⚠️ Obrázek není plně načtený, čekám...');
+                    setTimeout(() => {
+                        if (cropImage.complete && cropImage.naturalWidth > 0) {
+                            initCropper();
+                        } else {
+                            console.error('❌ Obrázek se nepodařilo načíst do editoru');
+                            if (cropLoading) {
+                                cropLoading.style.display = 'none';
+                            }
+                            modal.style.display = 'none';
+                            alert('Nepodařilo se načíst obrázek do editoru. Zkuste to znovu.');
+                        }
+                    }, 500);
+                }
             };
+            
+            cropImage.onload = handleImageLoad;
             
             // Nastavit src až po registraci handlerů a zobrazení modalu
             // Přidat malé zpoždění, aby se modal stihl zobrazit
             setTimeout(() => {
-                console.log('📸 Nastavuji src obrázku...');
+                console.log('📸 Nastavuji src obrázku:', e.target.result.substring(0, 50) + '...');
                 cropImage.src = e.target.result;
                 
-                // Pro data URL se obrázek načte okamžitě, ale onload se může spustit asynchronně
-                // Zkontrolovat, zda je obrázek už načtený
+                // Pro data URL se obrázek může načíst okamžitě
+                // Zkontrolovat, zda je obrázek už načtený (pokud se onload nespustil)
                 setTimeout(() => {
                     if (cropImage.complete && cropImage.naturalWidth > 0 && !cropperInstance && !imageLoaded) {
                         console.log('✅ Obrázek je už načtený (data URL), inicializuji cropper');
-                        imageLoaded = true;
-                        initCropper();
-                    } else if (!cropperInstance && !imageLoaded) {
-                        // Fallback - pokud se onload nespustil do 1.5s, zkusit znovu
+                        handleImageLoad();
+                    } else if (!cropImage.complete || cropImage.naturalWidth === 0) {
+                        // Pokud se obrázek stále načítá, počkat déle
                         console.log('⚠️ Obrázek se stále načítá, čekám...');
                         setTimeout(() => {
                             if (cropImage.complete && cropImage.naturalWidth > 0 && !cropperInstance && !imageLoaded) {
                                 console.log('⚠️ Fallback: inicializuji cropper po timeoutu');
-                                imageLoaded = true;
-                                initCropper();
-                            } else if (!cropperInstance) {
-                                console.error('❌ Obrázek se nepodařilo načíst do editoru');
+                                handleImageLoad();
+                            } else if (!cropperInstance && !imageLoaded) {
+                                console.error('❌ Obrázek se nepodařilo načíst do editoru po timeoutu');
                                 if (cropLoading) {
                                     cropLoading.style.display = 'none';
                                 }
                                 modal.style.display = 'none';
                                 alert('Nepodařilo se načíst obrázek do editoru. Zkuste to znovu.');
                             }
-                        }, 1500);
+                        }, 2000);
                     }
-                }, 100);
-            }, 50);
+                }, 200);
+            }, 100);
         };
+        
         reader.readAsDataURL(file);
     };
     
