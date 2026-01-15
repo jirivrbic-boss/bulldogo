@@ -1050,27 +1050,36 @@ function renderRatingsChart(containerEl, stats) {
 function openReviewPhotoLightbox(photoUrls, startIndex = 0) {
     if (!photoUrls || photoUrls.length === 0) return;
     
+    // Odstranit existující modaly, pokud existují
+    const existingModals = document.querySelectorAll('.review-photo-lightbox');
+    existingModals.forEach(m => m.remove());
+    
     const modal = document.createElement('div');
     modal.className = 'review-photo-lightbox';
-    modal.style.cssText = `
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        bottom: 0 !important;
-        width: 100vw !important;
-        height: 100vh !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        background: rgba(0, 0, 0, 0.95) !important;
-        z-index: 99999 !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        cursor: pointer !important;
-        overflow: hidden !important;
-        box-sizing: border-box !important;
-    `;
+    
+    // Nastavit všechny styly pomocí setProperty pro lepší kontrolu
+    modal.style.setProperty('position', 'fixed', 'important');
+    modal.style.setProperty('top', '0', 'important');
+    modal.style.setProperty('left', '0', 'important');
+    modal.style.setProperty('right', '0', 'important');
+    modal.style.setProperty('bottom', '0', 'important');
+    modal.style.setProperty('width', '100vw', 'important');
+    modal.style.setProperty('height', '100vh', 'important');
+    modal.style.setProperty('margin', '0', 'important');
+    modal.style.setProperty('padding', '0', 'important');
+    modal.style.setProperty('background', 'rgba(0, 0, 0, 0.95)', 'important');
+    modal.style.setProperty('z-index', '999999', 'important');
+    modal.style.setProperty('display', 'flex', 'important');
+    modal.style.setProperty('align-items', 'center', 'important');
+    modal.style.setProperty('justify-content', 'center', 'important');
+    modal.style.setProperty('cursor', 'pointer', 'important');
+    modal.style.setProperty('overflow', 'hidden', 'important');
+    modal.style.setProperty('box-sizing', 'border-box', 'important');
+    modal.style.setProperty('transform', 'none', 'important');
+    modal.style.setProperty('will-change', 'auto', 'important');
+    
+    // Zajistit, že modal není omezen žádným parent elementem
+    modal.setAttribute('data-lightbox', 'true');
     
     let currentIndex = startIndex;
     
@@ -1227,7 +1236,42 @@ function openReviewPhotoLightbox(photoUrls, startIndex = 0) {
     document.addEventListener('keydown', handleKey);
     
     // Přidat modal přímo do body, ne do žádného kontejneru
-    document.body.appendChild(modal);
+    // Zkontrolovat, zda body existuje a není omezen
+    if (document.body) {
+        document.body.appendChild(modal);
+    } else {
+        // Fallback - přidat do html elementu
+        document.documentElement.appendChild(modal);
+    }
+    
+    // Zajistit, že modal je skutečně přes celou obrazovku
+    // Použít requestAnimationFrame pro zajištění, že DOM je aktualizován
+    requestAnimationFrame(() => {
+        const rect = modal.getBoundingClientRect();
+        const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+        const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+        
+        console.log('🔍 Modal dimensions check:', {
+            modalWidth: rect.width,
+            modalHeight: rect.height,
+            viewportWidth: viewportWidth,
+            viewportHeight: viewportHeight,
+            modalLeft: rect.left,
+            modalTop: rect.top
+        });
+        
+        // Pokud modal není přes celou obrazovku, vynutit to
+        if (rect.width < viewportWidth || rect.height < viewportHeight || rect.left !== 0 || rect.top !== 0) {
+            console.warn('⚠️ Modal is not fullscreen, forcing dimensions...');
+            modal.style.setProperty('position', 'fixed', 'important');
+            modal.style.setProperty('top', '0', 'important');
+            modal.style.setProperty('left', '0', 'important');
+            modal.style.setProperty('width', `${viewportWidth}px`, 'important');
+            modal.style.setProperty('height', `${viewportHeight}px`, 'important');
+            modal.style.setProperty('margin', '0', 'important');
+            modal.style.setProperty('padding', '0', 'important');
+        }
+    });
     
     // Cleanup při odstranění modalu
     const observer = new MutationObserver(() => {
