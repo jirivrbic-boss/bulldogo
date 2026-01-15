@@ -288,7 +288,7 @@
                 <div style="margin-bottom: 20px;">
                     <h3 style="margin: 0; font-size: 18px; font-weight: 600;">Celkem recenzí: ${reviews.length}</h3>
                 </div>
-                <div style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="admin-reviews-grid">
                     ${reviewsWithNames.map(review => {
                         const rating = review.rating || 0;
                         const filledStars = '★'.repeat(rating);
@@ -467,6 +467,24 @@
         window.deleteReviewConfirm = deleteReviewConfirm;
     </script>
     <style>
+        .admin-reviews-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+        
+        @media (max-width: 1200px) {
+            .admin-reviews-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .admin-reviews-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
         .modal {
             display: none;
             position: fixed;
