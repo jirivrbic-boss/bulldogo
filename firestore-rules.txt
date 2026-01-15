@@ -10,12 +10,14 @@ service cloud.firestore {
     // Helper funkce pro kontrolu admin statusu
     function isAdmin() {
       return request.auth != null && (
-        // Kontrola přes profil
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)/profile/profile) &&
-        (
-          get(/databases/$(database)/documents/users/$(request.auth.uid)/profile/profile).data.isAdmin == true ||
-          get(/databases/$(database)/documents/users/$(request.auth.uid)/profile/profile).data.role == 'admin'
-        ) ||
+        // Kontrola přes /admins/{uid} (priorita)
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        // Kontrola přes profil (fallback pro kompatibilitu)
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)/profile/profile) &&
+         (
+           get(/databases/$(database)/documents/users/$(request.auth.uid)/profile/profile).data.isAdmin == true ||
+           get(/databases/$(database)/documents/users/$(request.auth.uid)/profile/profile).data.role == 'admin'
+         )) ||
         // Kontrola přes email (fallback)
         request.auth.token.email in ['admin@bulldogo.cz', 'support@bulldogo.cz']
       );
@@ -57,30 +59,61 @@ service cloud.firestore {
       allow delete: if request.auth != null && isAdmin();
     }
     
-    // ===== PRAVIDLA PRO RECENZE =====
-    // DŮLEŽITÉ: Pro collectionGroup("reviews") dotazy musí být všechny cesty explicitně povoleny
-    // Recenze na profilu uživatele - MUSÍ BÝT PŘED OBECNÝM PRAVIDLEM /users/{userId}/{document=**}
-    match /users/{userId}/reviews/{reviewId} {
-      allow read: if true;  // Veřejné čtení pro všechny (včetně vlastních) - i bez přihlášení
-      allow create: if request.auth != null;  // Kdokoli přihlášený může psát recenze
-      allow update: if request.auth != null && (request.auth.uid == resource.data.reviewerId || request.auth.uid == userId);
-      allow delete: if request.auth != null && (request.auth.uid == resource.data.reviewerId || request.auth.uid == userId);
-    }
-    
-    // Recenze na inzerátech
-    match /users/{userId}/inzeraty/{adId}/reviews/{reviewId} {
-      allow read: if true;  // Veřejné čtení pro všechny (včetně vlastních)
-      allow create: if request.auth != null;
-      allow update: if request.auth != null && (request.auth.uid == resource.data.reviewerId || request.auth.uid == userId);
-      allow delete: if request.auth != null && (request.auth.uid == resource.data.reviewerId || request.auth.uid == userId);
-    }
-    
-    // Root kolekce reviews (fallback, pokud existuje)
+    // ===== PRAVIDLA PRO RECENZE (NOVÝ SYSTÉM) =====
+    // Root kolekce /reviews - JEDINÝ ZDROJ PRAVDY
+    // DŮLEŽITÉ: Všechny recenze se ukládají do /reviews, ne do users/{userId}/reviews
     match /reviews/{reviewId} {
-      allow read: if true;  // Veřejné čtení pro všechny
+      // READ: Veřejné recenze (isHidden == false) jsou čitelné pro všechny
+      // Skryté recenze (isHidden == true) jsou čitelné jen pro admin
+      allow read: if resource.data.isHidden == false || 
+                     (request.auth != null && isAdmin());
+      
+      // CREATE: Jen přihlášení uživatelé, authorId MUSÍ být request.auth.uid
+      allow create: if request.auth != null &&
+                       request.resource.data.authorId == request.auth.uid &&
+                       request.resource.data.targetUserId is string &&
+                       request.resource.data.rating is int &&
+                       request.resource.data.rating >= 1 &&
+                       request.resource.data.rating <= 5 &&
+                       request.resource.data.text is string &&
+                       request.resource.data.text.size() > 0 &&
+                       // Immutable fields - nelze změnit po vytvoření
+                       request.resource.data.authorId == request.resource.data.authorId &&
+                       request.resource.data.targetUserId == request.resource.data.targetUserId;
+      
+      // UPDATE: Autor může upravit text, rating, photoUrls
+      // Admin může upravit COKOLIV (včetně isHidden, editedByAdmin)
+      allow update: if request.auth != null && (
+                       // Autor může upravit své recenze (text, rating, photoUrls)
+                       (resource.data.authorId == request.auth.uid &&
+                        // Immutable fields nelze změnit
+                        request.resource.data.authorId == resource.data.authorId &&
+                        request.resource.data.targetUserId == resource.data.targetUserId) ||
+                       // Admin může upravit cokoliv
+                       isAdmin()
+                     );
+      
+      // DELETE: Autor nebo admin
+      allow delete: if request.auth != null && (
+                       resource.data.authorId == request.auth.uid ||
+                       isAdmin()
+                     );
+    }
+    
+    // ===== ADMIN KOLEKCE =====
+    // Kolekce /admins/{uid} pro kontrolu admin statusu
+    match /admins/{adminId} {
+      // Jen admin může číst a upravovat admins
+      allow read, write: if request.auth != null && isAdmin();
+    }
+    
+    // ===== STARÁ PRAVIDLA PRO RECENZE (ZACHOVAT PRO KOMPATIBILITU) =====
+    // Pokud máte staré recenze v users/{userId}/reviews, tato pravidla je zachovají
+    match /users/{userId}/reviews/{reviewId} {
+      allow read: if true;
       allow create: if request.auth != null;
-      allow update: if request.auth != null && request.auth.uid == resource.data.reviewerId;
-      allow delete: if request.auth != null && request.auth.uid == resource.data.reviewerId;
+      allow update: if request.auth != null && (request.auth.uid == resource.data.reviewerId || request.auth.uid == userId || isAdmin());
+      allow delete: if request.auth != null && (request.auth.uid == resource.data.reviewerId || request.auth.uid == userId || isAdmin());
     }
     
     // ===== PRAVIDLA PRO KONVERZACE (NOVÝ CHAT SYSTÉM) =====
