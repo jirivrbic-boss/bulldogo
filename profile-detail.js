@@ -337,47 +337,30 @@ async function displayUserReviewsNew() {
 }
 
 // Display profile
-// Zkontrolovat admin status a zobrazit/skrýt formulář pro recenze
-async function checkAdminAndShowReviewForm() {
+// Zkontrolovat přihlášení a zobrazit/skrýt formulář pro recenze
+async function checkAuthAndShowReviewForm() {
     try {
         const currentUser = window.firebaseAuth?.currentUser;
-        if (!currentUser) {
-            // Není přihlášen - skrýt formulář
-            const writeReviewBtn = document.getElementById('writeReviewBtn');
-            if (writeReviewBtn) {
-                writeReviewBtn.style.display = 'none';
-            }
-            return;
-        }
+        const writeReviewBtn = document.getElementById('writeReviewBtn');
         
-        // Zkontrolovat, zda je admin
-        if (window.ReviewsSystem && window.ReviewsSystem.isAdmin) {
-            const isAdmin = await window.ReviewsSystem.isAdmin(currentUser.uid);
-            const writeReviewBtn = document.getElementById('writeReviewBtn');
-            if (writeReviewBtn) {
-                writeReviewBtn.style.display = isAdmin ? 'block' : 'none';
+        if (!writeReviewBtn) return;
+        
+        // Zobrazit formulář pro všechny přihlášené uživatele
+        if (currentUser) {
+            // Zkontrolovat, zda uživatel nesnaží recenzovat sám sebe
+            const targetUserId = currentProfileUser?.uid || currentProfileUser?.id;
+            if (targetUserId && currentUser.uid === targetUserId) {
+                // Uživatel nemůže recenzovat sám sebe
+                writeReviewBtn.style.display = 'none';
+            } else {
+                writeReviewBtn.style.display = 'block';
             }
         } else {
-            // Fallback - použít reviews.js funkci přímo
-            const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
-            try {
-                const adminRef = doc(window.firebaseDb, 'admins', currentUser.uid);
-                const adminSnap = await getDoc(adminRef);
-                const isAdmin = adminSnap.exists();
-                const writeReviewBtn = document.getElementById('writeReviewBtn');
-                if (writeReviewBtn) {
-                    writeReviewBtn.style.display = isAdmin ? 'block' : 'none';
-                }
-            } catch (error) {
-                console.warn('⚠️ Error checking admin status:', error);
-                const writeReviewBtn = document.getElementById('writeReviewBtn');
-                if (writeReviewBtn) {
-                    writeReviewBtn.style.display = 'none';
-                }
-            }
+            // Není přihlášen - skrýt formulář
+            writeReviewBtn.style.display = 'none';
         }
     } catch (error) {
-        console.error('❌ Error in checkAdminAndShowReviewForm:', error);
+        console.error('❌ Error in checkAuthAndShowReviewForm:', error);
         const writeReviewBtn = document.getElementById('writeReviewBtn');
         if (writeReviewBtn) {
             writeReviewBtn.style.display = 'none';
@@ -388,8 +371,8 @@ async function checkAdminAndShowReviewForm() {
 function displayProfile() {
     console.log('🖼️ displayProfile called');
     
-    // Zkontrolovat admin status a zobrazit formulář pro recenze
-    checkAdminAndShowReviewForm();
+    // Zkontrolovat přihlášení a zobrazit formulář pro recenze
+    checkAuthAndShowReviewForm();
     console.log('🖼️ currentProfileUser:', currentProfileUser);
     console.log('🖼️ userProfile:', userProfile);
     console.log('🖼️ userServices:', userServices);

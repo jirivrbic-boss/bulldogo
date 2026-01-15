@@ -68,10 +68,9 @@ service cloud.firestore {
       allow read: if resource.data.isHidden == false || 
                      (request.auth != null && isAdmin());
       
-      // CREATE: Jen admin může vytvářet recenze
+      // CREATE: Každý přihlášený uživatel může vytvářet recenze, authorId MUSÍ být request.auth.uid
       allow create: if request.auth != null &&
-                       isAdmin() &&
-                       request.resource.data.authorId is string &&
+                       request.resource.data.authorId == request.auth.uid &&
                        request.resource.data.targetUserId is string &&
                        request.resource.data.rating is int &&
                        request.resource.data.rating >= 1 &&
