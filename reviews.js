@@ -337,8 +337,11 @@ async function fetchReviewsForTarget(targetUserId, options = {}) {
         
     } catch (error) {
         console.error('❌ Error fetching reviews for target:', error);
+        // Pro nepřihlášené uživatele vracet prázdné pole místo chyby
+        // (veřejné recenze by měly být dostupné i bez přihlášení)
         if (error.code === 'permission-denied') {
-            throw new Error('Nemáte oprávnění k načtení recenzí');
+            console.warn('⚠️ Permission denied - returning empty array for unauthenticated user');
+            return [];
         }
         throw error;
     }

@@ -43,8 +43,8 @@ service firebase.storage {
     // ===== FOTKY RECENZÍ (NOVÝ SYSTÉM) =====
     // Cesta: reviews/{authorId}/{timestamp}_{index}_{filename}
     match /reviews/{authorId}/{allPaths=**} {
-      // READ: Jen přihlášení mohou vidět fotky recenzí
-      allow read: if request.auth != null;
+      // READ: Všichni mohou vidět fotky recenzí (i nepřihlášení)
+      allow read: if true;
       
       // WRITE: Autor může nahrávat do své složky, admin může nahrávat kdekoliv
       allow write: if request.auth != null && (

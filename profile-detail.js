@@ -328,11 +328,24 @@ async function displayUserReviewsNew() {
         
     } catch (error) {
         console.error('❌ Error loading reviews:', error);
-        container.innerHTML = `
-            <div style="text-align: center; padding: 40px; color: #dc2626;">
-                <p>Chyba při načítání recenzí: ${error.message}</p>
-            </div>
-        `;
+        // Pro nepřihlášené uživatele zobrazit prázdný stav místo chyby
+        const currentUser = window.firebaseAuth?.currentUser;
+        if (!currentUser && error.message && error.message.includes('oprávnění')) {
+            // Nepřihlášený uživatel - zobrazit prázdný stav
+            container.innerHTML = `
+                <div style="text-align: center; padding: 60px 20px; background: white; border-radius: 16px; border: 2px dashed #e5e7eb;">
+                    <i class="fas fa-star" style="font-size: 48px; color: #d1d5db; margin-bottom: 16px;"></i>
+                    <p style="font-size: 16px; color: #6b7280; margin: 0; font-weight: 500;">Zatím žádné recenze</p>
+                </div>
+            `;
+        } else {
+            // Přihlášený uživatel nebo jiná chyba - zobrazit chybovou zprávu
+            container.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: #dc2626;">
+                    <p>Chyba při načítání recenzí: ${error.message}</p>
+                </div>
+            `;
+        }
     }
 }
 
