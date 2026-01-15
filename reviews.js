@@ -147,30 +147,47 @@ async function createReview({ targetUserId, rating, text, files = [], listingId 
         
         // Nahrát obrázky do Storage
         const photoUrls = [];
+        console.log('📸 Files received:', files, 'files.length:', files?.length, 'firebaseStorage:', !!window.firebaseStorage);
+        
         if (files && files.length > 0 && window.firebaseStorage) {
+            console.log('📸 Starting photo upload process...');
             const { ref, uploadBytes, getDownloadURL } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js');
             
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
+                console.log(`📸 Uploading photo ${i + 1}/${files.length}:`, file.name, 'type:', file.type, 'size:', file.size);
                 
                 // Validace typu
                 if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+                    console.error('❌ Invalid file type:', file.type);
                     throw new Error(`Nepovolený typ souboru: ${file.type}. Povolené typy: ${ALLOWED_IMAGE_TYPES.join(', ')}`);
                 }
                 
                 // Validace velikosti
                 if (file.size > MAX_FILE_SIZE) {
+                    console.error('❌ File too large:', file.size);
                     throw new Error(`Soubor ${file.name} je příliš velký. Maximální velikost: 5 MB`);
                 }
                 
                 const timestamp = Date.now();
                 const fileName = `${STORAGE_PATH_PREFIX}/${currentUser.uid}/${timestamp}_${i}_${file.name}`;
+                console.log('📸 Storage path:', fileName);
                 const storageRef = ref(window.firebaseStorage, fileName);
                 
-                await uploadBytes(storageRef, file);
-                const downloadURL = await getDownloadURL(storageRef);
-                photoUrls.push(downloadURL);
+                try {
+                    await uploadBytes(storageRef, file);
+                    console.log('✅ Photo uploaded to storage:', fileName);
+                    const downloadURL = await getDownloadURL(storageRef);
+                    console.log('✅ Download URL obtained:', downloadURL);
+                    photoUrls.push(downloadURL);
+                } catch (uploadError) {
+                    console.error('❌ Error uploading photo:', uploadError);
+                    throw new Error(`Chyba při nahrávání fotky ${i + 1}: ${uploadError.message}`);
+                }
             }
+            console.log('📸 All photos uploaded. Total photoUrls:', photoUrls.length, photoUrls);
+        } else {
+            console.log('📸 No files to upload or Firebase Storage not available');
         }
         
         // Vytvořit recenzi v Firestore
@@ -187,10 +204,30 @@ async function createReview({ targetUserId, rating, text, files = [], listingId 
             isHidden: false
         };
         
+        console.log('💾 Saving review to Firestore with data:', {
+            ...reviewData,
+            photoUrls: photoUrls,
+            photoUrlsCount: photoUrls.length
+        });
+        
         const reviewsRef = collection(window.firebaseDb, REVIEWS_COLLECTION);
         const docRef = await addDoc(reviewsRef, reviewData);
         
-        console.log('✅ Review created:', docRef.id);
+        console.log('✅ Review created:', docRef.id, 'with photoUrls:', photoUrls.length);
+        
+        // Ověřit, že se data správně uložila
+        const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        const savedReviewRef = doc(window.firebaseDb, REVIEWS_COLLECTION, docRef.id);
+        const savedReviewSnap = await getDoc(savedReviewRef);
+        if (savedReviewSnap.exists()) {
+            const savedData = savedReviewSnap.data();
+            console.log('✅ Verified saved review data:', {
+                id: docRef.id,
+                photoUrls: savedData.photoUrls,
+                photoUrlsCount: savedData.photoUrls?.length || 0
+            });
+        }
+        
         return docRef.id;
         
     } catch (error) {

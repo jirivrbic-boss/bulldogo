@@ -1186,12 +1186,24 @@ async function submitReview() {
         console.log('💾 Creating review with new system...');
         console.log('💾 ReviewsSystem available:', !!window.ReviewsSystem);
         console.log('💾 createReview available:', typeof window.createReview);
+        console.log('💾 selectedReviewPhotos:', selectedReviewPhotos);
+        console.log('💾 selectedReviewPhotos.length:', selectedReviewPhotos?.length);
+        console.log('💾 selectedReviewPhotos type:', Array.isArray(selectedReviewPhotos) ? 'Array' : typeof selectedReviewPhotos);
+        
+        if (selectedReviewPhotos && selectedReviewPhotos.length > 0) {
+            console.log('💾 Photo files details:', selectedReviewPhotos.map((f, i) => ({
+                index: i,
+                name: f.name,
+                type: f.type,
+                size: f.size
+            })));
+        }
         
         const reviewId = await window.createReview({
             targetUserId: targetUserId,
             rating: selectedRating,
             text: reviewText,
-            files: selectedReviewPhotos,
+            files: selectedReviewPhotos || [],
             listingId: null
         });
         
