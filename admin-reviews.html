@@ -301,7 +301,8 @@
                         
                         // Fotky
                         let photosHtml = '';
-                        if (review.photoUrls && review.photoUrls.length > 0) {
+                        console.log('📸 Admin review photos check:', review.id, 'photoUrls:', review.photoUrls);
+                        if (review.photoUrls && Array.isArray(review.photoUrls) && review.photoUrls.length > 0) {
                             const photosToShow = review.photoUrls.slice(0, 3); // Zobrazit max 3 fotky
                             const remainingCount = review.photoUrls.length - 3;
                             photosHtml = `
@@ -309,7 +310,10 @@
                                     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-width: 300px;">
                                         ${photosToShow.map((url, idx) => `
                                             <div style="position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden; border: 2px solid #e5e7eb; cursor: pointer;" onclick="window.openReviewPhotoLightbox(${JSON.stringify(review.photoUrls)}, ${idx})">
-                                                <img src="${url}" alt="Foto ${idx + 1}" style="width: 100%; height: 100%; object-fit: cover;">
+                                                <img src="${url}" 
+                                                     alt="Foto ${idx + 1}" 
+                                                     style="width: 100%; height: 100%; object-fit: cover;"
+                                                     onerror="console.error('❌ Error loading photo in admin:', this.src); this.style.display='none';">
                                             </div>
                                         `).join('')}
                                     </div>
@@ -320,6 +324,8 @@
                                     ` : ''}
                                 </div>
                             `;
+                        } else {
+                            console.log('📸 No photos found for review:', review.id);
                         }
 
                         return `

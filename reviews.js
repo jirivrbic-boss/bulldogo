@@ -711,19 +711,34 @@ async function renderReviews(containerEl, reviews, options = {}) {
         
         // Fotky
         let photosHtml = '';
-        if (options.showPhotos !== false && review.photoUrls && review.photoUrls.length > 0) {
+        if (options.showPhotos !== false && review.photoUrls && Array.isArray(review.photoUrls) && review.photoUrls.length > 0) {
+            console.log('📸 Rendering photos for review:', review.id, 'photoUrls:', review.photoUrls);
+            // Zobrazit max 3 fotky vedle sebe
+            const photosToShow = review.photoUrls.slice(0, 3);
+            const remainingCount = review.photoUrls.length - 3;
             photosHtml = `
-                <div class="review-photos" style="margin-top: 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px;">
-                    ${review.photoUrls.map((url, idx) => `
-                        <img src="${url}" 
-                             alt="Foto ${idx + 1}" 
-                             class="review-photo-thumbnail"
-                             style="width: 100%; height: 80px; object-fit: cover; border-radius: 8px; cursor: pointer; border: 2px solid #e5e7eb;"
-                             onclick="openReviewPhotoLightbox(${JSON.stringify(review.photoUrls)}, ${idx})"
-                             loading="lazy">
-                    `).join('')}
+                <div class="review-photos" style="margin-top: 12px;">
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-width: 300px;">
+                        ${photosToShow.map((url, idx) => `
+                            <div style="position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden; border: 2px solid #e5e7eb; cursor: pointer;" onclick="window.openReviewPhotoLightbox(${JSON.stringify(review.photoUrls)}, ${idx})">
+                                <img src="${url}" 
+                                     alt="Foto ${idx + 1}" 
+                                     class="review-photo-thumbnail"
+                                     style="width: 100%; height: 100%; object-fit: cover;"
+                                     loading="lazy"
+                                     onerror="console.error('❌ Error loading photo:', this.src); this.style.display='none';">
+                            </div>
+                        `).join('')}
+                    </div>
+                    ${remainingCount > 0 ? `
+                        <div style="margin-top: 8px; font-size: 14px; color: #6b7280;">
+                            <i class="fas fa-images"></i> +${remainingCount} dalších fotek
+                        </div>
+                    ` : ''}
                 </div>
             `;
+        } else {
+            console.log('📸 No photos for review:', review.id, 'photoUrls:', review.photoUrls, 'showPhotos:', options.showPhotos);
         }
         
         return `
