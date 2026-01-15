@@ -677,10 +677,10 @@
                         <!-- Nahrání fotek -->
                         <div style="margin-bottom: 16px;">
                             <label style="font-size: 14px; font-weight: 600; color: #374151; display: block; margin-bottom: 8px;">
-                                Fotky (volitelné):
+                                Fotky (volitelné, max. 3):
                             </label>
                             <input type="file" id="reviewPhotos" accept="image/jpeg,image/png,image/webp" multiple style="display: none;" onchange="handleReviewPhotosChange(event)">
-                            <button type="button" onclick="document.getElementById('reviewPhotos').click()" style="
+                            <button type="button" id="selectPhotosBtn" onclick="if (selectedReviewPhotos.length < 3) document.getElementById('reviewPhotos').click(); else alert('Můžete nahrát maximálně 3 fotky');" style="
                                 padding: 10px 20px;
                                 background: white;
                                 border: 2px dashed #e5e7eb;
@@ -690,10 +690,10 @@
                                 cursor: pointer;
                                 width: 100%;
                                 transition: all 0.2s;
-                            " onmouseover="this.style.borderColor='#f77c00'; this.style.color='#f77c00';" onmouseout="this.style.borderColor='#e5e7eb'; this.style.color='#6b7280';">
-                                <i class="fas fa-camera"></i> Vybrat fotky
+                            " onmouseover="if (selectedReviewPhotos.length < 3) { this.style.borderColor='#f77c00'; this.style.color='#f77c00'; }" onmouseout="if (selectedReviewPhotos.length < 3) { this.style.borderColor='#e5e7eb'; this.style.color='#6b7280'; }">
+                                <i class="fas fa-camera"></i> <span id="selectPhotosBtnText">Vybrat fotky</span> <span id="photosCount" style="margin-left: 8px; color: #f77c00; font-weight: 600;"></span>
                             </button>
-                            <div id="reviewPhotosPreview" style="margin-top: 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px;"></div>
+                            <div id="reviewPhotosPreview" style="margin-top: 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 12px;"></div>
                         </div>
                         
                         <!-- Tlačítka -->

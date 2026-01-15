@@ -1110,6 +1110,16 @@ async function submitReview() {
         document.getElementById('reviewPhotos').value = '';
         document.getElementById('reviewPhotosPreview').innerHTML = '';
         highlightStars(0);
+        
+        // Aktualizovat tlačítko a počet fotek
+        const photosCount = document.getElementById('photosCount');
+        const btn = document.getElementById('selectPhotosBtn');
+        if (photosCount) photosCount.textContent = '';
+        if (btn) {
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
+        }
+        
         toggleReviewForm();
         
         // Znovu načíst recenze
@@ -1119,6 +1129,156 @@ async function submitReview() {
         console.error('❌ Chyba při ukládání recenze:', error);
         alert('Nepodařilo se uložit recenzi: ' + error.message);
     }
+}
+
+// Handler pro změnu fotek v recenzi
+function handleReviewPhotosChange(event) {
+    const files = Array.from(event.target.files || []);
+    const MAX_PHOTOS = 3;
+    
+    // Omezit na maximálně 3 fotky
+    if (files.length > MAX_PHOTOS) {
+        alert(`Můžete nahrát maximálně ${MAX_PHOTOS} fotky. První ${MAX_PHOTOS} byly vybrány.`);
+        files.splice(MAX_PHOTOS);
+    }
+    
+    // Přidat nové fotky k existujícím (pokud už nějaké jsou)
+    const currentCount = selectedReviewPhotos.length;
+    const remainingSlots = MAX_PHOTOS - currentCount;
+    
+    if (remainingSlots <= 0) {
+        alert(`Můžete nahrát maximálně ${MAX_PHOTOS} fotky.`);
+        event.target.value = '';
+        return;
+    }
+    
+    const filesToAdd = files.slice(0, remainingSlots);
+    selectedReviewPhotos = [...selectedReviewPhotos, ...filesToAdd];
+    
+    // Aktualizovat input (aby se dalo znovu vybrat stejný soubor)
+    const dataTransfer = new DataTransfer();
+    selectedReviewPhotos.forEach(file => dataTransfer.items.add(file));
+    event.target.files = dataTransfer.files;
+    
+    // Zobrazit preview
+    updatePhotosPreview();
+}
+
+// Aktualizovat preview fotek
+function updatePhotosPreview() {
+    const preview = document.getElementById('reviewPhotosPreview');
+    if (!preview) return;
+    
+    // Aktualizovat tlačítko a počet
+    const btn = document.getElementById('selectPhotosBtn');
+    const btnText = document.getElementById('selectPhotosBtnText');
+    const photosCount = document.getElementById('photosCount');
+    
+    if (btn && btnText && photosCount) {
+        if (selectedReviewPhotos.length > 0) {
+            photosCount.textContent = `(${selectedReviewPhotos.length}/3)`;
+            if (selectedReviewPhotos.length >= 3) {
+                btn.style.opacity = '0.6';
+                btn.style.cursor = 'not-allowed';
+            } else {
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+            }
+        } else {
+            photosCount.textContent = '';
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
+        }
+    }
+    
+    if (selectedReviewPhotos.length === 0) {
+        preview.innerHTML = '';
+        return;
+    }
+    
+    // Vytvořit preview HTML s placeholderem
+    preview.innerHTML = selectedReviewPhotos.map((file, index) => {
+        return `
+            <div style="position: relative; width: 100%;">
+                <div data-index="${index}" style="
+                    width: 100%; 
+                    height: 100px; 
+                    border-radius: 8px; 
+                    border: 2px solid #e5e7eb; 
+                    background: #f3f4f6; 
+                    display: flex; 
+                    align-items: center; 
+                    justify-content: center;
+                    overflow: hidden;
+                ">
+                    <i class="fas fa-spinner fa-spin" style="color: #9ca3af; font-size: 24px;"></i>
+                </div>
+                <button type="button" 
+                        onclick="removeReviewPhoto(${index})" 
+                        style="
+                            position: absolute;
+                            top: 6px;
+                            right: 6px;
+                            background: rgba(220, 38, 38, 0.95);
+                            color: white;
+                            border: none;
+                            border-radius: 50%;
+                            width: 28px;
+                            height: 28px;
+                            cursor: pointer;
+                            font-size: 14px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+                            transition: all 0.2s;
+                            z-index: 10;
+                        " 
+                        onmouseover="this.style.background='rgba(220, 38, 38, 1)'; this.style.transform='scale(1.1)'"
+                        onmouseout="this.style.background='rgba(220, 38, 38, 0.95)'; this.style.transform='scale(1)'"
+                        title="Odstranit fotku">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `;
+    }).join('');
+    
+    // Načíst preview pro všechny obrázky
+    selectedReviewPhotos.forEach((file, index) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const container = preview.querySelector(`[data-index="${index}"]`);
+            if (container) {
+                container.innerHTML = `<img src="${e.target.result}" alt="Preview ${index + 1}" style="width: 100%; height: 100px; object-fit: cover; display: block;">`;
+            }
+        };
+        reader.onerror = () => {
+            console.error('Error loading preview for file:', file.name);
+            const container = preview.querySelector(`[data-index="${index}"]`);
+            if (container) {
+                container.innerHTML = `<div style="padding: 20px; text-align: center; color: #dc2626;"><i class="fas fa-exclamation-triangle"></i> Chyba</div>`;
+            }
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+// Odstranit fotku z výběru
+function removeReviewPhoto(index) {
+    if (index < 0 || index >= selectedReviewPhotos.length) return;
+    
+    selectedReviewPhotos.splice(index, 1);
+    
+    // Aktualizovat input
+    const input = document.getElementById('reviewPhotos');
+    if (input) {
+        const dataTransfer = new DataTransfer();
+        selectedReviewPhotos.forEach(file => dataTransfer.items.add(file));
+        input.files = dataTransfer.files;
+    }
+    
+    // Aktualizovat preview
+    updatePhotosPreview();
 }
 
 // Export funkcí pro globální použití
