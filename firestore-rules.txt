@@ -63,10 +63,10 @@ service cloud.firestore {
     // Root kolekce /reviews - JEDINÝ ZDROJ PRAVDY
     // DŮLEŽITÉ: Všechny recenze se ukládají do /reviews, ne do users/{userId}/reviews
     match /reviews/{reviewId} {
-      // READ: Veřejné recenze (isHidden == false) jsou čitelné pro všechny
-      // Skryté recenze (isHidden == true) jsou čitelné jen pro admin
-      allow read: if resource.data.isHidden == false || 
-                     (request.auth != null && isAdmin());
+      // READ: Všichni přihlášení uživatelé mohou číst všechny recenze
+      // Skryté recenze (isHidden == true) se filtrují na klientovi
+      // Veřejné recenze (isHidden == false) jsou čitelné i pro nepřihlášené
+      allow read: if resource.data.isHidden == false || request.auth != null;
       
       // CREATE: Každý přihlášený uživatel může vytvářet recenze, authorId MUSÍ být request.auth.uid
       allow create: if request.auth != null &&
