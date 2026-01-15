@@ -482,13 +482,27 @@ async function fetchAllReviewsForAdmin(options = {}) {
         let reviews = [];
         
         snapshot.forEach(doc => {
+            const docData = doc.data();
             const reviewData = {
                 id: doc.id,
-                ...doc.data()
+                ...docData
             };
             
+            // Zajistit, že photoUrls je pole
+            if (reviewData.photoUrls && !Array.isArray(reviewData.photoUrls)) {
+                if (typeof reviewData.photoUrls === 'string') {
+                    try {
+                        reviewData.photoUrls = JSON.parse(reviewData.photoUrls);
+                    } catch (e) {
+                        reviewData.photoUrls = [reviewData.photoUrls];
+                    }
+                } else {
+                    reviewData.photoUrls = [reviewData.photoUrls];
+                }
+            }
+            
             // Debug: logovat photoUrls
-            if (reviewData.photoUrls && reviewData.photoUrls.length > 0) {
+            if (reviewData.photoUrls && Array.isArray(reviewData.photoUrls) && reviewData.photoUrls.length > 0) {
                 console.log('📸 Review has photos (fetchAllReviewsForAdmin):', reviewData.id, 'photoUrls count:', reviewData.photoUrls.length);
             }
             
@@ -753,18 +767,31 @@ async function renderReviews(containerEl, reviews, options = {}) {
             ? '<span style="background: #fbbf24; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 8px;">Upraveno adminem</span>' 
             : '';
         
-        // Fotky
+        // Fotky - normalizovat photoUrls před kontrolou
+        let normalizedPhotoUrls = review.photoUrls;
+        if (normalizedPhotoUrls && !Array.isArray(normalizedPhotoUrls)) {
+            if (typeof normalizedPhotoUrls === 'string') {
+                try {
+                    normalizedPhotoUrls = JSON.parse(normalizedPhotoUrls);
+                } catch (e) {
+                    normalizedPhotoUrls = [normalizedPhotoUrls];
+                }
+            } else {
+                normalizedPhotoUrls = [normalizedPhotoUrls];
+            }
+        }
+        
         let photosHtml = '';
-        if (options.showPhotos !== false && review.photoUrls && Array.isArray(review.photoUrls) && review.photoUrls.length > 0) {
-            console.log('📸 Rendering photos for review:', review.id, 'photoUrls:', review.photoUrls);
+        if (options.showPhotos !== false && normalizedPhotoUrls && Array.isArray(normalizedPhotoUrls) && normalizedPhotoUrls.length > 0) {
+            console.log('📸 Rendering photos for review:', review.id, 'photoUrls:', normalizedPhotoUrls, 'count:', normalizedPhotoUrls.length);
             // Zobrazit max 3 fotky vedle sebe
-            const photosToShow = review.photoUrls.slice(0, 3);
-            const remainingCount = review.photoUrls.length - 3;
+            const photosToShow = normalizedPhotoUrls.slice(0, 3);
+            const remainingCount = normalizedPhotoUrls.length - 3;
             photosHtml = `
                 <div class="review-photos" style="margin-top: 12px;">
                     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-width: 300px;">
                         ${photosToShow.map((url, idx) => `
-                            <div style="position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden; border: 2px solid #e5e7eb; cursor: pointer;" onclick="window.openReviewPhotoLightbox(${JSON.stringify(review.photoUrls)}, ${idx})">
+                            <div style="position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden; border: 2px solid #e5e7eb; cursor: pointer;" onclick="window.openReviewPhotoLightbox(${JSON.stringify(normalizedPhotoUrls)}, ${idx})">
                                 <img src="${url}" 
                                      alt="Foto ${idx + 1}" 
                                      class="review-photo-thumbnail"
@@ -782,7 +809,13 @@ async function renderReviews(containerEl, reviews, options = {}) {
                 </div>
             `;
         } else {
-            console.log('📸 No photos for review:', review.id, 'photoUrls:', review.photoUrls, 'showPhotos:', options.showPhotos);
+            console.log('📸 No photos for review:', review.id, {
+                photoUrls: review.photoUrls,
+                normalizedPhotoUrls: normalizedPhotoUrls,
+                isArray: Array.isArray(normalizedPhotoUrls),
+                length: normalizedPhotoUrls?.length || 0,
+                showPhotos: options.showPhotos
+            });
         }
         
         return `
