@@ -896,36 +896,38 @@
             cropImage.onload = handleImageLoad;
             
             // Nastavit src až po registraci handlerů a zobrazení modalu
-            // Přidat malé zpoždění, aby se modal stihl zobrazit
-            setTimeout(() => {
-                console.log('📸 Nastavuji src obrázku:', e.target.result.substring(0, 50) + '...');
-                cropImage.src = e.target.result;
-                
-                // Pro data URL se obrázek může načíst okamžitě
-                // Zkontrolovat, zda je obrázek už načtený (pokud se onload nespustil)
+            // Použít requestAnimationFrame pro zajištění, že se modal zobrazil
+            requestAnimationFrame(() => {
                 setTimeout(() => {
-                    if (cropImage.complete && cropImage.naturalWidth > 0 && !cropperInstance && !imageLoaded) {
-                        console.log('✅ Obrázek je už načtený (data URL), inicializuji cropper');
-                        handleImageLoad();
-                    } else if (!cropImage.complete || cropImage.naturalWidth === 0) {
-                        // Pokud se obrázek stále načítá, počkat déle
-                        console.log('⚠️ Obrázek se stále načítá, čekám...');
-                        setTimeout(() => {
-                            if (cropImage.complete && cropImage.naturalWidth > 0 && !cropperInstance && !imageLoaded) {
-                                console.log('⚠️ Fallback: inicializuji cropper po timeoutu');
-                                handleImageLoad();
-                            } else if (!cropperInstance && !imageLoaded) {
-                                console.error('❌ Obrázek se nepodařilo načíst do editoru po timeoutu');
-                                if (cropLoading) {
-                                    cropLoading.style.display = 'none';
+                    console.log('📸 Nastavuji src obrázku...');
+                    cropImage.src = e.target.result;
+                    
+                    // Pro data URL se obrázek může načíst okamžitě
+                    // Zkontrolovat, zda je obrázek už načtený (pokud se onload nespustil)
+                    setTimeout(() => {
+                        if (cropImage.complete && cropImage.naturalWidth > 0 && !cropperInstance && !imageLoaded) {
+                            console.log('✅ Obrázek je už načtený (data URL), inicializuji cropper');
+                            handleImageLoad();
+                        } else if (!cropImage.complete || cropImage.naturalWidth === 0) {
+                            // Pokud se obrázek stále načítá, počkat déle
+                            console.log('⚠️ Obrázek se stále načítá, čekám...');
+                            setTimeout(() => {
+                                if (cropImage.complete && cropImage.naturalWidth > 0 && !cropperInstance && !imageLoaded) {
+                                    console.log('⚠️ Fallback: inicializuji cropper po timeoutu');
+                                    handleImageLoad();
+                                } else if (!cropperInstance && !imageLoaded) {
+                                    console.error('❌ Obrázek se nepodařilo načíst do editoru po timeoutu');
+                                    if (cropLoading) {
+                                        cropLoading.style.display = 'none';
+                                    }
+                                    modal.style.display = 'none';
+                                    alert('Nepodařilo se načíst obrázek do editoru. Zkuste to znovu.');
                                 }
-                                modal.style.display = 'none';
-                                alert('Nepodařilo se načíst obrázek do editoru. Zkuste to znovu.');
-                            }
-                        }, 2000);
-                    }
-                }, 200);
-            }, 100);
+                            }, 2000);
+                        }
+                    }, 300);
+                }, 50);
+            });
         };
         
         reader.readAsDataURL(file);
