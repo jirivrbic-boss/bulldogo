@@ -149,6 +149,26 @@ async function createReview({ targetUserId, rating, text, files = [], listingId 
         const photoUrls = [];
         console.log('📸 Files received:', files, 'files.length:', files?.length, 'firebaseStorage:', !!window.firebaseStorage);
         
+        // Počkat na inicializaci Firebase Storage, pokud není dostupný
+        if (files && files.length > 0 && !window.firebaseStorage) {
+            console.log('⏳ Waiting for Firebase Storage initialization...');
+            let waitCount = 0;
+            await new Promise((resolve, reject) => {
+                const checkInterval = setInterval(() => {
+                    waitCount++;
+                    if (window.firebaseStorage) {
+                        console.log('✅ Firebase Storage initialized after', waitCount * 100, 'ms');
+                        clearInterval(checkInterval);
+                        resolve();
+                    } else if (waitCount > 50) { // Max 5 sekund
+                        clearInterval(checkInterval);
+                        console.error('❌ Firebase Storage timeout - Storage not initialized');
+                        reject(new Error('Firebase Storage není dostupný. Zkontrolujte, zda je firebase-init.js načtený.'));
+                    }
+                }, 100);
+            });
+        }
+        
         if (files && files.length > 0 && window.firebaseStorage) {
             console.log('📸 Starting photo upload process...');
             const { ref, uploadBytes, getDownloadURL } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js');
