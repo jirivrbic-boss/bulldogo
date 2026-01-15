@@ -2135,7 +2135,18 @@ async function handleForgotPassword() {
         return;
     }
     
+    // Získat tlačítko a uložit původní text
+    const btnForgotPassword = modal.querySelector('#btnForgotPassword');
+    const originalButtonText = btnForgotPassword ? btnForgotPassword.textContent : '';
+    
     try {
+        // Nastavit loading stav na tlačítku
+        if (btnForgotPassword) {
+            btnForgotPassword.disabled = true;
+            btnForgotPassword.textContent = 'Odesílání emailu...';
+            btnForgotPassword.style.cursor = 'wait';
+        }
+        
         console.log('📧 Odesílám žádost o reset hesla na:', email);
         
         // Volat Cloud Function pro reset hesla
@@ -2181,6 +2192,13 @@ async function handleForgotPassword() {
         }
         
         showMessage(errorMessage, 'error', { timeout: 10000 });
+    } finally {
+        // Vrátit tlačítko do původního stavu
+        if (btnForgotPassword) {
+            btnForgotPassword.disabled = false;
+            btnForgotPassword.textContent = originalButtonText;
+            btnForgotPassword.style.cursor = 'pointer';
+        }
     }
 }
 
