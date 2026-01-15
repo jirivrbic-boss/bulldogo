@@ -980,3 +980,17 @@ window.renderReviews = renderReviews;
 window.renderRatingsChart = renderRatingsChart;
 window.openReviewPhotoLightbox = openReviewPhotoLightbox;
 window.getUserName = getUserName; // Export pro admin rozhraní
+window.ReviewsSystem = {
+    createReview,
+    fetchReviewsForTarget,
+    fetchReviewsByAuthor,
+    fetchAllReviewsForAdmin,
+    updateReviewAsAdmin,
+    deleteReviewAsAdmin,
+    computeRatingsStats,
+    renderReviews,
+    renderRatingsChart,
+    openReviewPhotoLightbox,
+    getUserName,
+    isAdmin // Export isAdmin funkce
+};
