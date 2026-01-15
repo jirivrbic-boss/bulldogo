@@ -384,7 +384,13 @@ async function fetchAllReviewsForAdmin(options = {}) {
         throw new Error('Musíte být přihlášeni');
     }
     
-    const userIsAdmin = await isAdmin(currentUser.uid);
+    let userIsAdmin = false;
+    try {
+        userIsAdmin = await isAdmin(currentUser.uid);
+    } catch (error) {
+        console.warn('⚠️ Error checking admin status:', error);
+    }
+    
     if (!userIsAdmin) {
         throw new Error('Nemáte oprávnění administrátora');
     }
@@ -394,12 +400,12 @@ async function fetchAllReviewsForAdmin(options = {}) {
     }
     
     try {
-        const { collection, query, where, orderBy, limit, getDocs } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        const { collection, query, where, limit, getDocs } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
         
         const reviewsRef = collection(window.firebaseDb, REVIEWS_COLLECTION);
         let q = query(reviewsRef);
         
-        // Aplikovat filtry
+        // Pokud je filtr, použít ho v dotazu (ale bez orderBy, aby nepotřeboval index)
         if (options.filterBy === 'authorId' && options.filterValue) {
             q = query(q, where('authorId', '==', options.filterValue));
         } else if (options.filterBy === 'targetUserId' && options.filterValue) {
@@ -408,16 +414,12 @@ async function fetchAllReviewsForAdmin(options = {}) {
             q = query(q, where('rating', '==', parseInt(options.filterValue)));
         }
         
-        // Řazení
-        q = query(q, orderBy('createdAt', 'desc'));
-        
-        // Limit
-        if (options.limit) {
-            q = query(q, limit(options.limit));
-        }
+        // Limit pro dotaz (max 1000, pak filtrujeme na klientovi)
+        const queryLimit = options.limit ? Math.min(options.limit * 2, 1000) : 1000;
+        q = query(q, limit(queryLimit));
         
         const snapshot = await getDocs(q);
-        const reviews = [];
+        let reviews = [];
         
         snapshot.forEach(doc => {
             reviews.push({
@@ -425,6 +427,31 @@ async function fetchAllReviewsForAdmin(options = {}) {
                 ...doc.data()
             });
         });
+        
+        // Řazení na klientovi (aby nepotřeboval Firestore index)
+        reviews.sort((a, b) => {
+            let aVal = a.createdAt;
+            let bVal = b.createdAt;
+            
+            // Konvertovat Timestamp na Date pro porovnání
+            if (aVal && aVal.toDate && typeof aVal.toDate === 'function') {
+                aVal = aVal.toDate().getTime();
+            } else if (aVal instanceof Date) {
+                aVal = aVal.getTime();
+            }
+            if (bVal && bVal.toDate && typeof bVal.toDate === 'function') {
+                bVal = bVal.toDate().getTime();
+            } else if (bVal instanceof Date) {
+                bVal = bVal.getTime();
+            }
+            
+            return (bVal || 0) - (aVal || 0); // desc
+        });
+        
+        // Aplikovat limit po seřazení
+        if (options.limit) {
+            reviews = reviews.slice(0, options.limit);
+        }
         
         console.log('✅ Loaded all reviews for admin:', reviews.length);
         return reviews;
