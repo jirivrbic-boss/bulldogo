@@ -5597,3 +5597,237 @@ export const expireTopAds = functions
     }
   });
 
+/**
+ * Cloud Function pro žádost o reset hesla
+ * Přijme email, vygeneruje reset token, uloží do Firestore a pošle email s odkazem
+ */
+export const requestPasswordReset = functions.region("europe-west1").https.onRequest(async (req, res) => {
+  return corsHandler(req, res, async () => {
+    try {
+      if (req.method !== "POST") {
+        res.status(405).json({ error: "Method not allowed. Use POST." });
+        return;
+      }
+
+      const { email } = req.body;
+
+      if (!email || typeof email !== "string") {
+        res.status(400).json({ error: "Missing or invalid email parameter" });
+        return;
+      }
+
+      const auth = admin.auth();
+      const db = admin.firestore();
+
+      // Zkontrolovat, jestli uživatel s tímto emailem existuje
+      let user;
+      try {
+        user = await auth.getUserByEmail(email.trim().toLowerCase());
+      } catch (error: any) {
+        // Pokud uživatel neexistuje, vrátit stejnou odpověď jako by existoval (bezpečnost)
+        functions.logger.warn("⚠️ Pokus o reset hesla pro neexistující email", { email });
+        res.status(200).json({ 
+          success: true, 
+          message: "Pokud email existuje v systému, byl odeslán odkaz pro reset hesla." 
+        });
+        return;
+      }
+
+      // Vygenerovat bezpečný reset token
+      const resetToken = crypto.randomBytes(32).toString("hex");
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hodina
+
+      // Uložit token do Firestore
+      await db.collection("passwordResets").doc(resetToken).set({
+        uid: user.uid,
+        email: email.trim().toLowerCase(),
+        expiresAt: admin.firestore.Timestamp.fromDate(expiresAt),
+        used: false,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      // Vytvořit reset URL
+      const resetUrl = `https://bulldogo.cz/reset-password?token=${resetToken}`;
+
+      // HTML email template
+      const emailHTML = `
+        <!DOCTYPE html>
+        <html lang="cs">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #f77c00 0%, #fdf002 100%); padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="color: white; margin: 0;">BULLDOGO</h1>
+          </div>
+          <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
+            <h2 style="color: #f77c00; margin-top: 0;">Obnovení hesla</h2>
+            <p>Ahoj,</p>
+            <p>Obdrželi jsme žádost o obnovení hesla k vašemu účtu na BULLDOGO.</p>
+            <p>Pro nastavení nového hesla klikněte na tlačítko níže:</p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${resetUrl}" style="background: linear-gradient(135deg, #f77c00 0%, #fdf002 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block;">Obnovit heslo</a>
+            </div>
+            <p>Nebo zkopírujte a vložte tento odkaz do prohlížeče:</p>
+            <p style="word-break: break-all; color: #6b7280; font-size: 14px;">${resetUrl}</p>
+            <p style="color: #6b7280; font-size: 14px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+              <strong>Důležité:</strong><br>
+              • Odkaz je platný pouze 1 hodinu<br>
+              • Pokud jste o reset hesla nežádali, tento email ignorujte<br>
+              • Vaše heslo se nezmění, dokud nekliknete na odkaz a nezadáte nové heslo
+            </p>
+            <p style="color: #6b7280; font-size: 14px; margin-top: 20px;">
+              S pozdravem,<br>
+              Tým BULLDOGO
+            </p>
+          </div>
+        </body>
+        </html>
+      `;
+
+      // Text verze emailu
+      const emailText = `
+BULLDOGO - Obnovení hesla
+
+Ahoj,
+
+Obdrželi jsme žádost o obnovení hesla k vašemu účtu na BULLDOGO.
+
+Pro nastavení nového hesla klikněte na tento odkaz:
+${resetUrl}
+
+Důležité:
+- Odkaz je platný pouze 1 hodinu
+- Pokud jste o reset hesla nežádali, tento email ignorujte
+- Vaše heslo se nezmění, dokud nekliknete na odkaz a nezadáte nové heslo
+
+S pozdravem,
+Tým BULLDOGO
+      `;
+
+      // Odeslat email
+      await smtpTransporter.sendMail({
+        from: { name: "BULLDOGO", address: "info@bulldogo.cz" },
+        to: email.trim().toLowerCase(),
+        subject: "🔐 Obnovení hesla - BULLDOGO",
+        html: emailHTML,
+        text: emailText,
+      });
+
+      functions.logger.info("✅ Reset hesla email odeslán", { email, uid: user.uid });
+
+      res.status(200).json({ 
+        success: true, 
+        message: "Pokud email existuje v systému, byl odeslán odkaz pro reset hesla." 
+      });
+    } catch (error: any) {
+      functions.logger.error("❌ Chyba při žádosti o reset hesla", { 
+        error: error?.message,
+        stack: error?.stack 
+      });
+      res.status(500).json({ 
+        error: "Internal server error", 
+        message: error?.message 
+      });
+    }
+  });
+});
+
+/**
+ * Cloud Function pro reset hesla
+ * Přijme token a nové heslo, ověří token a změní heslo
+ */
+export const resetPassword = functions.region("europe-west1").https.onRequest(async (req, res) => {
+  return corsHandler(req, res, async () => {
+    try {
+      if (req.method !== "POST") {
+        res.status(405).json({ error: "Method not allowed. Use POST." });
+        return;
+      }
+
+      const { token, newPassword } = req.body;
+
+      if (!token || typeof token !== "string") {
+        res.status(400).json({ error: "Missing or invalid token parameter" });
+        return;
+      }
+
+      if (!newPassword || typeof newPassword !== "string" || newPassword.length < 6) {
+        res.status(400).json({ error: "Password must be at least 6 characters long" });
+        return;
+      }
+
+      const auth = admin.auth();
+      const db = admin.firestore();
+
+      // Načíst reset token z Firestore
+      const resetDoc = await db.collection("passwordResets").doc(token).get();
+
+      if (!resetDoc.exists) {
+        res.status(400).json({ error: "Invalid or expired reset token" });
+        return;
+      }
+
+      const resetData = resetDoc.data();
+      if (!resetData) {
+        res.status(400).json({ error: "Invalid reset token data" });
+        return;
+      }
+
+      // Zkontrolovat, jestli token už nebyl použit
+      if (resetData.used === true) {
+        res.status(400).json({ error: "Reset token has already been used" });
+        return;
+      }
+
+      // Zkontrolovat expiraci
+      const expiresAt = resetData.expiresAt?.toDate();
+      if (!expiresAt || expiresAt < new Date()) {
+        res.status(400).json({ error: "Reset token has expired" });
+        return;
+      }
+
+      const uid = resetData.uid as string;
+      if (!uid) {
+        res.status(400).json({ error: "Invalid reset token - missing user ID" });
+        return;
+      }
+
+      // Změnit heslo pomocí Firebase Admin SDK
+      await auth.updateUser(uid, {
+        password: newPassword,
+      });
+
+      // Označit token jako použitý
+      await db.collection("passwordResets").doc(token).update({
+        used: true,
+        usedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      functions.logger.info("✅ Heslo úspěšně změněno", { uid, email: resetData.email });
+
+      res.status(200).json({ 
+        success: true, 
+        message: "Password has been successfully reset." 
+      });
+    } catch (error: any) {
+      functions.logger.error("❌ Chyba při resetu hesla", { 
+        error: error?.message,
+        stack: error?.stack 
+      });
+
+      let errorMessage = "Failed to reset password";
+      if (error.code === "auth/user-not-found") {
+        errorMessage = "User not found";
+      } else if (error.code === "auth/weak-password") {
+        errorMessage = "Password is too weak";
+      }
+
+      res.status(500).json({ 
+        error: errorMessage, 
+        message: error?.message 
+      });
+    }
+  });
+});

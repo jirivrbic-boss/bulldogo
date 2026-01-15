@@ -153,12 +153,21 @@ async function loadAdDetail(adId, userId) {
             adOwner = null;
         }
         
+        // Add uid to adOwner if not present
+        if (adOwner && !adOwner.uid) {
+            adOwner.uid = userId;
+        }
+        
         // Display ad information
         console.log('🎨 Rendering ad detail:', currentAd);
         displayAdDetail();
         
         // Load user's other ads and update profile stats
         loadUserOtherAds(userId);
+        
+        // Load ad reviews and initialize review form
+        loadAdReviews();
+        initAdReviewForm();
         
     } catch (error) {
         console.error('❌ Error loading ad detail:', error);
@@ -1199,5 +1208,276 @@ document.addEventListener('click', (e) => {
     const modal = document.getElementById('reportAdModal');
     if (e.target === modal) {
         closeReportModal();
+    }
+});
+
+// ===== AD REVIEWS FUNCTIONS =====
+let selectedAdReviewRating = 0;
+
+// Load ad reviews
+async function loadAdReviews() {
+    if (!currentAd || !adOwner) {
+        console.log('⚠️ Cannot load reviews: missing ad or owner data');
+        return;
+    }
+    
+    const container = document.getElementById('adReviewsContainer');
+    if (!container) {
+        console.error('❌ Reviews container not found');
+        return;
+    }
+    
+    try {
+        const { getDocs, collection } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        const reviewsRef = collection(window.firebaseDb, 'users', adOwner.uid, 'inzeraty', currentAd.id, 'reviews');
+        const snap = await getDocs(reviewsRef);
+        const reviews = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        
+        displayAdReviews(reviews);
+    } catch (error) {
+        console.error('❌ Error loading ad reviews:', error);
+        container.innerHTML = '<p style="text-align: center; color: #dc2626; padding: 20px;">Chyba při načítání recenzí</p>';
+    }
+}
+
+// Display ad reviews
+function displayAdReviews(reviews) {
+    const container = document.getElementById('adReviewsContainer');
+    if (!container) return;
+    
+    if (!reviews || reviews.length === 0) {
+        container.innerHTML = `
+            <div style="text-align: center; padding: 40px; background: white; border-radius: 12px; border: 2px dashed #e5e7eb;">
+                <i class="fas fa-star" style="font-size: 48px; color: #d1d5db; margin-bottom: 16px;"></i>
+                <p style="font-size: 16px; color: #6b7280; margin: 0; font-weight: 500;">Zatím žádné recenze na tento inzerát</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Calculate average rating
+    const avgRating = reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviews.length;
+    
+    // Sort by date (newest first)
+    reviews.sort((a, b) => {
+        const dateA = a.updatedAt?.toDate?.() || a.updatedAt || a.createdAt?.toDate?.() || a.createdAt || new Date(0);
+        const dateB = b.updatedAt?.toDate?.() || b.updatedAt || b.createdAt?.toDate?.() || b.createdAt || new Date(0);
+        return new Date(dateB) - new Date(dateA);
+    });
+    
+    // Escape HTML helper
+    function escapeHtml(str) {
+        if (!str) return '';
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+    
+    // Format date helper
+    function formatReviewDate(date) {
+        if (!date) return 'Neznámé datum';
+        let reviewDate;
+        if (date.toDate && typeof date.toDate === 'function') {
+            reviewDate = date.toDate();
+        } else if (date instanceof Date) {
+            reviewDate = date;
+        } else {
+            reviewDate = new Date(date);
+        }
+        
+        const now = new Date();
+        const diffDays = Math.floor((now - reviewDate) / (1000 * 60 * 60 * 24));
+        
+        if (diffDays === 0) return 'Dnes';
+        if (diffDays === 1) return 'Včera';
+        if (diffDays < 7) return `Před ${diffDays} dny`;
+        if (diffDays < 30) return `Před ${Math.floor(diffDays / 7)} týdny`;
+        if (diffDays < 365) return `Před ${Math.floor(diffDays / 30)} měsíci`;
+        return `Před ${Math.floor(diffDays / 365)} lety`;
+    }
+    
+    container.innerHTML = `
+        <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid #e5e7eb;">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+                <div style="font-size: 2rem; font-weight: 700; color: #111827;">${avgRating.toFixed(1)}</div>
+                <div>
+                    <div style="font-size: 1.2rem; color: #fbbf24;">
+                        ${'★'.repeat(Math.round(avgRating))}${'☆'.repeat(5 - Math.round(avgRating))}
+                    </div>
+                    <div style="font-size: 14px; color: #6b7280;">Založeno na ${reviews.length} ${reviews.length === 1 ? 'recenzi' : reviews.length < 5 ? 'recenzích' : 'recenzích'}</div>
+                </div>
+            </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+            ${reviews.map(review => {
+                const reviewerEmail = review.fromUserEmail || review.reviewerEmail || '';
+                const reviewerName = reviewerEmail.split('@')[0] || 'Anonymní';
+                const rating = review.rating || 0;
+                const filledStars = '★'.repeat(rating);
+                const emptyStars = '☆'.repeat(5 - rating);
+                const text = review.text || 'Žádný komentář';
+                const date = formatReviewDate(review.updatedAt || review.createdAt);
+                
+                return `
+                    <div style="background: white; border-radius: 12px; padding: 20px; border: 1px solid #e5e7eb;">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="width: 40px; height: 40px; border-radius: 50%; background: #f3f4f6; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-user" style="color: #6b7280;"></i>
+                                </div>
+                                <div>
+                                    <h4 style="margin: 0; font-size: 16px; font-weight: 600; color: #111827;">${escapeHtml(reviewerName)}</h4>
+                                    <span style="font-size: 14px; color: #6b7280;">${date}</span>
+                                </div>
+                            </div>
+                            <div style="font-size: 18px; color: #fbbf24;">
+                                <span style="color: #fbbf24;">${filledStars}</span>
+                                <span style="color: #d1d5db;">${emptyStars}</span>
+                            </div>
+                        </div>
+                        <p style="margin: 0; color: #374151; line-height: 1.6;">${escapeHtml(text)}</p>
+                    </div>
+                `;
+            }).join('')}
+        </div>
+    `;
+}
+
+// Highlight stars on hover
+function highlightAdReviewStars(rating) {
+    const stars = document.querySelectorAll('#adReviewStars i');
+    stars.forEach((star, index) => {
+        if (index < rating) {
+            star.classList.remove('far');
+            star.classList.add('fas');
+            star.style.color = '#fbbf24';
+        } else {
+            star.classList.remove('fas');
+            star.classList.add('far');
+            star.style.color = '#d1d5db';
+        }
+    });
+}
+
+// Reset stars
+function resetAdReviewStars() {
+    const stars = document.querySelectorAll('#adReviewStars i');
+    stars.forEach(star => {
+        star.classList.remove('fas');
+        star.classList.add('far');
+        star.style.color = '#d1d5db';
+    });
+    
+    if (selectedAdReviewRating > 0) {
+        highlightAdReviewStars(selectedAdReviewRating);
+    }
+}
+
+// Select rating
+function selectAdReviewRating(rating) {
+    selectedAdReviewRating = rating;
+    highlightAdReviewStars(rating);
+    console.log('⭐ Selected ad review rating:', rating);
+}
+
+// Submit ad review
+async function submitAdReview() {
+    if (!currentAd || !adOwner) {
+        alert('Chyba: Chybí data inzerátu');
+        return;
+    }
+    
+    const currentUser = window.firebaseAuth?.currentUser;
+    if (!currentUser) {
+        alert('Pro napsání recenze se musíte přihlásit');
+        showAuthModal('login');
+        return;
+    }
+    
+    if (currentUser.uid === adOwner.uid) {
+        alert('Nemůžete hodnotit vlastní inzerát');
+        return;
+    }
+    
+    if (selectedAdReviewRating === 0) {
+        alert('Prosím vyberte hodnocení (1-5 hvězdiček)');
+        return;
+    }
+    
+    const reviewText = document.getElementById('adReviewText')?.value?.trim();
+    if (!reviewText) {
+        alert('Prosím napište text recenze');
+        return;
+    }
+    
+    try {
+        const { setDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        const reviewRef = doc(window.firebaseDb, 'users', adOwner.uid, 'inzeraty', currentAd.id, 'reviews', currentUser.uid);
+        
+        await setDoc(reviewRef, {
+            type: 'ad',
+            adId: currentAd.id,
+            rating: selectedAdReviewRating,
+            text: reviewText,
+            fromUserId: currentUser.uid,
+            fromUserEmail: currentUser.email || '',
+            updatedAt: new Date()
+        }, { merge: true });
+        
+        alert('✅ Děkujeme! Vaše recenze byla úspěšně přidána.');
+        
+        // Reset form
+        selectedAdReviewRating = 0;
+        document.getElementById('adReviewText').value = '';
+        resetAdReviewStars();
+        
+        // Reload reviews
+        await loadAdReviews();
+        
+    } catch (error) {
+        console.error('❌ Error submitting ad review:', error);
+        alert('Nepodařilo se uložit recenzi: ' + error.message);
+    }
+}
+
+// Initialize review form visibility
+function initAdReviewForm() {
+    const formSection = document.getElementById('adReviewFormSection');
+    const loginRequired = document.getElementById('adReviewLoginRequired');
+    
+    if (!formSection || !loginRequired) return;
+    
+    const currentUser = window.firebaseAuth?.currentUser;
+    
+    if (!currentUser) {
+        formSection.style.display = 'none';
+        loginRequired.style.display = 'block';
+    } else if (currentUser.uid === adOwner?.uid) {
+        formSection.style.display = 'none';
+        loginRequired.style.display = 'none';
+    } else {
+        formSection.style.display = 'block';
+        loginRequired.style.display = 'none';
+    }
+}
+
+// Export functions
+window.highlightAdReviewStars = highlightAdReviewStars;
+window.selectAdReviewRating = selectAdReviewRating;
+window.submitAdReview = submitAdReview;
+
+// Add event listeners for stars
+document.addEventListener('DOMContentLoaded', () => {
+    const starsContainer = document.getElementById('adReviewStars');
+    if (starsContainer) {
+        starsContainer.addEventListener('mouseleave', resetAdReviewStars);
+    }
+    
+    // Listen for auth state changes to update review form visibility
+    if (window.firebaseAuth) {
+        window.firebaseAuth.onAuthStateChanged((user) => {
+            console.log('👤 Auth state changed on ad-detail page');
+            initAdReviewForm();
+        });
     }
 });

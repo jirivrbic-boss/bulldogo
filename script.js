@@ -606,18 +606,52 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     });
 });
 
+// Zpracování odkazů na kontakt obsahujících index.html#contact - scrollovat na footer na aktuální stránce
+document.querySelectorAll('a[href*="#contact"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        const href = this.getAttribute('href');
+        if (!href || !href.includes('#contact')) return;
+        
+        // Pokud odkaz obsahuje index.html#contact, zkontrolovat, zda jsme na index.html
+        if (href.includes('index.html#contact')) {
+            const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+            
+            // Pokud nejsme na index.html, scrollovat na footer na aktuální stránce
+            if (currentPage !== 'index.html') {
+                e.preventDefault();
+                // Počkat na renderování, pak scrollovat
+                setTimeout(() => {
+                    const footerBottom = document.querySelector('.footer-bottom') || document.querySelector('footer');
+                    if (footerBottom) {
+                        footerBottom.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                        try { history.replaceState(null, '', '#contact'); } catch (_) { /* no-op */ }
+                    } else {
+                        // Pokud footer není na stránce, přejít na index.html a scrollovat tam
+                        window.location.href = 'index.html#contact';
+                    }
+                }, 50);
+                return;
+            }
+            // Pokud jsme na index.html, nechat prohlížeč přirozeně zpracovat odkaz
+        }
+    });
+});
+
 // Při načtení stránky se zadaným hashem zajistit správné doscrollování
 function scrollToHash() {
     const h = window.location.hash;
     if (!h) return;
     
     if (h === '#contact') {
-        const footerBottom = document.querySelector('.footer-bottom') || document.querySelector('footer');
-        if (footerBottom) {
-            footerBottom.scrollIntoView({ behavior: 'smooth', block: 'end' });
-        } else {
-            window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
-        }
+        // Počkat na načtení stránky, pak scrollovat na footer
+        setTimeout(() => {
+            const footerBottom = document.querySelector('.footer-bottom') || document.querySelector('footer');
+            if (footerBottom) {
+                footerBottom.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            } else {
+                window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+            }
+        }, 100);
         return;
     }
     
@@ -1366,7 +1400,7 @@ console.log(`
         banner.innerHTML = `
             <div class="cookie-banner__content">
                 <div class="cookie-banner__text">
-                    Používáme cookies pro zajištění funkcí webu a zlepšení služeb. 
+                    Používáme <a href="soubory/cookies.pdf" target="_blank" rel="noopener noreferrer">cookies</a> pro zajištění funkcí webu a zlepšení služeb. 
                     Před uložením nepovinných cookies potřebujeme váš souhlas. 
                     Více informací najdete v <a href="https://commission.europa.eu/cookies-policy_cs" target="_blank" rel="noopener noreferrer">zásadách EU o cookies</a>.
                 </div>
