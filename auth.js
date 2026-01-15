@@ -2785,6 +2785,10 @@ async function addService(serviceData) {
 // Načtení uživatelského profilu z Firestore (users/{uid}/profile/profile)
 async function loadUserProfile(uid) {
     try {
+        if (!uid) {
+            console.warn('⚠️ loadUserProfile: uid is not provided');
+            return null;
+        }
         if (!window.firebaseDb) {
             console.warn('⚠️ Firebase DB not available');
             return null;

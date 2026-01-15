@@ -961,13 +961,34 @@
                         }
                         
                         console.log('✅ Uživatel přihlášen, volám loadUserData...');
-                        loadUserData();
+                        // Načíst recenze i když loadUserData selže
+                        loadUserData().catch(err => {
+                            console.error('❌ Error in loadUserData:', err);
+                            // Zkusit načíst recenze i při chybě
+                            const currentUser = window.firebaseAuth?.currentUser;
+                            if (currentUser) {
+                                console.log('🔄 Zkouším načíst recenze i při chybě v loadUserData...');
+                                loadAllUserReviews(currentUser.uid).catch(e => {
+                                    console.error('❌ Error loading reviews after userData error:', e);
+                                });
+                            }
+                        });
                         
                         // Listen for auth state changes
                         window.firebaseAuth.onAuthStateChanged((user) => {
                             console.log('👤 Auth state changed on profile page:', user ? user.email : 'Not logged in');
                             if (user) {
-                                loadUserData();
+                                // Načíst recenze i když loadUserData selže
+                                loadUserData().catch(err => {
+                                    console.error('❌ Error in loadUserData:', err);
+                                    // Zkusit načíst recenze i při chybě
+                                    if (user) {
+                                        console.log('🔄 Zkouším načíst recenze i při chybě v loadUserData...');
+                                        loadAllUserReviews(user.uid).catch(e => {
+                                            console.error('❌ Error loading reviews after userData error:', e);
+                                        });
+                                    }
+                                });
                             } else {
                                 // User logged out - redirect to login
                                 console.log('⚠️ Uživatel se odhlásil - přesměrování na přihlášení');

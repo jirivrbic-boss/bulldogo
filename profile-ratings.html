@@ -310,8 +310,15 @@
                             console.log('👤 Auth state changed on profile-ratings page:', user ? user.email : 'Not logged in');
                             if (user) {
                                 console.log('✅ User logged in, loading data...');
-                                loadUserData();
-                                loadRatingsData();
+                                // Načíst recenze i když loadUserData selže
+                                loadRatingsData().catch(err => {
+                                    console.error('❌ Error in loadRatingsData:', err);
+                                });
+                                loadUserData().catch(err => {
+                                    console.error('❌ Error in loadUserData:', err);
+                                    // Zkusit načíst recenze i při chybě
+                                    loadRatingsData().catch(e => console.error('❌ Error loading ratings after userData error:', e));
+                                });
                             } else {
                                 // User logged out - redirect to login
                                 console.log('⚠️ Uživatel se odhlásil - přesměrování na přihlášení');
@@ -327,13 +334,28 @@
                         const existingUser = window.firebaseAuth.currentUser;
                         if (existingUser) {
                             console.log('✅ User already logged in, loading data immediately');
-                            loadUserData();
-                            loadRatingsData();
+                            // Načíst recenze i když loadUserData selže
+                            loadRatingsData().catch(err => {
+                                console.error('❌ Error in loadRatingsData:', err);
+                            });
+                            loadUserData().catch(err => {
+                                console.error('❌ Error in loadUserData:', err);
+                                // Zkusit načíst recenze i při chybě
+                                loadRatingsData().catch(e => console.error('❌ Error loading ratings after userData error:', e));
+                            });
                         }
                     }
                 }, 100);
             } catch (error) {
                 console.error('❌ Chyba při načítání profilu:', error);
+                // Zkusit načíst recenze i při chybě v loadUserProfile
+                const currentUser = window.firebaseAuth?.currentUser;
+                if (currentUser) {
+                    console.log('🔄 Zkouším načíst recenze i při chybě v loadUserProfile...');
+                    loadRatingsData().catch(e => {
+                        console.error('❌ Error loading ratings after loadUserProfile error:', e);
+                    });
+                }
             }
         }
 
