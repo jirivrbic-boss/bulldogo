@@ -4038,7 +4038,21 @@ function setupImagePreviews() {
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    previewImagePreview.innerHTML = `<img src="${e.target.result}" alt="Náhled">`;
+                    // Zobrazit obrázek s křížkem pro odstranění (pokud je funkce removePreviewImage dostupná)
+                    const removeFunction = typeof window.removePreviewImage === 'function' ? 'removePreviewImage()' : 
+                                          (typeof window.removeEditPreviewImage === 'function' ? 'removeEditPreviewImage()' : '');
+                    if (removeFunction) {
+                        previewImagePreview.innerHTML = `
+                            <div style="position: relative; display: inline-block; width: 100%;">
+                                <img src="${e.target.result}" alt="Náhled" style="max-width: 100%; border-radius: 8px; display: block;">
+                                <button type="button" class="remove-image-btn" onclick="${removeFunction}" title="Odstranit fotku" style="position: absolute; top: 5px; right: 5px;">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        `;
+                    } else {
+                        previewImagePreview.innerHTML = `<img src="${e.target.result}" alt="Náhled">`;
+                    }
                     previewImagePreview.classList.remove('empty');
                 };
                 reader.readAsDataURL(file);
