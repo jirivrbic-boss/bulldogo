@@ -209,6 +209,7 @@ async function loadUserProfile(userId) {
         if (userSnap.exists()) {
             currentProfileUser = userSnap.data();
             currentProfileUser.id = userId;
+            currentProfileUser.uid = userId; // Pro kompatibilitu s reviews systémem
             console.log('✅ User basic info loaded:', currentProfileUser);
             // Sloučit základní info s profilem pro lepší fallbacky při zobrazení
             // DŮLEŽITÉ: pole z profilu (userProfile) mají přednost před polem ze základního dokumentu (currentProfileUser)
@@ -1056,13 +1057,29 @@ function selectRating(rating) {
 
 // Odeslat recenzi pomocí nového modulu
 async function submitReview() {
+    console.log('📝 submitReview() called');
+    
     const currentUser = window.firebaseAuth?.currentUser;
     if (!currentUser) {
+        console.warn('⚠️ User not logged in');
         alert('Pro napsání recenze se musíte přihlásit');
         return;
     }
     
-    if (!currentProfileUser || currentUser.uid === currentProfileUser.uid) {
+    if (!currentProfileUser) {
+        console.error('❌ currentProfileUser is null');
+        alert('Chyba: Profil uživatele není načten');
+        return;
+    }
+    
+    const targetUserId = currentProfileUser.uid || currentProfileUser.id;
+    if (!targetUserId) {
+        console.error('❌ targetUserId is missing', currentProfileUser);
+        alert('Chyba: ID uživatele není dostupné');
+        return;
+    }
+    
+    if (currentUser.uid === targetUserId) {
         alert('Nemůžete hodnotit sami sebe');
         return;
     }
@@ -1078,28 +1095,42 @@ async function submitReview() {
         return;
     }
     
+    console.log('📝 Review data:', {
+        targetUserId,
+        rating: selectedRating,
+        textLength: reviewText.length,
+        photosCount: selectedReviewPhotos.length
+    });
+    
     try {
         // Počkat na načtení reviews modulu
         if (!window.ReviewsSystem || !window.createReview) {
             console.log('⏳ Waiting for reviews module...');
-            await new Promise(resolve => {
+            let waitCount = 0;
+            await new Promise((resolve, reject) => {
                 const checkInterval = setInterval(() => {
+                    waitCount++;
                     if (window.ReviewsSystem && window.createReview) {
                         clearInterval(checkInterval);
                         resolve();
+                    } else if (waitCount > 50) { // Max 5 sekund
+                        clearInterval(checkInterval);
+                        reject(new Error('Reviews modul se nenačetl'));
                     }
                 }, 100);
             });
         }
         
         console.log('💾 Creating review with new system...');
-        await window.createReview({
-            targetUserId: currentProfileUser.uid,
+        const reviewId = await window.createReview({
+            targetUserId: targetUserId,
             rating: selectedRating,
             text: reviewText,
             files: selectedReviewPhotos,
             listingId: null
         });
+        
+        console.log('✅ Review created successfully:', reviewId);
         
         alert('✅ Děkujeme! Vaše recenze byla úspěšně přidána.');
         
@@ -1288,4 +1319,14 @@ window.selectRating = selectRating;
 window.submitReview = submitReview;
 window.handleReviewPhotosChange = handleReviewPhotosChange;
 window.removeReviewPhoto = removeReviewPhoto;
+
+// Debug: zkontrolovat, zda jsou funkce dostupné
+console.log('✅ Profile detail functions exported:', {
+    toggleReviewForm: typeof window.toggleReviewForm,
+    highlightStars: typeof window.highlightStars,
+    selectRating: typeof window.selectRating,
+    submitReview: typeof window.submitReview,
+    handleReviewPhotosChange: typeof window.handleReviewPhotosChange,
+    removeReviewPhoto: typeof window.removeReviewPhoto
+});
 

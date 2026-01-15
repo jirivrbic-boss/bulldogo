@@ -712,7 +712,7 @@
                             " onmouseover="this.style.borderColor='#9ca3af';" onmouseout="this.style.borderColor='#e5e7eb';">
                                 Zrušit
                             </button>
-                            <button onclick="submitReview()" style="
+                            <button type="button" onclick="if (typeof submitReview === 'function') { submitReview(); } else { console.error('submitReview is not defined'); alert('Chyba: Funkce pro odeslání recenze není dostupná. Zkuste obnovit stránku.'); }" style="
                                 flex: 2;
                                 padding: 12px 24px;
                                 background: linear-gradient(135deg, #f77c00 0%, #fdf002 100%);
