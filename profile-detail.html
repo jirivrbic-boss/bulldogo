@@ -784,8 +784,33 @@
     <!-- Scripts -->
     <script src="script.js" defer></script>
     <script src="auth.js" defer></script>
-    <script src="js/reviews.js" defer></script>
+    <!-- Reviews modul - načíst před profile-detail.js (bez defer pro zajištění dostupnosti) -->
+    <script src="js/reviews.js"></script>
     <script src="profile-detail.js" defer></script>
+    
+    <!-- Zkontrolovat, zda se reviews modul načetl -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔍 Checking reviews module availability...');
+            console.log('🔍 window.ReviewsSystem:', typeof window.ReviewsSystem);
+            console.log('🔍 window.createReview:', typeof window.createReview);
+            
+            if (!window.ReviewsSystem || !window.createReview) {
+                console.warn('⚠️ Reviews module not loaded, attempting to load...');
+                const script = document.createElement('script');
+                script.src = 'js/reviews.js';
+                script.onload = function() {
+                    console.log('✅ Reviews module loaded successfully');
+                };
+                script.onerror = function() {
+                    console.error('❌ Failed to load reviews.js - check file path');
+                };
+                document.head.appendChild(script);
+            } else {
+                console.log('✅ Reviews module is available');
+            }
+        });
+    </script>
     
     <!-- Test script for back button -->
     <script>

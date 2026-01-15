@@ -1106,22 +1106,44 @@ async function submitReview() {
         // Počkat na načtení reviews modulu
         if (!window.ReviewsSystem || !window.createReview) {
             console.log('⏳ Waiting for reviews module...');
+            console.log('⏳ window.ReviewsSystem:', typeof window.ReviewsSystem);
+            console.log('⏳ window.createReview:', typeof window.createReview);
+            
+            // Zkusit načíst modul dynamicky, pokud není dostupný
+            if (!window.ReviewsSystem && !document.querySelector('script[src*="reviews.js"]')) {
+                console.log('⏳ Loading reviews.js dynamically...');
+                const script = document.createElement('script');
+                script.src = 'js/reviews.js';
+                script.onload = () => console.log('✅ reviews.js loaded dynamically');
+                script.onerror = () => console.error('❌ Error loading reviews.js');
+                document.head.appendChild(script);
+            }
+            
             let waitCount = 0;
             await new Promise((resolve, reject) => {
                 const checkInterval = setInterval(() => {
                     waitCount++;
                     if (window.ReviewsSystem && window.createReview) {
+                        console.log('✅ Reviews module loaded after', waitCount * 100, 'ms');
                         clearInterval(checkInterval);
                         resolve();
-                    } else if (waitCount > 50) { // Max 5 sekund
+                    } else if (waitCount > 100) { // Max 10 sekund
                         clearInterval(checkInterval);
-                        reject(new Error('Reviews modul se nenačetl'));
+                        console.error('❌ Reviews module timeout:', {
+                            ReviewsSystem: typeof window.ReviewsSystem,
+                            createReview: typeof window.createReview,
+                            allScripts: Array.from(document.querySelectorAll('script[src]')).map(s => s.src)
+                        });
+                        reject(new Error('Reviews modul se nenačetl! Zkontrolujte, zda existuje soubor js/reviews.js'));
                     }
                 }, 100);
             });
         }
         
         console.log('💾 Creating review with new system...');
+        console.log('💾 ReviewsSystem available:', !!window.ReviewsSystem);
+        console.log('💾 createReview available:', typeof window.createReview);
+        
         const reviewId = await window.createReview({
             targetUserId: targetUserId,
             rating: selectedRating,
