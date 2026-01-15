@@ -445,10 +445,17 @@ async function fetchAllReviewsForAdmin(options = {}) {
         let reviews = [];
         
         snapshot.forEach(doc => {
-            reviews.push({
+            const reviewData = {
                 id: doc.id,
                 ...doc.data()
-            });
+            };
+            
+            // Debug: logovat photoUrls
+            if (reviewData.photoUrls && reviewData.photoUrls.length > 0) {
+                console.log('📸 Review has photos (fetchAllReviewsForAdmin):', reviewData.id, 'photoUrls count:', reviewData.photoUrls.length);
+            }
+            
+            reviews.push(reviewData);
         });
         
         // Řazení na klientovi (aby nepotřeboval Firestore index)
