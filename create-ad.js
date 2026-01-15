@@ -399,7 +399,47 @@
                 openImageCropModal(file);
             });
         }
+        
+        // Funkce pro odstranění hlavní fotky
+        window.removePreviewImage = function() {
+            const previewImageInput = document.getElementById('previewImage');
+            const previewImagePreview = document.getElementById('previewImagePreview');
+            const imgPreview = document.getElementById('previewCardImage');
+            const noPreviewCheckbox = document.getElementById('noPreviewImage');
+            const DEFAULT_PREVIEW_LOGO = '/fotky/vychozi-inzerat.png';
+            
+            // Vymazat soubor z inputu
+            if (previewImageInput) {
+                previewImageInput.value = '';
+            }
+            
+            // Obnovit výchozí logo v náhledu
+            if (previewImagePreview) {
+                previewImagePreview.innerHTML = '';
+                previewImagePreview.classList.add('empty');
+            }
+            
+            // Obnovit výchozí logo v kartě
+            if (imgPreview) {
+                imgPreview.src = DEFAULT_PREVIEW_LOGO;
+            }
+            
+            // Zrušit checkbox "bez náhledu" pokud je zaškrtnutý
+            if (noPreviewCheckbox && noPreviewCheckbox.checked) {
+                noPreviewCheckbox.checked = false;
+                if (previewImageInput) {
+                    previewImageInput.required = true;
+                    previewImageInput.disabled = false;
+                }
+            }
+            
+            // Aktualizovat validaci
+            if (typeof validateRequired === 'function') {
+                validateRequired();
+            }
+        };
         if (noPreviewCheckbox && previewImageInput && imgPreview) {
+            const previewImagePreview = document.getElementById('previewImagePreview');
             const updateNoPreviewState = () => {
                 const checked = !!noPreviewCheckbox.checked;
                 previewImageInput.required = !checked;
@@ -407,9 +447,34 @@
                 if (checked) {
                     try { previewImageInput.value = ''; } catch(_) {}
                     imgPreview.src = DEFAULT_PREVIEW_LOGO;
+                    if (previewImagePreview) {
+                        previewImagePreview.innerHTML = '';
+                        previewImagePreview.classList.add('empty');
+                    }
                 } else {
                     if (!previewImageInput.files?.[0]) {
                         imgPreview.src = DEFAULT_PREVIEW_LOGO;
+                        if (previewImagePreview) {
+                            previewImagePreview.innerHTML = '';
+                            previewImagePreview.classList.add('empty');
+                        }
+                    } else {
+                        // Pokud je fotka nahraná, zobrazit ji s křížkem
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            if (previewImagePreview) {
+                                previewImagePreview.innerHTML = `
+                                    <div style="position: relative; display: inline-block; width: 100%;">
+                                        <img src="${e.target.result}" alt="Náhled" style="max-width: 100%; border-radius: 8px; display: block;">
+                                        <button type="button" class="remove-image-btn" onclick="removePreviewImage()" title="Odstranit fotku" style="position: absolute; top: 5px; right: 5px;">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                `;
+                                previewImagePreview.classList.remove('empty');
+                            }
+                        };
+                        reader.readAsDataURL(previewImageInput.files[0]);
                     }
                 }
                 validateRequired();
@@ -862,10 +927,25 @@
                 
                 // Aktualizovat náhled
                 const imgPreview = document.getElementById('previewCardImage');
-                if (imgPreview) {
+                const previewImagePreview = document.getElementById('previewImagePreview');
+                if (imgPreview || previewImagePreview) {
                     const reader = new FileReader();
                     reader.onload = function(e) {
-                        imgPreview.src = e.target.result;
+                        if (imgPreview) {
+                            imgPreview.src = e.target.result;
+                        }
+                        if (previewImagePreview) {
+                            // Zobrazit obrázek s křížkem pro odstranění
+                            previewImagePreview.innerHTML = `
+                                <div style="position: relative; display: inline-block; width: 100%;">
+                                    <img src="${e.target.result}" alt="Náhled" style="max-width: 100%; border-radius: 8px; display: block;">
+                                    <button type="button" class="remove-image-btn" onclick="removePreviewImage()" title="Odstranit fotku" style="position: absolute; top: 5px; right: 5px;">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            `;
+                            previewImagePreview.classList.remove('empty');
+                        }
                         console.log('✅ Náhled aktualizován');
                     };
                     reader.readAsDataURL(croppedFile);

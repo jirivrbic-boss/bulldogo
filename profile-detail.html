@@ -670,7 +670,30 @@
                                 font-family: inherit;
                                 resize: vertical;
                                 transition: border-color 0.2s;
+                                box-sizing: border-box;
                             " onfocus="this.style.borderColor='#f77c00';" onblur="this.style.borderColor='#e5e7eb';"></textarea>
+                        </div>
+                        
+                        <!-- Nahrání fotek -->
+                        <div style="margin-bottom: 16px;">
+                            <label style="font-size: 14px; font-weight: 600; color: #374151; display: block; margin-bottom: 8px;">
+                                Fotky (volitelné):
+                            </label>
+                            <input type="file" id="reviewPhotos" accept="image/jpeg,image/png,image/webp" multiple style="display: none;" onchange="handleReviewPhotosChange(event)">
+                            <button type="button" onclick="document.getElementById('reviewPhotos').click()" style="
+                                padding: 10px 20px;
+                                background: white;
+                                border: 2px dashed #e5e7eb;
+                                border-radius: 8px;
+                                font-size: 14px;
+                                color: #6b7280;
+                                cursor: pointer;
+                                width: 100%;
+                                transition: all 0.2s;
+                            " onmouseover="this.style.borderColor='#f77c00'; this.style.color='#f77c00';" onmouseout="this.style.borderColor='#e5e7eb'; this.style.color='#6b7280';">
+                                <i class="fas fa-camera"></i> Vybrat fotky
+                            </button>
+                            <div id="reviewPhotosPreview" style="margin-top: 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px;"></div>
                         </div>
                         
                         <!-- Tlačítka -->
@@ -761,6 +784,7 @@
     <!-- Scripts -->
     <script src="script.js" defer></script>
     <script src="auth.js" defer></script>
+    <script src="js/reviews.js" defer></script>
     <script src="profile-detail.js" defer></script>
     
     <!-- Test script for back button -->

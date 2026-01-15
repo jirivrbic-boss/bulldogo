@@ -1,0 +1,61 @@
+// Firebase Storage pravidla - NOVÝ SYSTÉM RECENZÍ
+// Aktualizované pravidla včetně fotek recenzí
+// 
+// DŮLEŽITÉ: Zkopírujte tento obsah do Firebase Console → Storage → Rules → Edit
+
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // ===== FOTKY RECENZÍ =====
+    // Cesta: reviews/{authorId}/{timestamp}_{index}_{filename}
+    match /reviews/{authorId}/{allPaths=**} {
+      // READ: Veřejné (authenticated nebo všichni - zvol podle potřeby)
+      // Pro veřejné: allow read: if true;
+      // Pro authenticated: allow read: if request.auth != null;
+      allow read: if request.auth != null;  // Jen přihlášení mohou vidět fotky
+      
+      // WRITE: Jen autor může nahrávat do své složky
+      // Admin může nahrávat/mazat kdekoliv
+      allow write: if request.auth != null && (
+                     request.auth.uid == authorId ||
+                     // Admin check - musí existovat /admins/{uid} v Firestore
+                     exists(/databases/(default)/documents/admins/$(request.auth.uid))
+                   ) &&
+                   // Validace typu souboru
+                   request.resource.contentType.matches('image/(jpeg|png|webp)') &&
+                   // Validace velikosti (max 5 MB)
+                   request.resource.size <= 5 * 1024 * 1024;
+      
+      // DELETE: Autor nebo admin
+      allow delete: if request.auth != null && (
+                      request.auth.uid == authorId ||
+                      exists(/databases/(default)/documents/admins/$(request.auth.uid))
+                    );
+    }
+    
+    // ===== OBRÁZKY SLUŽEB/INZERÁTŮ =====
+    match /services/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // ===== PROFILOVÉ OBRÁZKY =====
+    match /profile-pictures/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // ===== OBRÁZKY V CHATU =====
+    match /chat/{conversationId}/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+    
+    // ===== VÝCHOZÍ: ZAKÁZAT PŘÍSTUP =====
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

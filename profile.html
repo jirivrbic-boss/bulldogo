@@ -305,6 +305,7 @@
     </div>
 
     <script src="script.js" defer></script>
+    <script src="js/reviews.js" defer></script>
     <script src="auth.js" defer></script>
     <script src="cities.js" defer></script>
     <script src="click-spark.js" defer></script>
@@ -890,6 +891,21 @@
             // Immediately show empty state
             showEmptyProfile();
             loadUserProfile();
+            
+            // Zkusit načíst recenze i po chvíli, pokud se nenačtou automaticky
+            setTimeout(() => {
+                const currentUser = window.firebaseAuth?.currentUser;
+                const container = document.getElementById('allReviewsContainer');
+                if (currentUser && container) {
+                    const loadingText = container.querySelector('.loading-reviews');
+                    if (loadingText) {
+                        console.log('🔄 Zkouším načíst recenze po timeoutu...');
+                        loadAllUserReviews(currentUser.uid).catch(e => {
+                            console.error('❌ Error loading reviews after timeout:', e);
+                        });
+                    }
+                }
+            }, 2000);
         });
 
         // Show empty profile state
@@ -960,34 +976,34 @@
                             return;
                         }
                         
-                        console.log('✅ Uživatel přihlášen, volám loadUserData...');
-                        // Načíst recenze i když loadUserData selže
+                        console.log('✅ Uživatel přihlášen, volám loadUserData a loadAllUserReviews...');
+                        // Načíst recenze NEZÁVISLE na loadUserData
+                        const currentUserForReviews = window.firebaseAuth.currentUser;
+                        if (currentUserForReviews) {
+                            console.log('📚 Načítám recenze nezávisle na loadUserData...');
+                            loadAllUserReviews(currentUserForReviews.uid).catch(e => {
+                                console.error('❌ Error loading reviews:', e);
+                            });
+                        }
+                        
+                        // Načíst ostatní data
                         loadUserData().catch(err => {
                             console.error('❌ Error in loadUserData:', err);
-                            // Zkusit načíst recenze i při chybě
-                            const currentUser = window.firebaseAuth?.currentUser;
-                            if (currentUser) {
-                                console.log('🔄 Zkouším načíst recenze i při chybě v loadUserData...');
-                                loadAllUserReviews(currentUser.uid).catch(e => {
-                                    console.error('❌ Error loading reviews after userData error:', e);
-                                });
-                            }
                         });
                         
                         // Listen for auth state changes
                         window.firebaseAuth.onAuthStateChanged((user) => {
                             console.log('👤 Auth state changed on profile page:', user ? user.email : 'Not logged in');
                             if (user) {
-                                // Načíst recenze i když loadUserData selže
+                                // Načíst recenze NEZÁVISLE na loadUserData
+                                console.log('📚 Načítám recenze nezávisle na loadUserData (auth state changed)...');
+                                loadAllUserReviews(user.uid).catch(e => {
+                                    console.error('❌ Error loading reviews:', e);
+                                });
+                                
+                                // Načíst ostatní data
                                 loadUserData().catch(err => {
                                     console.error('❌ Error in loadUserData:', err);
-                                    // Zkusit načíst recenze i při chybě
-                                    if (user) {
-                                        console.log('🔄 Zkouším načíst recenze i při chybě v loadUserData...');
-                                        loadAllUserReviews(user.uid).catch(e => {
-                                            console.error('❌ Error loading reviews after userData error:', e);
-                                        });
-                                    }
                                 });
                             } else {
                                 // User logged out - redirect to login
@@ -1188,167 +1204,71 @@
             }
         }
 
-        // Load all user reviews (profile + ads) - zjednodušená verze podle profile-detail.js
+        // Načíst recenze pomocí nového modulu
         async function loadAllUserReviews(userId) {
-            console.log('⭐⭐⭐ loadAllUserReviews VOLÁNO pro userId:', userId);
-            console.log('⭐ Firebase DB dostupný:', !!window.firebaseDb);
-            console.log('⭐ Firebase Auth dostupný:', !!window.firebaseAuth);
+            console.log('📖 Loading reviews for user:', userId);
             
             const container = document.getElementById('allReviewsContainer');
             if (!container) {
-                console.error('❌❌❌ allReviewsContainer not found!');
+                console.error('❌ Reviews container not found');
                 return;
             }
-            console.log('✅ allReviewsContainer found:', container);
-
-            // Zkontrolovat, zda je Firebase připraven
-            if (!window.firebaseDb) {
-                console.error('❌ Firebase Firestore není inicializován!');
+            
+            try {
+                // Počkat na načtení reviews modulu
+                if (!window.ReviewsSystem || !window.fetchReviewsForTarget) {
+                    console.log('⏳ Waiting for reviews module...');
+                    await new Promise(resolve => {
+                        const checkInterval = setInterval(() => {
+                            if (window.ReviewsSystem && window.fetchReviewsForTarget) {
+                                clearInterval(checkInterval);
+                                resolve();
+                            }
+                        }, 100);
+                    });
+                }
+                
+                // Načíst recenze "o mně" (targetUserId == currentUserId)
+                const reviewsAboutMe = await window.fetchReviewsForTarget(userId, {
+                    orderBy: 'createdAt',
+                    orderDirection: 'desc',
+                    limit: 5 // Jen 5 nejnovějších pro "Nedávné recenze"
+                });
+                
+                console.log('✅ Loaded reviews about me:', reviewsAboutMe.length);
+                
+                // Zobrazit recenze
+                await window.renderReviews(container, reviewsAboutMe, {
+                    showAuthorName: true,
+                    showPhotos: true,
+                    maxReviews: 5
+                });
+                
+                // Aktualizovat statistiky
+                if (reviewsAboutMe.length > 0) {
+                    const stats = window.computeRatingsStats(reviewsAboutMe);
+                    updateRatingFromStats(stats);
+                }
+                
+            } catch (error) {
+                console.error('❌ Error loading reviews:', error);
                 container.innerHTML = `
                     <div class="no-reviews">
                         <i class="fas fa-exclamation-triangle"></i>
-                        <h4>Chyba při připojení k databázi</h4>
-                        <p>Zkuste obnovit stránku.</p>
+                        <h4>Chyba při načítání recenzí</h4>
+                        <p>${error.message || 'Zkuste obnovit stránku.'}</p>
                     </div>
                 `;
-                return;
-            }
-
-            try {
-                const { getDocs, collection } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
-                
-                const allReviews = [];
-                
-                // Načíst jen recenze na profilu uživatele (users/{userId}/reviews)
-                try {
-                    console.log('📖 Načítám recenze z cesty: users/' + userId + '/reviews');
-                    const profileReviewsRef = collection(window.firebaseDb, 'users', userId, 'reviews');
-                    const profileReviewsSnap = await getDocs(profileReviewsRef);
-                    console.log('📖 Načteno recenzí z profilu:', profileReviewsSnap.size);
-                    
-                    if (profileReviewsSnap.empty) {
-                        console.log('⚠️ Kolekce reviews je prázdná nebo neexistuje');
-                    } else {
-                        profileReviewsSnap.forEach(doc => {
-                            const reviewData = doc.data();
-                            console.log('📖 Recenze nalezena:', {
-                                id: doc.id,
-                                rating: reviewData.rating,
-                                text: reviewData.text?.substring(0, 30),
-                                reviewerId: reviewData.reviewerId
-                            });
-                            reviewData.id = doc.id;
-                            reviewData.type = 'profile';
-                            allReviews.push(reviewData);
-                        });
-                    }
-                } catch (error) {
-                    console.error('❌ Error loading profile reviews:', error);
-                    console.error('Error details:', {
-                        code: error.code,
-                        message: error.message,
-                        path: `users/${userId}/reviews`,
-                        stack: error.stack
-                    });
-                    
-                    // Zobrazit chybovou zprávu
-                    if (error.code === 'permission-denied') {
-                        container.innerHTML = `
-                            <div class="no-reviews">
-                                <i class="fas fa-lock"></i>
-                                <h4>Nemáte oprávnění k načtení recenzí</h4>
-                                <p>Zkontrolujte Firestore Security Rules.</p>
-                            </div>
-                        `;
-                        return;
-                    }
-                    // Pokračovat i při jiné chybě
-                }
-
-                console.log('📊 Celkem načteno recenzí:', allReviews.length);
-                
-                if (allReviews.length > 0) {
-                    console.log('📊 První recenze:', {
-                        id: allReviews[0].id,
-                        rating: allReviews[0].rating,
-                        text: allReviews[0].text?.substring(0, 50),
-                        createdAt: allReviews[0].createdAt,
-                        updatedAt: allReviews[0].updatedAt
-                    });
-                    
-                    // Sort by date (newest first)
-                    allReviews.sort((a, b) => {
-                        const dateA = a.updatedAt?.toDate?.() || a.updatedAt || 
-                                      a.createdAt?.toDate?.() || a.createdAt || 
-                                      new Date(0);
-                        const dateB = b.updatedAt?.toDate?.() || b.updatedAt || 
-                                      b.createdAt?.toDate?.() || b.createdAt || 
-                                      new Date(0);
-                        return new Date(dateB) - new Date(dateA);
-                    });
-
-                    // Render reviews - načíst jména recenzentů až při renderování
-                    try {
-                        await renderAllReviews(allReviews, container);
-                        console.log('✅ Recenze zobrazeny');
-                    } catch (renderError) {
-                        console.error('❌ Error rendering reviews:', renderError);
-                        console.error('Render error stack:', renderError.stack);
-                        container.innerHTML = `
-                            <div class="no-reviews">
-                                <i class="fas fa-exclamation-triangle"></i>
-                                <h4>Chyba při zobrazování recenzí</h4>
-                                <p>Zkuste obnovit stránku.</p>
-                            </div>
-                        `;
-                    }
-                    
-                    // Update rating in statistics after loading reviews
-                    updateRatingFromReviews(allReviews);
-                } else {
-                    console.log('⚠️ Žádné recenze nenalezeny pro uživatele:', userId);
-                    container.innerHTML = `
-                        <div class="no-reviews">
-                            <i class="fas fa-star"></i>
-                            <h4>Zatím nemáte žádné recenze</h4>
-                            <p>Jakmile získáte první hodnocení od zákazníků, zobrazí se zde.</p>
-                        </div>
-                    `;
-                }
-
-            } catch (error) {
-                console.error('❌ Error loading reviews:', error);
-                console.error('Error details:', {
-                    code: error.code,
-                    message: error.message,
-                    stack: error.stack
-                });
-                const container = document.getElementById('allReviewsContainer');
-                if (container) {
-                    container.innerHTML = `
-                        <div class="no-reviews">
-                            <i class="fas fa-star"></i>
-                            <h4>Zatím nemáte žádné recenze</h4>
-                            <p>Jakmile získáte první hodnocení od zákazníků, zobrazí se zde.</p>
-                        </div>
-                    `;
-                }
             }
         }
 
-        // Update rating in statistics from reviews
-        function updateRatingFromReviews(reviews) {
-            console.log('🔄 Updating rating from reviews:', reviews.length);
+        // Update rating in statistics from stats object
+        function updateRatingFromStats(stats) {
+            console.log('🔄 Updating rating from stats:', stats);
             
-            if (!reviews || !Array.isArray(reviews)) {
-                console.warn('⚠️ Invalid reviews data');
+            if (!stats || stats.total === 0) {
                 return;
             }
-            
-            // Calculate average rating
-            const validReviews = reviews.filter(r => r.rating && typeof r.rating === 'number' && r.rating > 0);
-            const avgRating = validReviews.length > 0 ? 
-                (validReviews.reduce((sum, r) => sum + (r.rating || 0), 0) / validReviews.length) : 0;
             
             const ratingElement = document.querySelector('.stat-card:nth-child(2) .stat-number');
             if (ratingElement) {
@@ -1364,194 +1284,6 @@
             }
         }
 
-        // Render all reviews - asynchronní verze podle profile-detail.js
-        async function renderAllReviews(reviews, container) {
-            console.log('🎨 Rendering reviews:', reviews?.length || 0, 'reviews');
-            if (!container) {
-                console.error('❌ Container not provided to renderAllReviews');
-                return;
-            }
-            if (!reviews || reviews.length === 0) {
-                console.log('⚠️ No reviews to render, showing empty state');
-                container.innerHTML = `
-                    <div class="no-reviews">
-                        <i class="fas fa-star"></i>
-                        <h4>Zatím nemáte žádné recenze</h4>
-                        <p>Jakmile získáte první hodnocení od zákazníků, zobrazí se zde.</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            console.log('✅ Rendering', reviews.length, 'reviews');
-            
-            // Načíst jména recenzentů asynchronně - stejně jako v profile-detail.js
-            let reviewsWithNames = [];
-            try {
-                const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
-                reviewsWithNames = await Promise.all(
-                    reviews.map(async (review) => {
-                        let reviewerName = review.reviewerName || review.reviewerEmail?.split('@')[0] || 'Anonymní';
-                        
-                        // Pokud máme reviewerId, zkus načíst jméno z profilu
-                        if (review.reviewerId && !review.reviewerName && window.firebaseDb) {
-                            try {
-                                const reviewerProfileRef = doc(window.firebaseDb, 'users', review.reviewerId, 'profile', 'profile');
-                                const reviewerProfileSnap = await getDoc(reviewerProfileRef);
-                                
-                                if (reviewerProfileSnap.exists()) {
-                                    const reviewerData = reviewerProfileSnap.data();
-                                    reviewerName = reviewerData.name || 
-                                                   (reviewerData.firstName && reviewerData.lastName 
-                                                    ? `${reviewerData.firstName} ${reviewerData.lastName}`.trim()
-                                                    : reviewerData.email?.split('@')[0] || reviewerName);
-                                }
-                            } catch (error) {
-                                console.warn('⚠️ Nepodařilo se načíst jméno recenzenta:', error);
-                            }
-                        }
-                        
-                        return {
-                            ...review,
-                            reviewerName: reviewerName
-                        };
-                    })
-                );
-            } catch (error) {
-                console.error('❌ Error loading reviewer names:', error);
-                // Použít recenze bez jmen
-                reviewsWithNames = reviews.map(review => ({
-                    ...review,
-                    reviewerName: review.reviewerName || review.reviewerEmail?.split('@')[0] || 'Anonymní'
-                }));
-            }
-
-            // Calculate average rating
-            const avgRating = (reviewsWithNames.reduce((sum, r) => sum + (r.rating || 0), 0) / reviewsWithNames.length).toFixed(1);
-            const totalReviews = reviewsWithNames.length;
-            
-            // Zobrazit jen 5 nejnovějších recenzí
-            const latestReviews = reviewsWithNames.slice(0, 5);
-
-            // Helper function to get time ago
-            function getTimeAgo(date) {
-                if (!date) return 'Neznámé datum';
-                let reviewDate;
-                if (date.toDate && typeof date.toDate === 'function') {
-                    reviewDate = date.toDate();
-                } else if (date instanceof Date) {
-                    reviewDate = date;
-                } else {
-                    reviewDate = new Date(date);
-                }
-                
-                const now = new Date();
-                const diffMs = now - reviewDate;
-                const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-                
-                if (diffDays === 0) return 'Dnes';
-                if (diffDays === 1) return 'Včera';
-                if (diffDays < 7) return `Před ${diffDays} dny`;
-                if (diffDays < 30) return `Před ${Math.floor(diffDays / 7)} týdny`;
-                if (diffDays < 365) return `Před ${Math.floor(diffDays / 30)} měsíci`;
-                return `Před ${Math.floor(diffDays / 365)} lety`;
-            }
-            
-            // Helper function to create review card
-            function createReviewCard(review) {
-                const stars = '★'.repeat(review.rating || 0) + '☆'.repeat(5 - (review.rating || 0));
-                
-                // Zpracovat createdAt nebo updatedAt
-                let createdAt;
-                if (review.createdAt) {
-                    if (typeof review.createdAt.toDate === 'function') {
-                        createdAt = review.createdAt.toDate();
-                    } else if (review.createdAt instanceof Date) {
-                        createdAt = review.createdAt;
-                    } else {
-                        createdAt = new Date(review.createdAt);
-                    }
-                } else if (review.updatedAt) {
-                    if (typeof review.updatedAt.toDate === 'function') {
-                        createdAt = review.updatedAt.toDate();
-                    } else if (review.updatedAt instanceof Date) {
-                        createdAt = review.updatedAt;
-                    } else {
-                        createdAt = new Date(review.updatedAt);
-                    }
-                } else {
-                    createdAt = new Date();
-                }
-                
-                const timeAgo = getTimeAgo(createdAt);
-                const reviewText = review.text || review.comment || 'Recenze bez komentáře.';
-                const reviewerName = review.reviewerName || review.reviewerEmail?.split('@')[0] || 'Anonymní';
-                
-                return `
-                    <div class="review-card">
-                        <div class="review-header">
-                            <div class="reviewer-info">
-                                <div class="reviewer-avatar">
-                                    <i class="fas fa-user"></i>
-                                </div>
-                                <div class="reviewer-details">
-                                    <h4>${escapeHtml(reviewerName)}</h4>
-                                    <span class="review-date">${timeAgo}</span>
-                                </div>
-                            </div>
-                            <div class="review-rating">
-                                <span class="stars">${stars}</span>
-                            </div>
-                        </div>
-                        <div class="review-content">
-                            <p>${escapeHtml(reviewText)}</p>
-                        </div>
-                    </div>
-                `;
-            }
-            
-            container.innerHTML = `
-                <div class="reviews-summary">
-                    <div class="summary-stats">
-                        <div class="stat-item">
-                            <span class="stat-number">${avgRating}</span>
-                            <span class="stat-label">Průměrné hodnocení</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-number">${totalReviews}</span>
-                            <span class="stat-label">Celkem recenzí</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="reviews-list">
-                    ${latestReviews.map(review => createReviewCard(review)).join('')}
-                </div>
-                ${totalReviews > 5 ? `<div style="text-align: center; margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
-                    <p style="margin: 0; color: #666;">Zobrazeno 5 z ${totalReviews} recenzí. <a href="profile-ratings.html" style="color: #f77c00; text-decoration: none; font-weight: 600;">Zobrazit všechny →</a></p>
-                </div>` : ''}
-            `;
-        }
-
-        // Format review date
-        function formatReviewDate(date) {
-            if (!date) return 'Neznámé datum';
-            const reviewDate = date.toDate ? date.toDate() : new Date(date);
-            return reviewDate.toLocaleDateString('cs-CZ', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
-        }
-
-        // Escape HTML
-        function escapeHtml(str) {
-            return (str || '')
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
-        }
 
         // Tab switching functionality
         function showTab(tabName) {

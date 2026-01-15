@@ -5,7 +5,7 @@ console.log('🔍 Script loading check - profile-detail.js loaded');
 let currentProfileUser = null;
 let userProfile = null;
 let userServices = [];
-let userReviews = [];
+let selectedReviewPhotos = []; // Pro nový systém recenzí
 
 // Category names mapping
 const categoryNames = {
@@ -156,12 +156,7 @@ async function loadProfileDetail(userId) {
         await loadUserServices(userId);
         console.log('🖼️ User services loaded');
         
-        // Load user reviews
-        console.log('🖼️ Loading user reviews...');
-        await loadUserReviews(userId);
-        console.log('🖼️ User reviews loaded');
-        
-        // Display profile
+        // Display profile (recenze se načtou v displayProfile pomocí nového modulu)
         console.log('🖼️ Calling displayProfile...');
         displayProfile();
         console.log('🖼️ displayProfile called');
@@ -291,58 +286,52 @@ async function loadUserServices(userId) {
     }
 }
 
-// Load user reviews
-async function loadUserReviews(userId) {
+// Načíst a zobrazit recenze pomocí nového modulu
+async function displayUserReviewsNew() {
+    if (!currentProfileUser || !currentProfileUser.uid) {
+        console.warn('⚠️ No profile user to load reviews for');
+        return;
+    }
+    
+    const container = document.getElementById('userReviewsGrid');
+    if (!container) {
+        console.error('❌ Reviews container not found');
+        return;
+    }
+    
     try {
-        const { getDocs, collection } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
-        
-        userReviews = [];
-        
-        // 1. Načíst recenze na profilu uživatele (users/{userId}/reviews)
-        try {
-            const profileReviewsRef = collection(window.firebaseDb, 'users', userId, 'reviews');
-            const profileReviewsSnap = await getDocs(profileReviewsRef);
-            profileReviewsSnap.forEach(doc => {
-                const reviewData = doc.data();
-                reviewData.id = doc.id;
-                reviewData.type = 'profile';
-                userReviews.push(reviewData);
-            });
-            console.log('✅ Profile reviews loaded:', profileReviewsSnap.size);
-        } catch (profileError) {
-            console.warn('⚠️ Error loading profile reviews:', profileError);
-        }
-        
-        // Fallback: zkusit root kolekci reviews (pokud existuje)
-        try {
-            const rootReviewsRef = collection(window.firebaseDb, 'reviews');
-            const rootReviewsSnap = await getDocs(rootReviewsRef);
-            rootReviewsSnap.forEach(doc => {
-                const reviewData = doc.data();
-                if (reviewData.reviewedUserId === userId) {
-                    // Zkontrolovat, zda už není v seznamu
-                    const exists = userReviews.some(r => r.id === doc.id);
-                    if (!exists) {
-                        reviewData.id = doc.id;
-                        reviewData.type = reviewData.type || 'unknown';
-                        userReviews.push(reviewData);
+        // Počkat na načtení reviews modulu
+        if (!window.ReviewsSystem || !window.fetchReviewsForTarget) {
+            console.log('⏳ Waiting for reviews module...');
+            await new Promise(resolve => {
+                const checkInterval = setInterval(() => {
+                    if (window.ReviewsSystem && window.fetchReviewsForTarget) {
+                        clearInterval(checkInterval);
+                        resolve();
                     }
-                }
+                }, 100);
             });
-            console.log('✅ Root reviews checked');
-        } catch (rootError) {
-            console.warn('⚠️ Error loading root reviews (this is OK if collection doesn\'t exist):', rootError.message);
         }
         
-        console.log('✅ Total user reviews loaded:', userReviews.length);
+        console.log('📖 Loading reviews for target:', currentProfileUser.uid);
+        const reviews = await window.fetchReviewsForTarget(currentProfileUser.uid, {
+            orderBy: 'createdAt',
+            orderDirection: 'desc'
+        });
+        
+        console.log('✅ Loaded reviews:', reviews.length);
+        await window.renderReviews(container, reviews, {
+            showAuthorName: true,
+            showPhotos: true
+        });
         
     } catch (error) {
-        console.error('❌ Error loading user reviews:', error);
-        console.error('Error details:', {
-            code: error.code,
-            message: error.message
-        });
-        userReviews = [];
+        console.error('❌ Error loading reviews:', error);
+        container.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: #dc2626;">
+                <p>Chyba při načítání recenzí: ${error.message}</p>
+            </div>
+        `;
     }
 }
 
@@ -352,7 +341,6 @@ function displayProfile() {
     console.log('🖼️ currentProfileUser:', currentProfileUser);
     console.log('🖼️ userProfile:', userProfile);
     console.log('🖼️ userServices:', userServices);
-    console.log('🖼️ userReviews:', userReviews);
     
     if (!currentProfileUser) {
         console.error('❌ currentProfileUser is missing');
@@ -380,9 +368,9 @@ function displayProfile() {
     console.log('🖼️ Displaying user services');
     displayUserServices();
     
-    // Display user reviews
+    // Display user reviews pomocí nového modulu
     console.log('🖼️ Displaying user reviews');
-    displayUserReviews().catch(error => {
+    displayUserReviewsNew().catch(error => {
         console.error('❌ Error displaying reviews:', error);
     });
     
@@ -1142,7 +1130,7 @@ function getTimeAgo(date) {
     return `Před ${Math.floor(days / 365)} lety`;
 }
 
-// ===== RECENZE FUNKCE =====
+// ===== RECENZE FUNKCE (NOVÝ SYSTÉM) =====
 
 let selectedRating = 0;
 
@@ -1180,28 +1168,24 @@ function selectRating(rating) {
     console.log('⭐ Vybráno hodnocení:', rating);
 }
 
-// Odeslat recenzi
+// Odeslat recenzi pomocí nového modulu
 async function submitReview() {
-    // Zkontrolovat přihlášení
     const currentUser = window.firebaseAuth?.currentUser;
     if (!currentUser) {
         alert('Pro napsání recenze se musíte přihlásit');
         return;
     }
     
-    // Zkontrolovat, že uživatel nehodnotí sám sebe
     if (!currentProfileUser || currentUser.uid === currentProfileUser.uid) {
         alert('Nemůžete hodnotit sami sebe');
         return;
     }
     
-    // Zkontrolovat hodnocení
     if (selectedRating === 0) {
         alert('Prosím vyberte hodnocení (1-5 hvězdiček)');
         return;
     }
     
-    // Získat text recenze
     const reviewText = document.getElementById('reviewText')?.value?.trim();
     if (!reviewText) {
         alert('Prosím napište text recenze');
@@ -1209,39 +1193,41 @@ async function submitReview() {
     }
     
     try {
-        console.log('💾 Ukládám recenzi...');
+        // Počkat na načtení reviews modulu
+        if (!window.ReviewsSystem || !window.createReview) {
+            console.log('⏳ Waiting for reviews module...');
+            await new Promise(resolve => {
+                const checkInterval = setInterval(() => {
+                    if (window.ReviewsSystem && window.createReview) {
+                        clearInterval(checkInterval);
+                        resolve();
+                    }
+                }, 100);
+            });
+        }
         
-        // Import Firestore funkcí
-        const { addDoc, collection, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
-        
-        // Uložit recenzi do Firestore
-        const reviewData = {
-            reviewerId: currentUser.uid,
-            reviewerEmail: currentUser.email,
+        console.log('💾 Creating review with new system...');
+        await window.createReview({
+            targetUserId: currentProfileUser.uid,
             rating: selectedRating,
             text: reviewText,
-            createdAt: serverTimestamp()
-        };
+            files: selectedReviewPhotos,
+            listingId: null
+        });
         
-        await addDoc(
-            collection(window.firebaseDb, 'users', currentProfileUser.uid, 'reviews'),
-            reviewData
-        );
-        
-        console.log('✅ Recenze uložena');
-        
-        // Zobrazit úspěšnou zprávu
         alert('✅ Děkujeme! Vaše recenze byla úspěšně přidána.');
         
         // Resetovat formulář
         selectedRating = 0;
         document.getElementById('reviewText').value = '';
+        selectedReviewPhotos = [];
+        document.getElementById('reviewPhotos').value = '';
+        document.getElementById('reviewPhotosPreview').innerHTML = '';
         highlightStars(0);
         toggleReviewForm();
         
         // Znovu načíst recenze
-        await loadUserReviews(currentProfileUser.uid);
-        await displayUserReviews();
+        await displayUserReviewsNew();
         
     } catch (error) {
         console.error('❌ Chyba při ukládání recenze:', error);
@@ -1254,4 +1240,6 @@ window.toggleReviewForm = toggleReviewForm;
 window.highlightStars = highlightStars;
 window.selectRating = selectRating;
 window.submitReview = submitReview;
+window.handleReviewPhotosChange = handleReviewPhotosChange;
+window.removeReviewPhoto = removeReviewPhoto;
 

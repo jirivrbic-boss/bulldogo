@@ -11922,6 +11922,7 @@ input[type="tel"]:focus {
     align-items: center;
     justify-content: center;
     background: #f8f9fa;
+    position: relative;
 }
 
 .image-preview img {

@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Správa recenzí - Admin - BULLDOGO</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"></noscript>
+    <script type="module" src="firebase-init.js" defer></script>
+</head>
+<body>
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">B</div>
+                <span class="logo-text">
+                    <span class="logo-bull">ULL</span>
+                    <span class="logo-dogo">DOGO</span>
+                </span>
+            </div>
+        </div>
+        <div class="navigation-section">
+            <h3 class="nav-section-title">ADMIN</h3>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="index.html" class="nav-link">
+                        <i class="fas fa-home nav-icon"></i>
+                        <span class="nav-text">Domů</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="admin-reviews.html" class="nav-link active">
+                        <i class="fas fa-star nav-icon"></i>
+                        <span class="nav-text">Správa recenzí</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <div class="user-profile-section" id="userProfileSection" style="display: none;">
+            <button class="btn-profile" onclick="window.location.href='profile.html'">
+                <i class="fas fa-user-circle"></i>
+                <span>Profil</span>
+            </button>
+            <button class="btn-logout" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Odhlásit se</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <section class="page-hero">
+            <div class="container">
+                <div class="page-hero-card">
+                    <div class="page-hero-inner">
+                        <h2 class="services-title">
+                            <span class="title-text">Správa recenzí</span>
+                            <span class="title-accent"></span>
+                        </h2>
+                        <p class="page-hero-subtitle">Administrátorský přehled všech recenzí</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Filters -->
+        <div class="ratings-content" style="margin-top: 30px;">
+            <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                <h3 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 600;">Filtry</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+                    <div>
+                        <label style="display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; color: #374151;">Filtr podle:</label>
+                        <select id="adminFilterBy" style="width: 100%; padding: 10px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px;">
+                            <option value="">Všechny recenze</option>
+                            <option value="authorId">Autor</option>
+                            <option value="targetUserId">Cílový uživatel</option>
+                            <option value="rating">Hodnocení</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; color: #374151;">Hodnota filtru:</label>
+                        <input type="text" id="adminFilterValue" placeholder="ID nebo hodnocení (1-5)" style="width: 100%; padding: 10px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px;">
+                    </div>
+                    <div style="display: flex; align-items: flex-end;">
+                        <button onclick="loadAdminReviews()" style="padding: 10px 20px; background: #f77c00; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%;">
+                            <i class="fas fa-search"></i> Načíst
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reviews List -->
+            <div id="adminReviewsContainer" style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                <div style="text-align: center; padding: 40px;">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 32px; color: #f77c00;"></i>
+                    <p style="margin-top: 16px; color: #6b7280;">Načítám recenze...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Review Modal -->
+    <div id="editReviewModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2>Upravit recenzi</h2>
+                <button class="close" onclick="closeEditModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600;">Hodnocení (1-5):</label>
+                    <input type="number" id="editReviewRating" min="1" max="5" style="width: 100%; padding: 10px; border: 1px solid #e5e7eb; border-radius: 8px;">
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600;">Text recenze:</label>
+                    <textarea id="editReviewText" rows="5" style="width: 100%; padding: 10px; border: 1px solid #e5e7eb; border-radius: 8px; resize: vertical;"></textarea>
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600;">Skrýt recenzi:</label>
+                    <input type="checkbox" id="editReviewHidden" style="width: 20px; height: 20px; cursor: pointer;">
+                    <span style="margin-left: 8px;">Skrýt tuto recenzi</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeEditModal()" style="padding: 10px 20px; background: white; border: 1px solid #e5e7eb; border-radius: 8px; cursor: pointer; margin-right: 10px;">Zrušit</button>
+                <button onclick="saveReviewEdit()" style="padding: 10px 20px; background: #f77c00; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">Uložit</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js" defer></script>
+    <script src="auth.js" defer></script>
+    <script src="js/reviews.js" defer></script>
+    <script>
+        let currentEditingReviewId = null;
+        let allAdminReviews = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAdminAndLoad();
+        });
+
+        async function checkAdminAndLoad() {
+            const currentUser = window.firebaseAuth?.currentUser;
+            if (!currentUser) {
+                alert('Musíte být přihlášeni');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // Počkat na reviews modul
+            if (!window.ReviewsSystem || !window.isAdmin) {
+                await new Promise(resolve => {
+                    const checkInterval = setInterval(() => {
+                        if (window.ReviewsSystem && window.isAdmin) {
+                            clearInterval(checkInterval);
+                            resolve();
+                        }
+                    }, 100);
+                });
+            }
+
+            const userIsAdmin = await window.isAdmin(currentUser.uid);
+            if (!userIsAdmin) {
+                alert('Nemáte oprávnění administrátora');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // Zobrazit user profile section
+            const userProfileSection = document.getElementById('userProfileSection');
+            if (userProfileSection) {
+                userProfileSection.style.display = 'block';
+            }
+
+            await loadAdminReviews();
+        }
+
+        async function loadAdminReviews() {
+            const container = document.getElementById('adminReviewsContainer');
+            if (!container) return;
+
+            try {
+                const filterBy = document.getElementById('adminFilterBy')?.value || '';
+                const filterValue = document.getElementById('adminFilterValue')?.value || '';
+
+                container.innerHTML = '<div style="text-align: center; padding: 40px;"><i class="fas fa-spinner fa-spin" style="font-size: 32px; color: #f77c00;"></i><p style="margin-top: 16px; color: #6b7280;">Načítám recenze...</p></div>';
+
+                const reviews = await window.fetchAllReviewsForAdmin({
+                    filterBy: filterBy,
+                    filterValue: filterValue,
+                    limit: 100
+                });
+
+                allAdminReviews = reviews;
+                renderAdminReviews(reviews);
+
+            } catch (error) {
+                console.error('❌ Error loading admin reviews:', error);
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #dc2626;">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 32px; margin-bottom: 16px;"></i>
+                        <p>Chyba při načítání recenzí: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function renderAdminReviews(reviews) {
+            const container = document.getElementById('adminReviewsContainer');
+            if (!container) return;
+
+            if (reviews.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 60px 20px;">
+                        <i class="fas fa-star" style="font-size: 48px; color: #d1d5db; margin-bottom: 16px;"></i>
+                        <p style="font-size: 16px; color: #6b7280;">Žádné recenze nenalezeny</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Načíst jména uživatelů
+            const reviewsWithNames = await Promise.all(
+                reviews.map(async (review) => {
+                    const [authorName, targetName] = await Promise.all([
+                        getUserNameFallback(review.authorId),
+                        getUserNameFallback(review.targetUserId)
+                    ]);
+                    return {
+                        ...review,
+                        authorName: authorName,
+                        targetName: targetName
+                    };
+                })
+            );
+
+            container.innerHTML = `
+                <div style="margin-bottom: 20px;">
+                    <h3 style="margin: 0; font-size: 18px; font-weight: 600;">Celkem recenzí: ${reviews.length}</h3>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 16px;">
+                    ${reviewsWithNames.map(review => {
+                        const rating = review.rating || 0;
+                        const filledStars = '★'.repeat(rating);
+                        const emptyStars = '☆'.repeat(5 - rating);
+                        const text = review.text || 'Žádný komentář';
+                        const createdAt = review.createdAt?.toDate ? review.createdAt.toDate() : new Date(review.createdAt || 0);
+                        const dateStr = createdAt.toLocaleDateString('cs-CZ', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                        const hiddenBadge = review.isHidden ? '<span style="background: #dc2626; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 8px;">SKRYTO</span>' : '';
+                        const editedBadge = review.editedByAdmin ? '<span style="background: #fbbf24; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 8px;">UPRAVENO ADMINEM</span>' : '';
+                        
+                        // Fotky
+                        let photosHtml = '';
+                        if (review.photoUrls && review.photoUrls.length > 0) {
+                            photosHtml = `
+                                <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
+                                    ${review.photoUrls.map((url, idx) => `
+                                        <img src="${url}" alt="Foto ${idx + 1}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; cursor: pointer; border: 2px solid #e5e7eb;" onclick="window.openReviewPhotoLightbox(${JSON.stringify(review.photoUrls)}, ${idx})">
+                                    `).join('')}
+                                </div>
+                            `;
+                        }
+
+                        return `
+                            <div class="admin-review-card" style="background: ${review.isHidden ? '#fee2e2' : 'white'}; border-radius: 12px; padding: 20px; border: 2px solid ${review.isHidden ? '#dc2626' : '#e5e7eb'};">
+                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+                                    <div style="flex: 1;">
+                                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                            <strong>Autor:</strong> ${escapeHtml(review.authorName)} (${review.authorId.substring(0, 8)}...)
+                                            ${hiddenBadge}
+                                            ${editedBadge}
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                            <strong>Cílový uživatel:</strong> ${escapeHtml(review.targetName)} (${review.targetUserId.substring(0, 8)}...)
+                                        </div>
+                                        <div style="font-size: 14px; color: #6b7280;">
+                                            <strong>Datum:</strong> ${dateStr}
+                                        </div>
+                                    </div>
+                                    <div style="font-size: 18px; color: #fbbf24;">
+                                        <span>${filledStars}</span><span style="color: #d1d5db;">${emptyStars}</span>
+                                    </div>
+                                </div>
+                                <div style="margin-bottom: 12px; padding: 12px; background: #f9fafb; border-radius: 8px;">
+                                    <p style="margin: 0; color: #374151; line-height: 1.6;">${escapeHtml(text)}</p>
+                                    ${photosHtml}
+                                </div>
+                                <div style="display: flex; gap: 8px;">
+                                    <button onclick="openEditModal('${review.id}')" style="padding: 8px 16px; background: #f77c00; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
+                                        <i class="fas fa-edit"></i> Upravit
+                                    </button>
+                                    <button onclick="deleteReviewConfirm('${review.id}')" style="padding: 8px 16px; background: #dc2626; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
+                                        <i class="fas fa-trash"></i> Smazat
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        async function getUserNameFallback(userId) {
+            if (!userId || !window.firebaseDb) return 'Anonymní';
+            try {
+                const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                const profileRef = doc(window.firebaseDb, 'users', userId, 'profile', 'profile');
+                const profileSnap = await getDoc(profileRef);
+                if (profileSnap.exists()) {
+                    const data = profileSnap.data();
+                    return data.name || data.email?.split('@')[0] || 'Anonymní';
+                }
+            } catch (error) {
+                console.warn('Error loading user name:', error);
+            }
+            return 'Anonymní';
+        }
+
+        async function openEditModal(reviewId) {
+            const review = allAdminReviews.find(r => r.id === reviewId);
+            if (!review) return;
+
+            currentEditingReviewId = reviewId;
+            document.getElementById('editReviewRating').value = review.rating || 0;
+            document.getElementById('editReviewText').value = review.text || '';
+            document.getElementById('editReviewHidden').checked = review.isHidden || false;
+            document.getElementById('editReviewModal').style.display = 'flex';
+        }
+
+        function closeEditModal() {
+            document.getElementById('editReviewModal').style.display = 'none';
+            currentEditingReviewId = null;
+        }
+
+        async function saveReviewEdit() {
+            if (!currentEditingReviewId) return;
+
+            const rating = parseInt(document.getElementById('editReviewRating').value);
+            const text = document.getElementById('editReviewText').value.trim();
+            const isHidden = document.getElementById('editReviewHidden').checked;
+
+            if (rating < 1 || rating > 5) {
+                alert('Hodnocení musí být mezi 1 a 5');
+                return;
+            }
+
+            if (!text) {
+                alert('Text recenze je povinný');
+                return;
+            }
+
+            try {
+                await window.updateReviewAsAdmin(currentEditingReviewId, {
+                    rating: rating,
+                    text: text,
+                    isHidden: isHidden
+                });
+
+                alert('✅ Recenze byla úspěšně upravena');
+                closeEditModal();
+                await loadAdminReviews();
+
+            } catch (error) {
+                console.error('❌ Error updating review:', error);
+                alert('Chyba při ukládání: ' + error.message);
+            }
+        }
+
+        function deleteReviewConfirm(reviewId) {
+            if (!confirm('Opravdu chcete smazat tuto recenzi? Tato akce je nevratná.')) {
+                return;
+            }
+
+            deleteReview(reviewId);
+        }
+
+        async function deleteReview(reviewId) {
+            try {
+                await window.deleteReviewAsAdmin(reviewId);
+                alert('✅ Recenze byla úspěšně smazána');
+                await loadAdminReviews();
+            } catch (error) {
+                console.error('❌ Error deleting review:', error);
+                alert('Chyba při mazání: ' + error.message);
+            }
+        }
+
+        // Export functions
+        window.loadAdminReviews = loadAdminReviews;
+        window.openEditModal = openEditModal;
+        window.closeEditModal = closeEditModal;
+        window.saveReviewEdit = saveReviewEdit;
+        window.deleteReviewConfirm = deleteReviewConfirm;
+    </script>
+    <style>
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background-color: white;
+            border-radius: 12px;
+            padding: 0;
+            max-width: 90%;
+            max-height: 90%;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .modal-body {
+            padding: 20px;
+        }
+        .modal-footer {
+            padding: 20px;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: flex-end;
+        }
+        .close {
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #6b7280;
+        }
+        .close:hover {
+            color: #111827;
+        }
+    </style>
+</body>
+</html>

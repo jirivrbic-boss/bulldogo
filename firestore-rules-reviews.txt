@@ -1,0 +1,172 @@
+// Firebase Firestore pravidla - NOVÝ SYSTÉM RECENZÍ
+// Aktualizované pravidla pro root kolekci /reviews
+// 
+// DŮLEŽITÉ: Zkopírujte tento obsah do Firebase Console → Firestore → Rules → Edit
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper funkce pro kontrolu admin statusu (přes /admins/{uid})
+    function isAdmin() {
+      return request.auth != null && 
+             exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+    
+    // ===== PRAVIDLA PRO RECENZE (NOVÝ SYSTÉM) =====
+    // Root kolekce /reviews - JEDINÝ ZDROJ PRAVDY
+    match /reviews/{reviewId} {
+      // READ: Veřejné recenze (isHidden == false) jsou čitelné pro všechny
+      // Skryté recenze (isHidden == true) jsou čitelné jen pro admin
+      allow read: if resource.data.isHidden == false || 
+                     (request.auth != null && isAdmin());
+      
+      // CREATE: Jen přihlášení uživatelé, authorId MUSÍ být request.auth.uid
+      allow create: if request.auth != null &&
+                       request.resource.data.authorId == request.auth.uid &&
+                       request.resource.data.targetUserId is string &&
+                       request.resource.data.rating is int &&
+                       request.resource.data.rating >= 1 &&
+                       request.resource.data.rating <= 5 &&
+                       request.resource.data.text is string &&
+                       request.resource.data.text.size() > 0 &&
+                       // Immutable fields
+                       request.resource.data.authorId == request.resource.data.authorId &&
+                       request.resource.data.targetUserId == request.resource.data.targetUserId;
+      
+      // UPDATE: Autor může upravit text, rating, photoUrls
+      // Admin může upravit COKOLIV
+      allow update: if request.auth != null && (
+                       // Autor může upravit své recenze
+                       (resource.data.authorId == request.auth.uid &&
+                        // Immutable fields nelze změnit
+                        request.resource.data.authorId == resource.data.authorId &&
+                        request.resource.data.targetUserId == resource.data.targetUserId) ||
+                       // Admin může upravit cokoliv
+                       isAdmin()
+                     );
+      
+      // DELETE: Autor nebo admin
+      allow delete: if request.auth != null && (
+                       resource.data.authorId == request.auth.uid ||
+                       isAdmin()
+                     );
+    }
+    
+    // ===== ADMIN KOLEKCE =====
+    // Kolekce /admins/{uid} pro kontrolu admin statusu
+    match /admins/{adminId} {
+      // Jen admin může číst a upravovat admins
+      allow read, write: if request.auth != null && isAdmin();
+    }
+    
+    // ===== PŮVODNÍ PRAVIDLA (ZACHOVAT) =====
+    // Pravidla pro inzeráty
+    match /users/{userId}/inzeraty/{adId} {
+      allow read: if true;
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && (request.auth.uid == userId || isAdmin());
+      allow delete: if request.auth != null && (request.auth.uid == userId || isAdmin());
+    }
+    
+    match /users/{userId}/{document=**} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+      allow delete: if request.auth != null && (request.auth.uid == userId || isAdmin());
+    }
+    
+    match /users/{userId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+      allow delete: if request.auth != null && isAdmin();
+    }
+    
+    match /users/{userId}/profile/{profileId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+      allow delete: if request.auth != null && isAdmin();
+    }
+    
+    // ===== PRAVIDLA PRO KONVERZACE =====
+    match /conversations/{conversationId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+      
+      function isParticipant() {
+        return isSignedIn() && 
+               resource.data.participants != null &&
+               request.auth.uid in resource.data.participants;
+      }
+      
+      allow read: if isParticipant();
+      
+      allow create: if isSignedIn() && 
+                      request.resource.data.participants != null &&
+                      request.resource.data.participants.size() == 2 &&
+                      request.auth.uid in request.resource.data.participants;
+      
+      allow update: if isParticipant() &&
+                      (!('participants' in request.resource.data) ||
+                       request.resource.data.participants == resource.data.participants);
+      
+      allow delete: if isParticipant();
+      
+      match /messages/{messageId} {
+        function isConversationParticipant() {
+          let convDoc = get(/databases/$(database)/documents/conversations/$(conversationId));
+          return convDoc != null && 
+                 convDoc.data.participants != null &&
+                 request.auth.uid in convDoc.data.participants;
+        }
+        
+        allow read: if isSignedIn() && isConversationParticipant();
+        
+        allow create: if isSignedIn() && 
+                        request.resource.data.senderId == request.auth.uid &&
+                        isConversationParticipant();
+        
+        allow update, delete: if isSignedIn() && 
+                                resource.data.senderId == request.auth.uid;
+      }
+    }
+    
+    // ===== PRAVIDLA PRO PLATBY =====
+    match /users/{userId}/payments/{paymentId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && request.auth.uid == userId;
+      allow delete: if false;
+    }
+    
+    // ===== STRIPE FIRESTORE EXTENSION PRAVIDLA =====
+    match /customers/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      
+      match /checkout_sessions/{id} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+      match /subscriptions/{id} {
+        allow read: if request.auth != null && request.auth.uid == uid;
+      }
+      match /payments/{id} {
+        allow read: if request.auth != null && request.auth.uid == uid;
+      }
+    }
+    
+    match /products/{id} {
+      allow read: if true;
+      allow write: if false;
+      
+      match /prices/{id} {
+        allow read: if true;
+        allow write: if false;
+      }
+      
+      match /tax_rates/{id} {
+        allow read: if true;
+        allow write: if false;
+      }
+    }
+  }
+}
