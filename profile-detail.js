@@ -1113,9 +1113,18 @@ async function submitReview() {
             if (!window.ReviewsSystem && !document.querySelector('script[src*="reviews.js"]')) {
                 console.log('⏳ Loading reviews.js dynamically...');
                 const script = document.createElement('script');
-                script.src = 'js/reviews.js';
+                script.src = 'reviews.js';
+                script.type = 'text/javascript';
                 script.onload = () => console.log('✅ reviews.js loaded dynamically');
-                script.onerror = () => console.error('❌ Error loading reviews.js');
+                script.onerror = () => {
+                    console.error('❌ Error loading reviews.js from root, trying js/ folder...');
+                    const script2 = document.createElement('script');
+                    script2.src = 'js/reviews.js';
+                    script2.type = 'text/javascript';
+                    script2.onload = () => console.log('✅ reviews.js loaded from js/ folder');
+                    script2.onerror = () => console.error('❌ Error loading reviews.js from js/ folder too');
+                    document.head.appendChild(script2);
+                };
                 document.head.appendChild(script);
             }
             
@@ -1134,7 +1143,7 @@ async function submitReview() {
                             createReview: typeof window.createReview,
                             allScripts: Array.from(document.querySelectorAll('script[src]')).map(s => s.src)
                         });
-                        reject(new Error('Reviews modul se nenačetl! Zkontrolujte, zda existuje soubor js/reviews.js'));
+                        reject(new Error('Reviews modul se nenačetl! Zkontrolujte, zda existuje soubor reviews.js'));
                     }
                 }, 100);
             });

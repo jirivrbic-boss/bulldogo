@@ -784,32 +784,59 @@
     <!-- Scripts -->
     <script src="script.js" defer></script>
     <script src="auth.js" defer></script>
-    <!-- Reviews modul - načíst před profile-detail.js (bez defer pro zajištění dostupnosti) -->
-    <script src="js/reviews.js"></script>
+    <!-- Reviews modul - načíst před profile-detail.js -->
+    <!-- Používáme reviews.js v rootu kvůli Content-Type problému na Vercelu -->
+    <script src="reviews.js"></script>
     <script src="profile-detail.js" defer></script>
     
     <!-- Zkontrolovat, zda se reviews modul načetl -->
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('🔍 Checking reviews module availability...');
-            console.log('🔍 window.ReviewsSystem:', typeof window.ReviewsSystem);
-            console.log('🔍 window.createReview:', typeof window.createReview);
-            
-            if (!window.ReviewsSystem || !window.createReview) {
-                console.warn('⚠️ Reviews module not loaded, attempting to load...');
+        // Zkontrolovat ihned po načtení stránky
+        (function checkReviewsModule() {
+            // Počkat na načtení reviews.js (který je načten bez defer)
+            setTimeout(function() {
+                if (window.ReviewsSystem && window.createReview) {
+                    console.log('✅ Reviews module is available');
+                    return;
+                }
+                
+                console.warn('⚠️ Reviews module not loaded after 1 second, checking...');
+                console.warn('⚠️ window.ReviewsSystem:', typeof window.ReviewsSystem);
+                console.warn('⚠️ window.createReview:', typeof window.createReview);
+                
+                // Zkusit načíst znovu
+                console.log('⏳ Attempting to load reviews.js from root...');
                 const script = document.createElement('script');
-                script.src = 'js/reviews.js';
+                script.src = 'reviews.js';
+                script.type = 'text/javascript';
+                script.async = false;
                 script.onload = function() {
-                    console.log('✅ Reviews module loaded successfully');
+                    console.log('✅ Reviews module loaded from root');
+                    if (window.ReviewsSystem && window.createReview) {
+                        console.log('✅ Reviews module functions are now available');
+                    } else {
+                        console.error('❌ Reviews module loaded but functions are still undefined');
+                    }
                 };
                 script.onerror = function() {
-                    console.error('❌ Failed to load reviews.js - check file path');
+                    console.error('❌ Failed to load reviews.js from root');
+                    // Zkusit z js/ složky jako fallback
+                    const script2 = document.createElement('script');
+                    script2.src = 'js/reviews.js';
+                    script2.type = 'text/javascript';
+                    script2.async = false;
+                    script2.onload = function() {
+                        console.log('✅ Reviews module loaded from js/ folder (fallback)');
+                    };
+                    script2.onerror = function() {
+                        console.error('❌ Failed to load reviews.js from js/ folder too');
+                        console.error('❌ All attempts to load reviews module failed');
+                    };
+                    document.head.appendChild(script2);
                 };
                 document.head.appendChild(script);
-            } else {
-                console.log('✅ Reviews module is available');
-            }
-        });
+            }, 1000);
+        })();
     </script>
     
     <!-- Test script for back button -->
