@@ -980,6 +980,7 @@ window.renderReviews = renderReviews;
 window.renderRatingsChart = renderRatingsChart;
 window.openReviewPhotoLightbox = openReviewPhotoLightbox;
 window.getUserName = getUserName; // Export pro admin rozhraní
+window.isAdmin = isAdmin; // Export isAdmin jako globální funkce
 window.ReviewsSystem = {
     createReview,
     fetchReviewsForTarget,

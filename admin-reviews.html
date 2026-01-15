@@ -133,7 +133,8 @@
 
     <script src="script.js" defer></script>
     <script src="auth.js" defer></script>
-    <script src="reviews.js" defer></script>
+    <!-- Reviews modul - načíst před inline scriptem -->
+    <script src="reviews.js"></script>
     <script>
         let currentEditingReviewId = null;
         let allAdminReviews = [];
@@ -150,32 +151,45 @@
                 return;
             }
 
-            // Počkat na reviews modul
-            if (!window.ReviewsSystem || !window.isAdmin) {
-                await new Promise(resolve => {
-                    const checkInterval = setInterval(() => {
-                        if (window.ReviewsSystem && window.isAdmin) {
-                            clearInterval(checkInterval);
-                            resolve();
-                        }
-                    }, 100);
-                });
-            }
+            // Počkat na reviews modul a Firebase DB
+            let waitCount = 0;
+            await new Promise((resolve, reject) => {
+                const checkInterval = setInterval(() => {
+                    waitCount++;
+                    if (window.firebaseDb && window.isAdmin && typeof window.isAdmin === 'function') {
+                        clearInterval(checkInterval);
+                        resolve();
+                    } else if (waitCount > 100) { // Max 10 sekund
+                        clearInterval(checkInterval);
+                        console.error('❌ Timeout waiting for reviews module:', {
+                            firebaseDb: !!window.firebaseDb,
+                            isAdmin: typeof window.isAdmin,
+                            ReviewsSystem: !!window.ReviewsSystem
+                        });
+                        reject(new Error('Reviews modul se nenačetl'));
+                    }
+                }, 100);
+            });
 
-            const userIsAdmin = await window.isAdmin(currentUser.uid);
-            if (!userIsAdmin) {
-                alert('Nemáte oprávnění administrátora');
-                window.location.href = 'index.html';
-                return;
-            }
+            try {
+                const userIsAdmin = await window.isAdmin(currentUser.uid);
+                if (!userIsAdmin) {
+                    alert('Nemáte oprávnění administrátora');
+                    window.location.href = 'index.html';
+                    return;
+                }
 
-            // Zobrazit user profile section
-            const userProfileSection = document.getElementById('userProfileSection');
-            if (userProfileSection) {
-                userProfileSection.style.display = 'block';
-            }
+                // Zobrazit user profile section
+                const userProfileSection = document.getElementById('userProfileSection');
+                if (userProfileSection) {
+                    userProfileSection.style.display = 'block';
+                }
 
-            await loadAdminReviews();
+                await loadAdminReviews();
+            } catch (error) {
+                console.error('❌ Error checking admin status:', error);
+                alert('Chyba při kontrole oprávnění: ' + error.message);
+            }
         }
 
         async function loadAdminReviews() {
