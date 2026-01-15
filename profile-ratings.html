@@ -429,24 +429,24 @@
             }
         }
 
-        // Jednoduchá funkce pro načtení a zobrazení všech recenzí
+        // Jednoduchá funkce pro načtení a zobrazení všech recenzí (pouze z profilu)
         async function loadAndDisplayAllReviews(userId) {
             console.log('📚 ZAČÍNÁM NAČÍTAT RECENZE PRO UŽIVATELE:', userId);
             
             try {
-                const { getDocs, collection, collectionGroup } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                const { getDocs, collection } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
                 const allReviews = [];
                 
-                // 1. Načíst recenze na profilu
+                // Načíst recenze na profilu
                 try {
-                    console.log('📖 1. Načítám recenze z profilu...');
+                    console.log('📖 Načítám recenze z profilu...');
                     const profileReviewsRef = collection(window.firebaseDb, 'users', userId, 'reviews');
                     const profileSnap = await getDocs(profileReviewsRef);
-                    console.log('📖 1. Nalezeno recenzí na profilu:', profileSnap.size);
+                    console.log('📖 Nalezeno recenzí na profilu:', profileSnap.size);
                     
                     profileSnap.forEach(doc => {
                         const data = doc.data();
-                        console.log('📖 1. Recenze z profilu:', doc.id, data);
+                        console.log('📖 Recenze z profilu:', doc.id, data);
                         allReviews.push({
                             id: doc.id,
                             ...data,
@@ -455,35 +455,6 @@
                     });
                 } catch (error) {
                     console.error('❌ Chyba při načítání recenzí z profilu:', error);
-                }
-                
-                // 2. Načíst recenze z inzerátů pomocí collectionGroup
-                try {
-                    console.log('📖 2. Načítám recenze z inzerátů...');
-                    const adReviewsGroup = collectionGroup(window.firebaseDb, 'reviews');
-                    const adReviewsSnap = await getDocs(adReviewsGroup);
-                    console.log('📖 2. Nalezeno recenzí celkem (collectionGroup):', adReviewsSnap.size);
-                    
-                    adReviewsSnap.forEach(docSnap => {
-                        const reviewData = docSnap.data();
-                        const parent = docSnap.ref.parent;
-                        const adDoc = parent?.parent;
-                        const inzeraty = adDoc?.parent;
-                        const userDoc = inzeraty?.parent;
-                        
-                        if (userDoc && userDoc.id === userId && inzeraty.id === 'inzeraty') {
-                            console.log('📖 2. Recenze z inzerátu:', docSnap.id, reviewData);
-                            allReviews.push({
-                                id: docSnap.id,
-                                ...reviewData,
-                                type: 'ad',
-                                adId: adDoc.id
-                            });
-                        }
-                    });
-                    console.log('📖 2. Nalezeno recenzí z inzerátů tohoto uživatele:', allReviews.filter(r => r.type === 'ad').length);
-                } catch (error) {
-                    console.error('❌ Chyba při načítání recenzí z inzerátů:', error);
                 }
                 
                 console.log('✅ CELKEM NAČTENO RECENZÍ:', allReviews.length);

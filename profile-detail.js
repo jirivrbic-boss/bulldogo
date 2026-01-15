@@ -294,7 +294,7 @@ async function loadUserServices(userId) {
 // Load user reviews
 async function loadUserReviews(userId) {
     try {
-        const { getDocs, collection, collectionGroup } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        const { getDocs, collection } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
         
         userReviews = [];
         
@@ -313,31 +313,7 @@ async function loadUserReviews(userId) {
             console.warn('⚠️ Error loading profile reviews:', profileError);
         }
         
-        // 2. Načíst recenze na inzerátech uživatele pomocí collectionGroup
-        try {
-            const adReviewsGroup = collectionGroup(window.firebaseDb, 'reviews');
-            const adReviewsSnap = await getDocs(adReviewsGroup);
-            adReviewsSnap.forEach(docSnap => {
-                const reviewData = docSnap.data();
-                // Zkontrolovat, zda recenze patří k inzerátu tohoto uživatele
-                const parent = docSnap.ref.parent; // reviews collection
-                const adDoc = parent?.parent; // adId document
-                const inzeraty = adDoc?.parent; // 'inzeraty' collection
-                const userDoc = inzeraty?.parent; // user uid document
-                
-                if (userDoc && userDoc.id === userId && inzeraty.id === 'inzeraty') {
-                    reviewData.id = docSnap.id;
-                    reviewData.type = 'ad';
-                    reviewData.adId = adDoc.id;
-                    userReviews.push(reviewData);
-                }
-            });
-            console.log('✅ Ad reviews loaded from collectionGroup');
-        } catch (adReviewsError) {
-            console.warn('⚠️ Error loading ad reviews:', adReviewsError);
-        }
-        
-        // 3. Fallback: zkusit root kolekci reviews (pokud existuje)
+        // Fallback: zkusit root kolekci reviews (pokud existuje)
         try {
             const rootReviewsRef = collection(window.firebaseDb, 'reviews');
             const rootReviewsSnap = await getDocs(rootReviewsRef);

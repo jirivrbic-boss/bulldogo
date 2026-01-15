@@ -2301,81 +2301,19 @@ async function submitProfileReview(targetUserId) {
     }
 }
 
-async function submitListingReview(ownerUserId, adId) {
-    try {
-        const currentUser = window.firebaseAuth?.currentUser;
-        if (!currentUser) { showMessage('Pro hodnocení se přihlaste', 'error'); return; }
-        if (currentUser.uid === ownerUserId) { showMessage('Nemůžete hodnotit vlastní inzerát', 'error'); return; }
-
-        const starsEl = document.querySelector(`.stars[data-for="listing"][data-adid="${adId}"]`);
-        const rating = parseInt(starsEl?.getAttribute('data-selected') || '0');
-        const text = (document.getElementById(`listingReviewText_${adId}`)?.value || '').trim();
-        if (rating < 1 || rating > 5) { showMessage('Vyberte počet hvězd (1-5)', 'error'); return; }
-
-        const { setDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
-        const reviewRef = doc(window.firebaseDb, 'users', ownerUserId, 'inzeraty', adId, 'reviews', currentUser.uid);
-        await setDoc(reviewRef, {
-            type: 'ad',
-            adId,
-            rating,
-            text,
-            fromUserId: currentUser.uid,
-            fromUserEmail: currentUser.email || '',
-            updatedAt: new Date()
-        }, { merge: true });
-
-        showMessage('Hodnocení inzerátu uloženo', 'success');
-        loadListingReviews(ownerUserId, adId);
-    } catch (e) {
-        console.error('submitListingReview error', e);
-        showMessage('Nepodařilo se uložit hodnocení', 'error');
-    }
-}
-
-async function loadListingReviews(ownerUserId, adId) {
-    try {
-        const container = document.getElementById(`listingReviews_${adId}`);
-        if (!container) return;
-        container.innerHTML = '<p>Načítám recenze...</p>';
-
-        const { getDocs, collection } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
-        const reviewsRef = collection(window.firebaseDb, 'users', ownerUserId, 'inzeraty', adId, 'reviews');
-        const snap = await getDocs(reviewsRef);
-        const reviews = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        container.innerHTML = renderReviewsList(reviews);
-    } catch (e) {
-        console.error('loadListingReviews error', e);
-    }
-}
-
 async function loadCombinedUserReviews(userId) {
     try {
         const container = document.getElementById(`combinedReviews_${userId}`);
         if (!container) return;
         container.innerHTML = '<p>Načítám recenze...</p>';
 
-        const { getDocs, collection, collectionGroup } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
-        // Recenze profilu
+        const { getDocs, collection } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        // Načíst pouze recenze z profilu uživatele
         const profileReviewsRef = collection(window.firebaseDb, 'users', userId, 'reviews');
         const profileSnap = await getDocs(profileReviewsRef);
         const profileReviews = profileSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-        // Recenze ke všem inzerátům uživatele napříč strukturou
-        const adReviewsGroup = collectionGroup(window.firebaseDb, 'reviews');
-        const adReviews = [];
-        const groupSnap = await getDocs(adReviewsGroup);
-        groupSnap.forEach(docSnap => {
-            const parent = docSnap.ref.parent; // reviews
-            const adDoc = parent?.parent; // adId document
-            const inzeraty = adDoc?.parent; // collection 'inzeraty'
-            const userDoc = inzeraty?.parent; // user uid doc
-            if (userDoc && userDoc.id === userId && inzeraty.id === 'inzeraty') {
-                adReviews.push({ id: docSnap.id, ...docSnap.data() });
-            }
-        });
-
-        const combined = [...profileReviews, ...adReviews];
-        container.innerHTML = renderReviewsList(combined);
+        container.innerHTML = renderReviewsList(profileReviews);
     } catch (e) {
         console.error('loadCombinedUserReviews error', e);
     }
@@ -2413,7 +2351,6 @@ function escapeHtml(str) {
 
 // Expose submit functions
 window.submitProfileReview = submitProfileReview;
-window.submitListingReview = submitListingReview;
 
 // Add CSS for review forms
 const reviewStyles = document.createElement('style');
