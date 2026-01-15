@@ -139,57 +139,90 @@
         let currentEditingReviewId = null;
         let allAdminReviews = [];
 
-        document.addEventListener('DOMContentLoaded', () => {
-            checkAdminAndLoad();
+        document.addEventListener('DOMContentLoaded', async () => {
+            await initAdminReviewsPage();
         });
 
-        async function checkAdminAndLoad() {
-            const currentUser = window.firebaseAuth?.currentUser;
-            if (!currentUser) {
-                alert('Musíte být přihlášeni');
-                window.location.href = 'index.html';
-                return;
+        async function initAdminReviewsPage() {
+            console.log('🔧 Inicializuji stránku admin recenzí...');
+            
+            const auth = window.firebaseAuth;
+            if (!auth) {
+                console.error('❌ Firebase Auth není dostupné');
+                // Počkat na Firebase Auth
+                let waitCount = 0;
+                await new Promise((resolve, reject) => {
+                    const checkInterval = setInterval(() => {
+                        waitCount++;
+                        if (window.firebaseAuth) {
+                            clearInterval(checkInterval);
+                            resolve();
+                        } else if (waitCount > 50) { // Max 5 sekund
+                            clearInterval(checkInterval);
+                            reject(new Error('Firebase Auth se nenačetl'));
+                        }
+                    }, 100);
+                });
             }
-
-            // Počkat na reviews modul a Firebase DB
-            let waitCount = 0;
-            await new Promise((resolve, reject) => {
-                const checkInterval = setInterval(() => {
-                    waitCount++;
-                    if (window.firebaseDb && window.isAdmin && typeof window.isAdmin === 'function') {
-                        clearInterval(checkInterval);
-                        resolve();
-                    } else if (waitCount > 100) { // Max 10 sekund
-                        clearInterval(checkInterval);
-                        console.error('❌ Timeout waiting for reviews module:', {
-                            firebaseDb: !!window.firebaseDb,
-                            isAdmin: typeof window.isAdmin,
-                            ReviewsSystem: !!window.ReviewsSystem
-                        });
-                        reject(new Error('Reviews modul se nenačetl'));
-                    }
-                }, 100);
-            });
-
-            try {
-                const userIsAdmin = await window.isAdmin(currentUser.uid);
-                if (!userIsAdmin) {
-                    alert('Nemáte oprávnění administrátora');
+            
+            // Počkat na přihlášení uživatele pomocí onAuthStateChanged
+            const { onAuthStateChanged } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+            
+            onAuthStateChanged(window.firebaseAuth, async (user) => {
+                console.log('🔐 Auth state changed na admin-reviews.html:', user ? user.email : 'Odhlášen');
+                
+                if (!user) {
+                    console.log('⚠️ Uživatel není přihlášen, přesměrovávám na index');
+                    alert('Musíte být přihlášeni');
                     window.location.href = 'index.html';
                     return;
                 }
-
-                // Zobrazit user profile section
-                const userProfileSection = document.getElementById('userProfileSection');
-                if (userProfileSection) {
-                    userProfileSection.style.display = 'block';
+                
+                // Počkat na reviews modul a Firebase DB
+                let waitCount = 0;
+                try {
+                    await new Promise((resolve, reject) => {
+                        const checkInterval = setInterval(() => {
+                            waitCount++;
+                            if (window.firebaseDb && window.isAdmin && typeof window.isAdmin === 'function') {
+                                clearInterval(checkInterval);
+                                resolve();
+                            } else if (waitCount > 100) { // Max 10 sekund
+                                clearInterval(checkInterval);
+                                console.error('❌ Timeout waiting for reviews module:', {
+                                    firebaseDb: !!window.firebaseDb,
+                                    isAdmin: typeof window.isAdmin,
+                                    ReviewsSystem: !!window.ReviewsSystem
+                                });
+                                reject(new Error('Reviews modul se nenačetl'));
+                            }
+                        }, 100);
+                    });
+                    
+                    // Zkontrolovat admin status
+                    const userIsAdmin = await window.isAdmin(user.uid);
+                    console.log('👤 Admin status pro', user.email, ':', userIsAdmin);
+                    
+                    if (!userIsAdmin) {
+                        console.log('⚠️ Uživatel není admin, přesměrovávám na index');
+                        alert('Nemáte oprávnění administrátora');
+                        window.location.href = 'index.html';
+                        return;
+                    }
+                    
+                    // Zobrazit user profile section
+                    const userProfileSection = document.getElementById('userProfileSection');
+                    if (userProfileSection) {
+                        userProfileSection.style.display = 'block';
+                    }
+                    
+                    // Načíst recenze
+                    await loadAdminReviews();
+                } catch (error) {
+                    console.error('❌ Error in admin reviews initialization:', error);
+                    alert('Chyba při načítání stránky: ' + error.message);
                 }
-
-                await loadAdminReviews();
-            } catch (error) {
-                console.error('❌ Error checking admin status:', error);
-                alert('Chyba při kontrole oprávnění: ' + error.message);
-            }
+            });
         }
 
         async function loadAdminReviews() {
