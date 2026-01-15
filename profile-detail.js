@@ -672,20 +672,10 @@ function updateProfileInfo() {
 function updateProfileStats() {
     console.log('🖼️ updateProfileStats called');
     console.log('🖼️ userServices:', userServices);
-    console.log('🖼️ userReviews:', userReviews);
     
     // Active services count
     const activeServices = userServices.filter(service => service.status === 'active');
     console.log('🖼️ activeServices:', activeServices);
-    
-    // Average rating
-    let averageRating = '-';
-    if (userReviews.length > 0) {
-        const totalRating = userReviews.reduce((sum, review) => sum + (review.rating || 0), 0);
-        averageRating = (totalRating / userReviews.length).toFixed(1);
-    }
-    
-    console.log('🖼️ averageRating:', averageRating);
     
     // Update profile stats section
     const profileStatsEl = document.getElementById('profileStats');
@@ -851,118 +841,14 @@ function createServiceCard(service) {
     `;
 }
 
-// Display user reviews
+// Stará funkce displayUserReviews - nahrazena displayUserReviewsNew()
+// Zachována pro kompatibilitu, ale už se nepoužívá
 async function displayUserReviews() {
-    const reviewsGrid = document.getElementById('userReviewsGrid');
-    
-    if (userReviews.length === 0) {
-        reviewsGrid.innerHTML = `
-            <div style="
-                text-align: center;
-                padding: 60px 20px;
-                background: white;
-                border-radius: 16px;
-                border: 2px dashed #e5e7eb;
-            ">
-                <i class="fas fa-star" style="font-size: 48px; color: #d1d5db; margin-bottom: 16px;"></i>
-                <p style="
-                    font-size: 16px;
-                    color: #6b7280;
-                    margin: 0;
-                    font-weight: 500;
-                ">Uživatel zatím nemá žádné recenze.</p>
-            </div>
-        `;
-        return;
-    }
-    
-    // Načíst jména recenzentů
-    const reviewsWithNames = await Promise.all(
-        userReviews.map(async (review) => {
-            let reviewerName = review.reviewerName || review.reviewerEmail || 'Anonymní';
-            
-            // Pokud máme reviewerEmail, zkus načíst jméno z profilu
-            if (review.reviewerId && !review.reviewerName) {
-                try {
-                    const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
-                    const reviewerProfileRef = doc(window.firebaseDb, 'users', review.reviewerId);
-                    const reviewerProfileSnap = await getDoc(reviewerProfileRef);
-                    
-                    if (reviewerProfileSnap.exists()) {
-                        const reviewerData = reviewerProfileSnap.data();
-                        reviewerName = reviewerData.name || 
-                                       (reviewerData.firstName && reviewerData.lastName 
-                                        ? `${reviewerData.firstName} ${reviewerData.lastName}`.trim()
-                                        : reviewerData.email?.split('@')[0] || reviewerName);
-                    }
-                } catch (error) {
-                    console.warn('⚠️ Nepodařilo se načíst jméno recenzenta:', error);
-                }
-            }
-            
-            return {
-                ...review,
-                reviewerName: reviewerName
-            };
-        })
-    );
-    
-    reviewsGrid.innerHTML = reviewsWithNames.map(review => createReviewCard(review)).join('');
+    console.warn('⚠️ displayUserReviews() is deprecated, using displayUserReviewsNew()');
+    await displayUserReviewsNew();
 }
 
-// Create review card
-function createReviewCard(review) {
-    const stars = '★'.repeat(review.rating || 0) + '☆'.repeat(5 - (review.rating || 0));
-    
-    // Zpracovat createdAt (může být Timestamp nebo Date)
-    let createdAt;
-    if (review.createdAt) {
-        if (typeof review.createdAt.toDate === 'function') {
-            createdAt = review.createdAt.toDate();
-        } else if (review.createdAt instanceof Date) {
-            createdAt = review.createdAt;
-        } else {
-            createdAt = new Date(review.createdAt);
-        }
-    } else {
-        createdAt = new Date();
-    }
-    
-    const timeAgo = getTimeAgo(createdAt);
-    
-    // Použít správná pole: text místo comment, reviewerName (už načtené)
-    const reviewText = review.text || review.comment || 'Recenze bez komentáře.';
-    const reviewerName = review.reviewerName || review.reviewerEmail?.split('@')[0] || 'Anonymní';
-    
-    // Vytvořit hvězdičky s lepším designem
-    const filledStars = '★'.repeat(review.rating || 0);
-    const emptyStars = '☆'.repeat(5 - (review.rating || 0));
-    
-    return `
-        <div class="review-card-modern">
-            <div class="review-card-header">
-                <div class="reviewer-info-modern">
-                    <div class="reviewer-avatar-modern">
-                        <i class="fas fa-user"></i>
-                    </div>
-                    <div class="reviewer-details-modern">
-                        <h4 class="reviewer-name">${reviewerName}</h4>
-                        <span class="review-date-modern">${timeAgo}</span>
-                    </div>
-                </div>
-                <div class="review-rating-modern">
-                    <div class="stars-container">
-                        <span class="stars-filled">${filledStars}</span>
-                        <span class="stars-empty">${emptyStars}</span>
-                    </div>
-                </div>
-            </div>
-            <div class="review-card-content">
-                <p class="review-text">${reviewText}</p>
-            </div>
-        </div>
-    `;
-}
+// createReviewCard funkce byla odstraněna - používáme window.renderReviews() z reviews.js modulu
 
 // View service
 window.viewService = function(serviceId, userId) {
