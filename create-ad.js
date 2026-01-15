@@ -816,29 +816,40 @@
             
             // Nastavit src až po registraci handlerů
             console.log('📸 Nastavuji src obrázku...');
-            cropImage.src = e.target.result;
             
-            // Okamžitá kontrola - pokud je obrázek už načtený (data URL se načte okamžitě)
-            setTimeout(() => {
-                if (cropImage.complete && cropImage.naturalWidth > 0) {
-                    console.log('✅ Obrázek je už načtený (data URL), inicializuji cropper');
-                    initCropper();
-                } else if (!cropperInstance) {
-                    // Fallback - pokud se onload nespustil do 500ms, zkusit znovu
-                    console.log('⚠️ Obrázek se stále načítá, čekám...');
-                    setTimeout(() => {
-                        if (cropImage.complete && cropImage.naturalWidth > 0 && !cropperInstance) {
-                            console.log('⚠️ Fallback: inicializuji cropper po timeoutu');
-                            initCropper();
-                        } else if (!cropperInstance) {
-                            console.error('❌ Obrázek se nepodařilo načíst');
-                            if (cropLoading) {
-                                cropLoading.style.display = 'none';
+            // Pokud je obrázek už načtený (data URL), nastavit src a okamžitě inicializovat
+            if (e.target.result) {
+                cropImage.src = e.target.result;
+                
+                // Okamžitá kontrola - pokud je obrázek už načtený (data URL se načte okamžitě)
+                setTimeout(() => {
+                    if (cropImage.complete && cropImage.naturalWidth > 0 && !cropperInstance) {
+                        console.log('✅ Obrázek je už načtený (data URL), inicializuji cropper');
+                        initCropper();
+                    } else if (!cropperInstance) {
+                        // Fallback - pokud se onload nespustil do 500ms, zkusit znovu
+                        console.log('⚠️ Obrázek se stále načítá, čekám...');
+                        setTimeout(() => {
+                            if (cropImage.complete && cropImage.naturalWidth > 0 && !cropperInstance) {
+                                console.log('⚠️ Fallback: inicializuji cropper po timeoutu');
+                                initCropper();
+                            } else if (!cropperInstance) {
+                                console.error('❌ Obrázek se nepodařilo načíst');
+                                if (cropLoading) {
+                                    cropLoading.style.display = 'none';
+                                }
+                                alert('Nepodařilo se načíst obrázek do editoru. Zkuste to znovu.');
                             }
-                        }
-                    }, 500);
+                        }, 500);
+                    }
+                }, 100);
+            } else {
+                console.error('❌ Data URL není k dispozici');
+                if (cropLoading) {
+                    cropLoading.style.display = 'none';
                 }
-            }, 50);
+                alert('Chyba při načítání obrázku. Zkuste to znovu.');
+            }
         };
         reader.readAsDataURL(file);
     };
@@ -947,19 +958,29 @@
                             previewImagePreview.classList.remove('empty');
                         }
                         console.log('✅ Náhled aktualizován');
+                        
+                        // Zavřít modal až po aktualizaci náhledu
+                        closeImageCropModal();
+                        
+                        // Aktualizovat validaci
+                        if (typeof validateRequired === 'function') {
+                            validateRequired();
+                        }
+                        
+                        console.log('✅ Ořez dokončen, modal zavřen');
                     };
                     reader.readAsDataURL(croppedFile);
+                } else {
+                    // Pokud není náhled, zavřít modal hned
+                    closeImageCropModal();
+                    
+                    // Aktualizovat validaci
+                    if (typeof validateRequired === 'function') {
+                        validateRequired();
+                    }
+                    
+                    console.log('✅ Ořez dokončen, modal zavřen (bez náhledu)');
                 }
-                
-                // Zavřít modal
-                closeImageCropModal();
-                
-                // Aktualizovat validaci
-                if (typeof validateRequired === 'function') {
-                    validateRequired();
-                }
-                
-                console.log('✅ Ořez dokončen, modal zavřen');
             } catch (error) {
                 console.error('❌ Chyba při nastavení souboru:', error);
                 alert('Chyba při uložení oříznutého obrázku. Zkuste to znovu.');

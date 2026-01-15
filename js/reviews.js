@@ -888,11 +888,16 @@ async function renderReviews(containerEl, reviews, options = {}) {
             // Zobrazit max 3 fotky vedle sebe
             const photosToShow = normalizedPhotoUrls.slice(0, 3);
             const remainingCount = normalizedPhotoUrls.length - 3;
+            // Escapovat photoUrls pro bezpečné použití v data atributu
+            const photoUrlsJson = JSON.stringify(normalizedPhotoUrls).replace(/"/g, '&quot;');
             photosHtml = `
                 <div class="review-photos" style="margin-top: 12px;">
                     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-width: 300px;">
                         ${photosToShow.map((url, idx) => `
-                            <div style="position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden; border: 2px solid #e5e7eb; cursor: pointer;" onclick="window.openReviewPhotoLightbox(${JSON.stringify(normalizedPhotoUrls)}, ${idx})">
+                            <div class="review-photo-item" 
+                                 data-photo-urls="${photoUrlsJson}" 
+                                 data-photo-index="${idx}"
+                                 style="position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden; border: 2px solid #e5e7eb; cursor: pointer;">
                                 <img src="${url}" 
                                      alt="Foto ${idx + 1}" 
                                      class="review-photo-thumbnail"
@@ -946,6 +951,38 @@ async function renderReviews(containerEl, reviews, options = {}) {
             </div>
         `;
     }).join('');
+    
+    // Přidat event delegation pro kliknutí na fotky recenzí
+    // Použít setTimeout, aby se to spustilo po vložení HTML do DOM
+    setTimeout(() => {
+        document.querySelectorAll('.review-photo-item').forEach(item => {
+            // Odstranit existující listenery, pokud existují
+            const newItem = item.cloneNode(true);
+            item.parentNode.replaceChild(newItem, item);
+            
+            // Přidat nový listener
+            newItem.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const photoUrlsJson = this.getAttribute('data-photo-urls');
+                const photoIndex = parseInt(this.getAttribute('data-photo-index'), 10);
+                
+                if (photoUrlsJson && typeof window.openReviewPhotoLightbox === 'function') {
+                    try {
+                        // Dekódovat HTML entity zpět na normální JSON
+                        const photoUrls = JSON.parse(photoUrlsJson.replace(/&quot;/g, '"'));
+                        console.log('🖼️ Opening lightbox for review photo:', photoIndex, 'of', photoUrls.length);
+                        window.openReviewPhotoLightbox(photoUrls, photoIndex);
+                    } catch (err) {
+                        console.error('❌ Error parsing photo URLs:', err);
+                    }
+                } else {
+                    console.warn('⚠️ openReviewPhotoLightbox not available or photoUrls missing');
+                }
+            });
+        });
+    }, 100);
     
     console.log('✅ Reviews rendered');
 }
