@@ -1241,7 +1241,9 @@ async function submitReview() {
 
 // Handler pro změnu fotek v recenzi
 function handleReviewPhotosChange(event) {
+    console.log('📸 handleReviewPhotosChange called');
     const files = Array.from(event.target.files || []);
+    console.log('📸 Files selected:', files.length, files.map(f => ({ name: f.name, type: f.type, size: f.size })));
     const MAX_PHOTOS = 3;
     
     // Omezit na maximálně 3 fotky
@@ -1252,6 +1254,7 @@ function handleReviewPhotosChange(event) {
     
     // Přidat nové fotky k existujícím (pokud už nějaké jsou)
     const currentCount = selectedReviewPhotos.length;
+    console.log('📸 Current selectedReviewPhotos count:', currentCount);
     const remainingSlots = MAX_PHOTOS - currentCount;
     
     if (remainingSlots <= 0) {
@@ -1261,7 +1264,9 @@ function handleReviewPhotosChange(event) {
     }
     
     const filesToAdd = files.slice(0, remainingSlots);
+    console.log('📸 Files to add:', filesToAdd.length, filesToAdd.map(f => ({ name: f.name, type: f.type, size: f.size })));
     selectedReviewPhotos = [...selectedReviewPhotos, ...filesToAdd];
+    console.log('📸 selectedReviewPhotos after adding:', selectedReviewPhotos.length, selectedReviewPhotos.map(f => ({ name: f.name, type: f.type, size: f.size })));
     
     // Aktualizovat input (aby se dalo znovu vybrat stejný soubor)
     const dataTransfer = new DataTransfer();
