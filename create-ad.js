@@ -743,7 +743,7 @@
             cropperInstance = null;
         }
         
-        // Zobrazit modal
+        // Zobrazit modal nejdřív
         modal.style.display = 'flex';
         
         // Zobrazit loading spinner
@@ -760,6 +760,7 @@
         // Vynutit přepočítání
         cropImage.style.display = 'none';
         cropImage.style.visibility = 'hidden';
+        cropImage.style.opacity = '0';
         
         // Načíst obrázek pomocí FileReader
         console.log('📁 Načítám soubor pomocí FileReader...', { fileName: file.name, fileSize: file.size, fileType: file.type });
@@ -890,37 +891,73 @@
                 }, 100);
             };
             
-            // Nastavit error handler PRVNÍ
-            cropImage.onerror = function(err) {
-                console.error('❌ Chyba při načítání obrázku do editoru:', err);
-                if (cropLoading) cropLoading.style.display = 'none';
-                modal.style.display = 'none';
-                alert('Nepodařilo se načíst obrázek do editoru. Zkuste to znovu.');
-            };
-            
-            // Nastavit onload handler
-            cropImage.onload = function() {
-                console.log('📸 cropImage.onload event fired');
-                initCropper();
-            };
-            
-            // Nastavit src obrázku
-            console.log('📸 Nastavuji src obrázku...');
-            cropImage.src = dataUrl;
-            
-            // Fallback kontrola pro data URL (mohou se načíst okamžitě, před onload)
-            setTimeout(() => {
-                if (cropImage.complete && cropImage.naturalWidth > 0 && cropImage.naturalHeight > 0 && !cropperInstance && !imageLoadedCallbackFired) {
-                    console.log('✅ Obrázek je už načtený (fallback kontrola - onload se možná nespustil)');
-                    initCropper();
-                } else if (!cropImage.complete) {
-                    console.log('⚠️ Obrázek se stále načítá...', {
-                        complete: cropImage.complete,
-                        naturalWidth: cropImage.naturalWidth,
-                        naturalHeight: cropImage.naturalHeight
+            // Počkat, až se modal zobrazí, pak nastavit handlery a src
+            requestAnimationFrame(() => {
+                // Další requestAnimationFrame pro zajištění, že modal je skutečně zobrazený
+                requestAnimationFrame(() => {
+                    // Nastavit error handler PRVNÍ
+                    cropImage.onerror = function(err) {
+                        console.error('❌ Chyba při načítání obrázku do editoru:', err);
+                        if (cropLoading) cropLoading.style.display = 'none';
+                        modal.style.display = 'none';
+                        alert('Nepodařilo se načíst obrázek do editoru. Zkuste to znovu.');
+                    };
+                    
+                    // Nastavit onload handler
+                    cropImage.onload = function() {
+                        console.log('📸 cropImage.onload event fired');
+                        initCropper();
+                    };
+                    
+                    // Nastavit src obrázku
+                    console.log('📸 Nastavuji src obrázku do cropImage elementu...');
+                    console.log('📸 cropImage element:', {
+                        id: cropImage.id,
+                        tagName: cropImage.tagName,
+                        parentElement: cropImage.parentElement?.tagName,
+                        isConnected: cropImage.isConnected
                     });
-                }
-            }, 300);
+                    
+                    // Vynutit nové načtení - nastavit prázdný src a pak data URL
+                    cropImage.src = '';
+                    setTimeout(() => {
+                        cropImage.src = dataUrl;
+                        console.log('📸 src nastaven na data URL');
+                        
+                        // Fallback kontrola pro data URL (mohou se načíst okamžitě, před onload)
+                        setTimeout(() => {
+                            if (cropImage.complete && cropImage.naturalWidth > 0 && cropImage.naturalHeight > 0 && !cropperInstance && !imageLoadedCallbackFired) {
+                                console.log('✅ Obrázek je už načtený (fallback kontrola - onload se možná nespustil)');
+                                initCropper();
+                            } else if (!cropImage.complete) {
+                                console.log('⚠️ Obrázek se stále načítá...', {
+                                    complete: cropImage.complete,
+                                    naturalWidth: cropImage.naturalWidth,
+                                    naturalHeight: cropImage.naturalHeight,
+                                    src: cropImage.src ? 'nastaveno' : 'nenastaveno',
+                                    srcLength: cropImage.src?.length
+                                });
+                                
+                                // Pokud se obrázek stále nenačítá po 2 sekundách, zkusit znovu
+                                setTimeout(() => {
+                                    if (!imageLoadedCallbackFired && cropImage.complete && cropImage.naturalWidth > 0) {
+                                        console.log('✅ Fallback: Obrázek načten po delším čekání');
+                                        initCropper();
+                                    } else if (!imageLoadedCallbackFired) {
+                                        console.error('❌ Obrázek se nepodařilo načíst ani po 2 sekundách');
+                                        console.error('Stav obrázku:', {
+                                            complete: cropImage.complete,
+                                            naturalWidth: cropImage.naturalWidth,
+                                            naturalHeight: cropImage.naturalHeight,
+                                            src: cropImage.src ? cropImage.src.substring(0, 50) + '...' : 'nenastaveno'
+                                        });
+                                    }
+                                }, 2000);
+                            }
+                        }, 300);
+                    }, 50);
+                });
+            });
         };
         
         reader.onerror = function(err) {
