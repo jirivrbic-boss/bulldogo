@@ -952,7 +952,12 @@
         
         // 4. ULOŽIT SOUBOR (s normalizovaným názvem)
         currentCropFile = file;
-        currentCropInput = document.getElementById('previewImage');
+        // V edit-ad.js se používá editPreviewImage místo previewImage
+        currentCropInput = document.getElementById('editPreviewImage') || document.getElementById('previewImage');
+        
+        if (!currentCropInput) {
+            console.error('[CROP] ❌ Input element pro náhledový obrázek neexistuje');
+        }
         
         // 5. ZNICIT PŘEDCHOZÍ CROPPER INSTANCI
         if (cropperInstance) {
@@ -1124,12 +1129,27 @@
     
     // Funkce pro potvrzení ořezu
     window.confirmImageCrop = function() {
-        if (!cropperInstance || !currentCropInput) {
-            console.error('❌ Cropper instance or input not found');
+        console.debug('[CROP] confirmImageCrop volán');
+        
+        if (!cropperInstance) {
+            console.error('[CROP] ❌ Cropper instance neexistuje');
+            alert('Editor není inicializován. Zavřete modal a zkuste to znovu.');
             return;
         }
         
-        console.log('✂️ Potvrzuji ořez obrázku...');
+        // Zkusit najít input, pokud není nastaven
+        if (!currentCropInput) {
+            currentCropInput = document.getElementById('editPreviewImage') || document.getElementById('previewImage');
+            console.debug('[CROP] Input nalezen při confirm:', !!currentCropInput);
+        }
+        
+        if (!currentCropInput) {
+            console.error('[CROP] ❌ Input element neexistuje');
+            alert('Nepodařilo se najít input pro náhledový obrázek.');
+            return;
+        }
+        
+        console.debug('[CROP] ✂️ Potvrzuji ořez obrázku...');
         
         // Získat oříznutý obrázek jako canvas
         const canvas = cropperInstance.getCroppedCanvas({
