@@ -223,13 +223,22 @@
     {
       "source": "/reset-password",
       "destination": "/reset-password.html"
-    },
-    {
-      "source": "/((?!lib/|api/|fotky/|soubory/|.*\\.(js|css|png|jpg|jpeg|gif|webp|svg|ico|woff|woff2|ttf|eot|json|xml|txt|pdf|zip)).*)",
-      "destination": "/index.html"
     }
   ],
   "headers": [
+    {
+      "source": "/lib/:path*",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/javascript; charset=utf-8"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        }
+      ]
+    },
     {
       "source": "/(.*\\.js)",
       "headers": [
@@ -262,4 +271,3 @@
     }
   ]
 }
-
