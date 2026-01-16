@@ -705,15 +705,94 @@
         }
     }
     
-    // Funkce pro otevření modalu pro ořez obrázku - OPRAVENÁ IMPLEMENTACE
-    window.openImageCropModal = function(file) {
-        console.debug('[CROP] openImageCropModal volán pro:', file.name, 'typ:', file.type, 'velikost:', file.size);
+    // Robustní funkce pro načtení obrázku do IMG elementu
+    function loadImageToCrop(imgEl, objectUrl, timeoutMs = 8000) {
+        return new Promise((resolve, reject) => {
+            let done = false;
+            const t0 = performance.now();
+
+            const cleanup = () => {
+                imgEl.onload = null;
+                imgEl.onerror = null;
+                if (timer) clearTimeout(timer);
+            };
+
+            const fail = (reason, ev) => {
+                if (done) return;
+                done = true;
+                cleanup();
+                const info = {
+                    reason,
+                    src: imgEl.currentSrc || imgEl.src,
+                    complete: imgEl.complete,
+                    naturalWidth: imgEl.naturalWidth,
+                    naturalHeight: imgEl.naturalHeight,
+                    readyState: imgEl.readyState,
+                    timeMs: Math.round(performance.now() - t0),
+                    eventType: ev?.type,
+                };
+                console.error('[CROP] loadImageToCrop failed:', info);
+                reject(info);
+            };
+
+            const ok = () => {
+                if (done) return;
+                done = true;
+                cleanup();
+                const result = {
+                    src: imgEl.currentSrc || imgEl.src,
+                    naturalWidth: imgEl.naturalWidth,
+                    naturalHeight: imgEl.naturalHeight,
+                    timeMs: Math.round(performance.now() - t0),
+                };
+                console.debug('[CROP] loadImageToCrop success:', result);
+                resolve(result);
+            };
+
+            const timer = setTimeout(() => fail("timeout"), timeoutMs);
+
+            // Reset před nastavením src
+            imgEl.removeAttribute("src");
+            imgEl.src = "";
+            imgEl.decoding = "async";
+            imgEl.loading = "eager";
+            imgEl.alt = "crop source";
+
+            // Nastavit handlery PŘED src
+            imgEl.onload = () => {
+                // Někdy complete=true ale naturalWidth=0 → považuj za fail
+                if (imgEl.naturalWidth > 0 && imgEl.naturalHeight > 0) {
+                    ok();
+                } else {
+                    fail("onload_but_zero_dimensions");
+                }
+            };
+
+            imgEl.onerror = (ev) => fail("img_onerror", ev);
+
+            // Nastavit src AŽ PO handlerech
+            imgEl.src = objectUrl;
+
+            // Fallback kontrola (Safari někdy nespustí onload u blob, ale complete se změní)
+            setTimeout(() => {
+                if (!done && imgEl.complete && imgEl.naturalWidth > 0 && imgEl.naturalHeight > 0) {
+                    ok();
+                }
+            }, 150);
+        });
+    }
+
+    // Funkce pro otevření modalu pro ořez obrázku - FINÁLNÍ OPRAVENÁ VERZE
+    window.openImageCropModal = async function(file) {
+        // Normalizovat název souboru pro diakritiku
+        const safeName = file.name.normalize("NFC");
+        console.debug('[CROP] openImageCropModal volán pro:', safeName, 'typ:', file.type, 'velikost:', file.size);
         
         // 1. VALIDACE SOUBORU
         const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
         const maxSize = 10 * 1024 * 1024; // 10 MB
         
-        if (!allowedTypes.includes(file.type.toLowerCase()) && !file.name.match(/\.(jpg|jpeg|png|webp)$/i)) {
+        if (!allowedTypes.includes(file.type.toLowerCase()) && !safeName.match(/\.(jpg|jpeg|png|webp)$/i)) {
             alert('Podporované formáty: JPG, PNG, WEBP');
             return;
         }
@@ -740,7 +819,7 @@
             return;
         }
         
-        // 4. ULOŽIT SOUBOR
+        // 4. ULOŽIT SOUBOR (s normalizovaným názvem)
         currentCropFile = file;
         currentCropInput = document.getElementById('previewImage');
         
@@ -773,48 +852,34 @@
             cropLoadingEl.style.display = 'flex';
         }
         
-        // 9. VYTVOŘIT OBJEKT URL z lokálního souboru (nejjistější způsob, žádný CORS problém)
+        // 9. VYTVOŘIT OBJEKT URL z lokálního souboru
         const objectUrl = URL.createObjectURL(file);
         console.debug('[CROP] Object URL vytvořen:', objectUrl.substring(0, 50) + '...');
         
         // Uložit URL pro pozdější uvolnění
         let currentObjectUrl = objectUrl;
         
-        // 10. FLAG PRO ZAMEZENÍ DUPLICITNÍ INICIALIZACE
-        let cropperInitialized = false;
-        
-        // 11. FUNKCE PRO INICIALIZACI CROPPERU (volá se až po onload)
-        function initializeCropper() {
-            if (cropperInitialized) {
-                console.debug('[CROP] Cropper už je inicializovaný, přeskočím');
-                return;
-            }
-            
-            // Ověřit, že obrázek je skutečně načtený
-            if (!cropImageEl.complete || cropImageEl.naturalWidth === 0 || cropImageEl.naturalHeight === 0) {
-                console.warn('[CROP] Obrázek není plně načtený:', {
-                    complete: cropImageEl.complete,
-                    naturalWidth: cropImageEl.naturalWidth,
-                    naturalHeight: cropImageEl.naturalHeight
+        // 10. POČKAT, AŽ SE MODAL ZOBRAZÍ (requestAnimationFrame)
+        await new Promise(resolve => {
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    resolve();
                 });
-                return;
-            }
+            });
+        });
+        
+        // 11. NAČÍST OBRÁZEK POMOCÍ ROBUSTNÍ FUNKCE
+        try {
+            const result = await loadImageToCrop(cropImageEl, objectUrl);
+            console.debug('[CROP] img loaded:', result);
             
-            if (cropperInstance) {
-                console.warn('[CROP] Cropper instance už existuje');
-                return;
-            }
-            
-            // Ověřit, že modal je skutečně viditelný (důležité pro správný výpočet rozměrů)
+            // 12. INICIALIZOVAT CROPPER (až po onload a po zobrazení modalu)
+            // Ověřit, že modal je skutečně viditelný
             const modalRect = modal.getBoundingClientRect();
             if (modalRect.width === 0 || modalRect.height === 0) {
                 console.warn('[CROP] Modal není viditelný, čekám...', modalRect);
-                setTimeout(initializeCropper, 100);
-                return;
+                await new Promise(resolve => setTimeout(resolve, 100));
             }
-            
-            cropperInitialized = true;
-            console.debug('[CROP] Inicializuji Cropper, rozměry obrázku:', cropImageEl.naturalWidth, 'x', cropImageEl.naturalHeight);
             
             // Skrýt loading
             if (cropLoadingEl) {
@@ -829,110 +894,76 @@
             cropImageEl.style.maxWidth = '100%';
             cropImageEl.style.height = 'auto';
             
-            // Inicializovat Cropper po krátkém zpoždění (aby se DOM updatoval)
-            setTimeout(function() {
-                try {
-                    if (cropperInstance) {
-                        console.warn('[CROP] Cropper už existuje při vytváření');
-                        return;
-                    }
-                    
-                    console.debug('[CROP] Vytvářím Cropper instanci...');
-                    cropperInstance = new Cropper(cropImageEl, {
-                        aspectRatio: 4 / 3,
-                        viewMode: 1,
-                        dragMode: 'move',
-                        autoCropArea: 0.8,
-                        restore: false,
-                        guides: true,
-                        center: true,
-                        highlight: false,
-                        cropBoxMovable: true,
-                        cropBoxResizable: true,
-                        toggleDragModeOnDblclick: false,
-                        responsive: true,
-                        minContainerWidth: 300,
-                        minContainerHeight: 225,
-                        ready: function() {
-                            console.debug('[CROP] ✅✅✅ Cropper je READY!');
-                            if (cropLoadingEl) {
-                                cropLoadingEl.style.display = 'none';
-                            }
-                        },
-                        crop: function(event) {
-                            // Debug pro crop event (volitelné)
-                            // console.debug('[CROP] Crop box změněn:', event.detail);
-                        }
-                    });
-                    console.debug('[CROP] Cropper instance vytvořena úspěšně');
-                } catch (error) {
-                    console.error('[CROP] ❌ Chyba při vytváření Cropper:', error);
-                    alert('Chyba při inicializaci editoru: ' + error.message);
-                    modal.style.display = 'none';
-                    if (cropLoadingEl) cropLoadingEl.style.display = 'none';
-                    URL.revokeObjectURL(currentObjectUrl);
-                }
-            }, 100);
-        }
-        
-        // 12. NASTAVIT ERROR HANDLER PRVNÍ (před nastavením src)
-        cropImageEl.onerror = function(errorEvent) {
-            console.error('[CROP] ❌ Chyba při načítání obrázku do IMG elementu');
-            console.error('[CROP] Error details:', {
-                errorType: errorEvent.type,
-                src: cropImageEl.src ? cropImageEl.src.substring(0, 100) : 'nenastaveno',
-                complete: cropImageEl.complete,
-                naturalWidth: cropImageEl.naturalWidth,
-                naturalHeight: cropImageEl.naturalHeight
-            });
+            // Inicializovat Cropper po krátkém zpoždění
+            await new Promise(resolve => setTimeout(resolve, 100));
             
-            alert('Nepodařilo se načíst obrázek. Zkuste jiný soubor nebo jiný formát obrázku.');
+            try {
+                if (cropperInstance) {
+                    console.warn('[CROP] Cropper už existuje při vytváření');
+                    return;
+                }
+                
+                console.debug('[CROP] Vytvářím Cropper instanci...');
+                cropperInstance = new Cropper(cropImageEl, {
+                    aspectRatio: 4 / 3,
+                    viewMode: 1,
+                    dragMode: 'move',
+                    autoCropArea: 0.8,
+                    restore: false,
+                    guides: true,
+                    center: true,
+                    highlight: false,
+                    cropBoxMovable: true,
+                    cropBoxResizable: true,
+                    toggleDragModeOnDblclick: false,
+                    responsive: true,
+                    minContainerWidth: 300,
+                    minContainerHeight: 225,
+                    ready: function() {
+                        console.debug('[CROP] ✅✅✅ Cropper je READY!');
+                        if (cropLoadingEl) {
+                            cropLoadingEl.style.display = 'none';
+                        }
+                    }
+                });
+                console.debug('[CROP] Cropper instance vytvořena úspěšně');
+                
+                // Zavolat resize pro zajištění správných rozměrů
+                requestAnimationFrame(() => {
+                    if (cropperInstance && typeof cropperInstance.resize === 'function') {
+                        cropperInstance.resize();
+                    }
+                });
+            } catch (error) {
+                console.error('[CROP] ❌ Chyba při vytváření Cropper:', error);
+                alert('Chyba při inicializaci editoru: ' + error.message);
+                modal.style.display = 'none';
+                if (cropLoadingEl) cropLoadingEl.style.display = 'none';
+                URL.revokeObjectURL(currentObjectUrl);
+            }
+        } catch (err) {
+            console.error('[CROP] img load failed:', err);
+            alert('Nepodařilo se načíst obrázek. Zkuste jiný soubor nebo formát obrázku.\n\nDetaily: ' + err.reason);
             modal.style.display = 'none';
             if (cropLoadingEl) cropLoadingEl.style.display = 'none';
             URL.revokeObjectURL(currentObjectUrl);
-        };
+        }
         
-        // 13. NASTAVIT ONLOAD HANDLER (před nastavením src)
-        cropImageEl.onload = function() {
-            console.debug('[CROP] 📸 IMG onload event fired - obrázek je načtený');
-            console.debug('[CROP] Image state:', {
-                complete: cropImageEl.complete,
-                naturalWidth: cropImageEl.naturalWidth,
-                naturalHeight: cropImageEl.naturalHeight,
-                clientWidth: cropImageEl.clientWidth,
-                clientHeight: cropImageEl.clientHeight
-            });
-            
-            // Inicializovat cropper až po onload (kritické!)
-            initializeCropper();
-        };
-        
-        // 14. NASTAVIT SRC (po zobrazení modalu a nastavení handlerů)
-        // Počkat, až se modal zobrazí a DOM se updatuje
-        requestAnimationFrame(function() {
-            requestAnimationFrame(function() {
-                console.debug('[CROP] Nastavuji src obrázku na object URL...');
-                cropImageEl.src = objectUrl;
-                
-                // Fallback kontrola pro cached obrázek (pokud se onload nespustí)
-                setTimeout(function() {
-                    if (cropImageEl.complete && cropImageEl.naturalWidth > 0 && cropImageEl.naturalHeight > 0 && !cropperInitialized) {
-                        console.debug('[CROP] ✅ Obrázek už je načtený (cached), inicializuji...');
-                        initializeCropper();
-                    } else if (!cropperInitialized && !cropImageEl.complete) {
-                        console.warn('[CROP] ⏳ Obrázek se stále načítá po 500ms...');
-                    }
-                }, 500);
-            });
-        });
-        
-        // 15. UKLIDIT OBJECT URL při zavření modalu
+        // 13. UKLIDIT OBJECT URL při zavření modalu
         const originalCloseModal = window.closeImageCropModal;
         window.closeImageCropModal = function() {
             console.debug('[CROP] Zavírám modal, uklízím object URL');
             if (currentObjectUrl) {
                 URL.revokeObjectURL(currentObjectUrl);
                 currentObjectUrl = null;
+            }
+            if (cropperInstance) {
+                try {
+                    cropperInstance.destroy();
+                    cropperInstance = null;
+                } catch (e) {
+                    console.warn('[CROP] Chyba při ničení cropperu:', e);
+                }
             }
             if (originalCloseModal) {
                 originalCloseModal.call(this);
