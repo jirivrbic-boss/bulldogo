@@ -762,22 +762,21 @@
         cropImage.style.visibility = 'hidden';
         cropImage.style.opacity = '0';
         
-        // Načíst obrázek pomocí FileReader
-        console.log('📁 Načítám soubor pomocí FileReader...', { fileName: file.name, fileSize: file.size, fileType: file.type });
+        // Vytvořit Blob URL přímo z File objektu (spolehlivější než data URL)
+        const blobUrl = URL.createObjectURL(file);
+        console.log('📁 Vytvořil Blob URL přímo z File objektu:', { fileName: file.name, fileSize: file.size, fileType: file.type });
         
+        // Také připravit data URL jako fallback pomocí FileReader
+        let dataUrl = null;
         const reader = new FileReader();
-        
         reader.onload = function(e) {
-            console.log('✅ FileReader načetl soubor, délka data URL:', e.target.result?.length);
-            const dataUrl = e.target.result;
-            if (!dataUrl) {
-                console.error('❌ Data URL není k dispozici');
-                if (cropLoading) cropLoading.style.display = 'none';
-                modal.style.display = 'none';
-                alert('Chyba při načítání obrázku. Zkuste to znovu.');
-                return;
-            }
-            
+            dataUrl = e.target.result;
+            console.log('✅ FileReader také načetl soubor (jako fallback), délka data URL:', dataUrl?.length);
+        };
+        reader.readAsDataURL(file);
+        
+        // Hlavní logika pro načtení obrázku (použijeme blobUrl, dataUrl jako fallback)
+        (function() {
             let imageLoadedCallbackFired = false;
             
             // Funkce pro inicializaci cropperu
@@ -895,12 +894,49 @@
             requestAnimationFrame(() => {
                 // Další requestAnimationFrame pro zajištění, že modal je skutečně zobrazený
                 requestAnimationFrame(() => {
-                    // Nastavit error handler PRVNÍ
-                    cropImage.onerror = function(err) {
-                        console.error('❌ Chyba při načítání obrázku do editoru:', err);
+                    // Ověřit, že data URL je platná
+                    if (!dataUrl || !dataUrl.startsWith('data:')) {
+                        console.error('❌ Neplatná data URL:', dataUrl ? dataUrl.substring(0, 50) : 'prázdná');
                         if (cropLoading) cropLoading.style.display = 'none';
                         modal.style.display = 'none';
-                        alert('Nepodařilo se načíst obrázek do editoru. Zkuste to znovu.');
+                        alert('Chyba při načítání obrázku. Zkuste to znovu.');
+                        return;
+                    }
+                    
+                    // Nastavit error handler PRVNÍ
+                    let errorCount = 0;
+                    cropImage.onerror = function(err) {
+                        errorCount++;
+                        console.error('❌ Chyba při načítání obrázku do editoru (pokus', errorCount, '):', err);
+                        
+                        // Pokud používáme Blob URL a máme data URL, zkusit data URL jako fallback
+                        if (errorCount === 1 && dataUrl && cropImage.src === blobUrl) {
+                            console.log('🔄 Zkouším použít Data URL jako fallback...');
+                            cropImage.src = dataUrl;
+                            return; // Dát šanci data URL
+                        }
+                        
+                        console.error('❌ Podrobnosti o chybě:', {
+                            errorType: err.type,
+                            target: err.target?.tagName,
+                            src: err.target?.src ? err.target.src.substring(0, 100) + '...' : 'nenastaveno',
+                            naturalWidth: err.target?.naturalWidth,
+                            naturalHeight: err.target?.naturalHeight,
+                            complete: err.target?.complete
+                        });
+                        
+                        // Neukončovat hned, dát šanci na opravu
+                        if (errorCount >= 2) {
+                            setTimeout(() => {
+                                if (!cropImage.complete || cropImage.naturalWidth === 0) {
+                                    if (cropLoading) cropLoading.style.display = 'none';
+                                    modal.style.display = 'none';
+                                    // Uklidit blob URL
+                                    URL.revokeObjectURL(blobUrl);
+                                    alert('Nepodařilo se načíst obrázek do editoru. Zkuste to znovu s jiným obrázkem.');
+                                }
+                            }, 1000);
+                        }
                     };
                     
                     // Nastavit onload handler
@@ -909,22 +945,28 @@
                         initCropper();
                     };
                     
-                    // Nastavit src obrázku
-                    console.log('📸 Nastavuji src obrázku do cropImage elementu...');
+                    // Nastavit src obrázku - použít Blob URL jako primární zdroj
+                    console.log('📸 Nastavuji src obrázku do cropImage elementu (Blob URL)...');
                     console.log('📸 cropImage element:', {
                         id: cropImage.id,
                         tagName: cropImage.tagName,
                         parentElement: cropImage.parentElement?.tagName,
-                        isConnected: cropImage.isConnected
+                        isConnected: cropImage.isConnected,
+                        currentSrc: cropImage.src ? 'má src' : 'nemá src'
                     });
                     
-                    // Vynutit nové načtení - nastavit prázdný src a pak data URL
-                    cropImage.src = '';
-                    setTimeout(() => {
-                        cropImage.src = dataUrl;
-                        console.log('📸 src nastaven na data URL');
-                        
-                        // Fallback kontrola pro data URL (mohou se načíst okamžitě, před onload)
+                    // Nastavit src na Blob URL
+                    cropImage.src = blobUrl;
+                    console.log('📸 src nastaven na Blob URL');
+                    
+                    // Uklidit blob URL při zavření modalu
+                    const originalCloseModal = window.closeImageCropModal;
+                    window.closeImageCropModal = function() {
+                        URL.revokeObjectURL(blobUrl);
+                        if (originalCloseModal) originalCloseModal();
+                    };
+                    
+                        // Fallback kontrola pro Blob URL (mohou se načíst okamžitě, před onload)
                         setTimeout(() => {
                             if (cropImage.complete && cropImage.naturalWidth > 0 && cropImage.naturalHeight > 0 && !cropperInstance && !imageLoadedCallbackFired) {
                                 console.log('✅ Obrázek je už načtený (fallback kontrola - onload se možná nespustil)');
@@ -934,8 +976,7 @@
                                     complete: cropImage.complete,
                                     naturalWidth: cropImage.naturalWidth,
                                     naturalHeight: cropImage.naturalHeight,
-                                    src: cropImage.src ? 'nastaveno' : 'nenastaveno',
-                                    srcLength: cropImage.src?.length
+                                    src: cropImage.src ? 'nastaveno (Blob URL)' : 'nenastaveno'
                                 });
                                 
                                 // Pokud se obrázek stále nenačítá po 2 sekundách, zkusit znovu
@@ -949,25 +990,15 @@
                                             complete: cropImage.complete,
                                             naturalWidth: cropImage.naturalWidth,
                                             naturalHeight: cropImage.naturalHeight,
-                                            src: cropImage.src ? cropImage.src.substring(0, 50) + '...' : 'nenastaveno'
+                                            src: cropImage.src ? 'Blob URL' : 'nenastaveno'
                                         });
                                     }
                                 }, 2000);
                             }
                         }, 300);
-                    }, 50);
                 });
             });
-        };
-        
-        reader.onerror = function(err) {
-            console.error('❌ Chyba při čtení souboru:', err);
-            if (cropLoading) cropLoading.style.display = 'none';
-            modal.style.display = 'none';
-            alert('Chyba při čtení obrázku. Zkuste to znovu.');
-        };
-        
-        reader.readAsDataURL(file);
+        })();
     };
     
     // Funkce pro zavření modalu
