@@ -824,16 +824,16 @@
         currentCropInput = document.getElementById('previewImage');
         
         // 5. ZNICIT PŘEDCHOZÍ CROPPER INSTANCI
-        if (cropperInstance) {
+            if (cropperInstance) {
             console.debug('[CROP] Ničím předchozí cropper instanci');
-            try {
-                cropperInstance.destroy();
+                try {
+                    cropperInstance.destroy();
             } catch (e) {
                 console.warn('[CROP] Chyba při ničení cropperu:', e);
+                }
+                cropperInstance = null;
             }
-            cropperInstance = null;
-        }
-        
+            
         // 6. RESETOVAT OBRÁZEK - kompletní reset
         cropImageEl.onload = null;
         cropImageEl.onerror = null;
@@ -844,7 +844,7 @@
         cropImageEl.style.opacity = '0';
         
         // 7. ZOBRAZIT MODAL (před načítáním obrázku)
-        modal.style.display = 'flex';
+            modal.style.display = 'flex';
         console.debug('[CROP] Modal zobrazen');
         
         // 8. ZOBRAZIT LOADING
@@ -858,7 +858,7 @@
         
         // Uložit URL pro pozdější uvolnění
         let currentObjectUrl = objectUrl;
-        
+            
         // 10. POČKAT, AŽ SE MODAL ZOBRAZÍ (requestAnimationFrame)
         await new Promise(resolve => {
             requestAnimationFrame(() => {
@@ -885,45 +885,45 @@
             if (cropLoadingEl) {
                 cropLoadingEl.style.display = 'none';
                 console.debug('[CROP] Loading skryt');
-            }
-            
+                }
+                
             // Zobrazit obrázek
             cropImageEl.style.display = 'block';
             cropImageEl.style.visibility = 'visible';
             cropImageEl.style.opacity = '1';
             cropImageEl.style.maxWidth = '100%';
             cropImageEl.style.height = 'auto';
-            
+                
             // Inicializovat Cropper po krátkém zpoždění
             await new Promise(resolve => setTimeout(resolve, 100));
             
-            try {
-                if (cropperInstance) {
+                    try {
+                        if (cropperInstance) {
                     console.warn('[CROP] Cropper už existuje při vytváření');
-                    return;
-                }
-                
+                            return;
+                        }
+                        
                 console.debug('[CROP] Vytvářím Cropper instanci...');
                 cropperInstance = new Cropper(cropImageEl, {
-                    aspectRatio: 4 / 3,
-                    viewMode: 1,
-                    dragMode: 'move',
-                    autoCropArea: 0.8,
-                    restore: false,
-                    guides: true,
-                    center: true,
-                    highlight: false,
-                    cropBoxMovable: true,
-                    cropBoxResizable: true,
-                    toggleDragModeOnDblclick: false,
-                    responsive: true,
-                    minContainerWidth: 300,
-                    minContainerHeight: 225,
-                    ready: function() {
+                            aspectRatio: 4 / 3,
+                            viewMode: 1,
+                            dragMode: 'move',
+                            autoCropArea: 0.8,
+                            restore: false,
+                            guides: true,
+                            center: true,
+                            highlight: false,
+                            cropBoxMovable: true,
+                            cropBoxResizable: true,
+                            toggleDragModeOnDblclick: false,
+                            responsive: true,
+                            minContainerWidth: 300,
+                            minContainerHeight: 225,
+                            ready: function() {
                         console.debug('[CROP] ✅✅✅ Cropper je READY!');
                         if (cropLoadingEl) {
                             cropLoadingEl.style.display = 'none';
-                        }
+                                }
                     }
                 });
                 console.debug('[CROP] Cropper instance vytvořena úspěšně');
@@ -932,19 +932,19 @@
                 requestAnimationFrame(() => {
                     if (cropperInstance && typeof cropperInstance.resize === 'function') {
                         cropperInstance.resize();
-                    }
-                });
-            } catch (error) {
+                            }
+                        });
+                    } catch (error) {
                 console.error('[CROP] ❌ Chyba při vytváření Cropper:', error);
                 alert('Chyba při inicializaci editoru: ' + error.message);
-                modal.style.display = 'none';
+                        modal.style.display = 'none';
                 if (cropLoadingEl) cropLoadingEl.style.display = 'none';
                 URL.revokeObjectURL(currentObjectUrl);
-            }
+                    }
         } catch (err) {
             console.error('[CROP] img load failed:', err);
             alert('Nepodařilo se načíst obrázek. Zkuste jiný soubor nebo formát obrázku.\n\nDetaily: ' + err.reason);
-            modal.style.display = 'none';
+                modal.style.display = 'none';
             if (cropLoadingEl) cropLoadingEl.style.display = 'none';
             URL.revokeObjectURL(currentObjectUrl);
         }
@@ -967,7 +967,7 @@
             }
             if (originalCloseModal) {
                 originalCloseModal.call(this);
-            }
+                                }
         };
     };
     
@@ -980,7 +980,7 @@
         }
         if (cropperInstance) {
             try {
-                cropperInstance.destroy();
+            cropperInstance.destroy();
                 console.debug('[CROP] Cropper instance zničena');
             } catch (e) {
                 console.warn('[CROP] Chyba při ničení cropperu:', e);
