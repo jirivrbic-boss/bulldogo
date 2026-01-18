@@ -762,6 +762,24 @@ function displayOtherAds(ads) {
             </div>
         `;
     }).join('');
+    
+    // Přidat event listenery pro obrázky - přidat třídu .loaded po načtení
+    const images = otherAdsGrid.querySelectorAll('.ad-thumb img');
+    images.forEach(img => {
+        if (img.complete && img.naturalWidth > 0) {
+            // Obrázek už je načtený
+            img.classList.add('loaded');
+        } else {
+            // Obrázek se ještě načítá
+            img.addEventListener('load', function() {
+                this.classList.add('loaded');
+            });
+            img.addEventListener('error', function() {
+                // I při chybě přidat třídu, aby se spinner skryl
+                this.classList.add('loaded');
+            });
+        }
+    });
 }
 
 // View ad - make it globally available

@@ -763,6 +763,24 @@ function displayUserServices() {
     console.log('🖼️ Creating service cards for:', activeServices.length, 'services');
     servicesGrid.innerHTML = activeServices.map(service => createServiceCard(service)).join('');
     console.log('🖼️ Service cards created and inserted');
+    
+    // Přidat event listenery pro obrázky - přidat třídu .loaded po načtení
+    const images = servicesGrid.querySelectorAll('.ad-thumb img, .ad-thumb picture img');
+    images.forEach(img => {
+        if (img.complete && img.naturalWidth > 0) {
+            // Obrázek už je načtený
+            img.classList.add('loaded');
+        } else {
+            // Obrázek se ještě načítá
+            img.addEventListener('load', function() {
+                this.classList.add('loaded');
+            });
+            img.addEventListener('error', function() {
+                // I při chybě přidat třídu, aby se spinner skryl
+                this.classList.add('loaded');
+            });
+        }
+    });
 }
 
 // Create service card

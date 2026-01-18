@@ -5670,7 +5670,9 @@ footer.footer,
     padding: 2.5rem 0 1rem;
     border-top: 1px solid #e5e7eb;
     width: 100%;
+    max-width: 100%;
     box-sizing: border-box;
+    overflow-x: hidden;
 }
 
 footer.footer .container,
@@ -5679,6 +5681,36 @@ footer.footer .container,
     margin: 0 auto;
     padding: 0 2rem;
     box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+}
+
+/* Footer na stránkách detailu (ad-detail, profile-detail) - zarovnat na šířku stránky */
+body:has(.ad-detail-content) .footer,
+body:has(.profile-detail-main) .footer,
+.ad-detail-content ~ .footer,
+.profile-detail-main ~ .footer {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+}
+
+body:has(.ad-detail-content) .footer .container,
+body:has(.profile-detail-main) .footer .container,
+.ad-detail-content ~ .footer .container,
+.profile-detail-main ~ .footer .container {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
+    box-sizing: border-box !important;
 }
 
 footer.footer .footer-content,
@@ -7871,13 +7903,27 @@ html {
 	border: 1px solid #f0f0f0;
 	box-shadow: 0 5px 20px rgba(0,0,0,0.1);
     animation: modalSlideIn 0.3s ease-out;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
     margin: auto;
     box-sizing: border-box;
 	position: relative;
     flex-shrink: 0;
     height: auto;
     min-height: auto;
+    /* Skrýt scrollbar, ale zachovat scrollování */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE a Edge */
+    /* Plynulé scrollování */
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch; /* Plynulé scrollování na iOS */
+}
+
+/* Skrýt scrollbar v Chrome, Safari a Opera */
+.modal-content::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
 }
 
 /* Report Ad Modal - užší než standardní */
@@ -9282,12 +9328,25 @@ html {
     text-align: center;
     padding: 3rem;
     color: #666;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .loading-services i {
     font-size: 2rem;
     margin-bottom: 1rem;
     color: #f77c00;
+}
+
+.loading-services p {
+    margin: 0;
+    font-size: 1rem;
+    color: #666;
 }
 
 .no-services {
@@ -10421,12 +10480,23 @@ body:has(.users-container) .main-content .container,
 }
 
 /* Smooth scrolling pro modaly */
-.modal-content::-webkit-scrollbar,
+/* Skrýt scrollbar pro auth modal - zachovat pro ostatní modaly */
+.modal-content.auth-with-hero::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+}
+
+.modal-content.auth-with-hero {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE a Edge */
+}
+
+/* Ostatní modaly mohou mít viditelný scrollbar */
 .instagram-profile-content::-webkit-scrollbar {
     width: 8px;
 }
 
-.modal-content::-webkit-scrollbar-track,
 .instagram-profile-content::-webkit-scrollbar-track {
     background: #f1f1f1;
     border-radius: 4px;
@@ -17661,6 +17731,16 @@ body.chat-page .message.other .message-content { margin-right: auto !important; 
         height: auto !important;
         min-height: auto !important;
         border-radius: 15px !important;
+        /* Skrýt scrollbar na mobilu také */
+        scrollbar-width: none !important; /* Firefox */
+        -ms-overflow-style: none !important; /* IE a Edge */
+    }
+    
+    /* Skrýt scrollbar v Chrome, Safari a Opera na mobilu */
+    .modal-content::-webkit-scrollbar {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
     }
     
     .modal-content.auth-with-hero {
@@ -17841,10 +17921,43 @@ div[class*="mc-"] button {
 /* ===== AGRESIVNÍ OPRAVA PROFILE-DETAIL OVERFLOW ===== */
 /* Zajistit, že pozadí NIKDY nejde mimo stránku */
 body:has(.ad-detail-content),
-html:has(.ad-detail-content) {
+html:has(.ad-detail-content),
+body:has(.profile-detail-main),
+html:has(.profile-detail-main) {
     overflow-x: hidden !important;
     max-width: 100% !important;
     width: 100% !important;
+}
+
+/* Footer na stránkách detailu - zajistit správné zarovnání */
+body:has(.ad-detail-content) footer.footer,
+body:has(.profile-detail-main) footer.footer,
+body:has(.ad-detail-content) .footer,
+body:has(.profile-detail-main) .footer {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+    position: relative !important;
+    left: 0 !important;
+    right: 0 !important;
+}
+
+body:has(.ad-detail-content) footer.footer .container,
+body:has(.profile-detail-main) footer.footer .container,
+body:has(.ad-detail-content) .footer .container,
+body:has(.profile-detail-main) .footer .container {
+    width: 100% !important;
+    max-width: 1400px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
+    box-sizing: border-box !important;
 }
 
 .main-content:has(.ad-detail-content) {
