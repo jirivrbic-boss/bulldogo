@@ -5686,9 +5686,11 @@ footer.footer .container,
 }
 
 /* Footer na stránkách detailu (ad-detail, profile-detail) - zarovnat stejně jako main-content */
-/* Použít stejné CSS jako .main-content */
+/* Použít stejné CSS jako .main-content - PŘEPISUJE VŠECHNY DALŠÍ PRAVIDLA */
 body:has(.ad-detail-content) .footer,
 body:has(.profile-detail-main) .footer,
+body:has(.ad-detail-content) footer.footer,
+body:has(.profile-detail-main) footer.footer,
 .ad-detail-content ~ .footer,
 .profile-detail-main ~ .footer {
     margin-left: 70px !important;
@@ -5720,7 +5722,9 @@ body:has(.profile-detail-main) .footer .container,
 
 /* Footer na detail stránkách při collapsed sidebar */
 body.sidebar-collapsed:has(.ad-detail-content) .footer,
-body.sidebar-collapsed:has(.profile-detail-main) .footer {
+body.sidebar-collapsed:has(.profile-detail-main) .footer,
+body.sidebar-collapsed:has(.ad-detail-content) footer.footer,
+body.sidebar-collapsed:has(.profile-detail-main) footer.footer {
     margin-left: 0 !important;
     width: 100% !important;
     max-width: 100% !important;
@@ -5730,6 +5734,8 @@ body.sidebar-collapsed:has(.profile-detail-main) .footer {
 @media (max-width: 768px) {
     body:has(.ad-detail-content) .footer,
     body:has(.profile-detail-main) .footer,
+    body:has(.ad-detail-content) footer.footer,
+    body:has(.profile-detail-main) footer.footer,
     .ad-detail-content ~ .footer,
     .profile-detail-main ~ .footer {
         margin-left: 0 !important;
@@ -17971,13 +17977,14 @@ html:has(.profile-detail-main) {
 }
 
 /* Footer na stránkách detailu - zajistit správné zarovnání */
+/* Footer na detail stránkách - zarovnat stejně jako main-content - PŘEPISUJE VŠECHNY PŘEDCHOZÍ PRAVIDLA */
 body:has(.ad-detail-content) footer.footer,
 body:has(.profile-detail-main) footer.footer,
 body:has(.ad-detail-content) .footer,
 body:has(.profile-detail-main) .footer {
-    width: 100% !important;
-    max-width: 100% !important;
-    margin-left: 0 !important;
+    margin-left: 70px !important;
+    width: calc(100% - 70px) !important;
+    max-width: calc(100% - 70px) !important;
     margin-right: 0 !important;
     padding-left: 0 !important;
     padding-right: 0 !important;
