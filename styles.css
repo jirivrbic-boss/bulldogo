@@ -5673,6 +5673,7 @@ footer.footer,
     max-width: 100%;
     box-sizing: border-box;
     overflow-x: hidden;
+    margin-top: 0;
 }
 
 footer.footer .container,
@@ -5694,6 +5695,8 @@ body:has(.profile-detail-main) footer.footer,
 .ad-detail-content ~ .footer,
 .profile-detail-main ~ .footer {
     margin-left: 70px !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
     min-height: auto !important;
     background: #ffffff !important;
     transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1) !important;
@@ -5704,8 +5707,8 @@ body:has(.profile-detail-main) footer.footer,
     margin-right: 0 !important;
     padding-left: 0 !important;
     padding-right: 0 !important;
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
+    padding-top: 2.5rem !important;
+    padding-bottom: 1rem !important;
 }
 
 body:has(.ad-detail-content) .footer .container,
@@ -5742,8 +5745,8 @@ body.sidebar-collapsed:has(.profile-detail-main) footer.footer {
         margin-right: 0 !important;
         padding-left: 0 !important;
         padding-right: 0 !important;
-        padding-top: 0 !important;
-        padding-bottom: 0 !important;
+    padding-top: 2.5rem !important;
+    padding-bottom: 1rem !important;
         width: 100% !important;
         max-width: 100% !important;
         min-width: 100% !important;
@@ -17983,11 +17986,15 @@ body:has(.profile-detail-main) footer.footer,
 body:has(.ad-detail-content) .footer,
 body:has(.profile-detail-main) .footer {
     margin-left: 70px !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
     width: calc(100% - 70px) !important;
     max-width: calc(100% - 70px) !important;
     margin-right: 0 !important;
     padding-left: 0 !important;
     padding-right: 0 !important;
+    padding-top: 2.5rem !important;
+    padding-bottom: 1rem !important;
     box-sizing: border-box !important;
     overflow-x: hidden !important;
     position: relative !important;
