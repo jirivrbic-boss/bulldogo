@@ -2803,6 +2803,54 @@ async function addService(serviceData) {
     }
 }
 
+// Globální helper funkce pro spolehlivé získání currentUser (řeší problémy s timing na Hostingeru)
+window.waitForCurrentUser = async function(timeoutMs = 5000) {
+    // Pokud je currentUser už dostupný, vrať ho okamžitě
+    if (window.firebaseAuth?.currentUser) {
+        return window.firebaseAuth.currentUser;
+    }
+    
+    // Pokud Firebase Auth není inicializován, počkej na něj
+    if (!window.firebaseAuth) {
+        const startedAt = Date.now();
+        while (!window.firebaseAuth && (Date.now() - startedAt) < timeoutMs) {
+            await new Promise(r => setTimeout(r, 100));
+        }
+        if (!window.firebaseAuth) {
+            console.warn('⚠️ waitForCurrentUser: Firebase Auth se neinicializoval');
+            return null;
+        }
+    }
+    
+    // Počkat na currentUser pomocí onAuthStateChanged
+    const { onAuthStateChanged } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+    return new Promise((resolve) => {
+        let resolved = false;
+        const startedAt = Date.now();
+        
+        const unsubscribe = onAuthStateChanged(window.firebaseAuth, (user) => {
+            if (!resolved) {
+                resolved = true;
+                unsubscribe();
+                resolve(user);
+            }
+        });
+        
+        // Timeout - pokud se listener nespustí včas, zkus ještě jednou currentUser
+        setTimeout(() => {
+            if (!resolved) {
+                resolved = true;
+                unsubscribe();
+                const user = window.firebaseAuth?.currentUser || null;
+                if (!user) {
+                    console.warn('⚠️ waitForCurrentUser: timeout - currentUser není dostupný');
+                }
+                resolve(user);
+            }
+        }, timeoutMs);
+    });
+};
+
 // Načtení uživatelského profilu z Firestore (users/{uid}/profile/profile)
 async function loadUserProfile(uid) {
     try {

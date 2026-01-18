@@ -21,7 +21,8 @@ document.addEventListener('DOMContentLoaded', function() {
 // Načíst aktuální balíček a aktualizovat UI
 async function loadCurrentPlan() {
     try {
-        const user = window.firebaseAuth && window.firebaseAuth.currentUser;
+        // Použít globální helper funkci pro spolehlivé získání currentUser
+        const user = await (window.waitForCurrentUser || (async () => window.firebaseAuth?.currentUser || null))(5000);
         if (!user || !window.firebaseDb) {
             console.warn('⚠️ Nelze načíst plán: chybí user nebo db');
             return;

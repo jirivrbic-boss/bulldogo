@@ -512,11 +512,13 @@
                         loadUserData();
                         
                         // Listen for auth state changes
-                        window.firebaseAuth.onAuthStateChanged((user) => {
-                            console.log('👤 Auth state changed on profile page:', user ? user.email : 'Not logged in');
-                            if (user) {
-                                loadUserData();
-                            }
+                        import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js').then(({ onAuthStateChanged }) => {
+                            onAuthStateChanged(window.firebaseAuth, (user) => {
+                                console.log('👤 Auth state changed on profile page:', user ? user.email : 'Not logged in');
+                                if (user) {
+                                    loadUserData();
+                                }
+                            });
                         });
                     }
                 }, 100);
@@ -2300,7 +2302,9 @@
             // Automatické načítání při změně auth stavu
             if (window.firebaseAuth) {
                 let previousEmail = null;
-                window.firebaseAuth.onAuthStateChanged(async (user) => {
+                // Použít správný import onAuthStateChanged
+                import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js').then(({ onAuthStateChanged }) => {
+                    onAuthStateChanged(window.firebaseAuth, async (user) => {
                     if (user && isInitialized) {
                         // Zkontrolovat, zda se změnil email v Auth (po ověření)
                         const currentEmail = user.email;
@@ -2381,9 +2385,11 @@
         // Automatické načtení nastavení uživatele
         async function loadUserSettings() {
             try {
-                const currentUser = window.firebaseAuth.currentUser;
+                // Použít globální helper funkci pro spolehlivé získání currentUser
+                const currentUser = await (window.waitForCurrentUser || (async () => window.firebaseAuth?.currentUser || null))(5000);
+                
                 if (!currentUser) {
-                    console.log('⚠️ Uživatel není přihlášen');
+                    console.log('⚠️ Uživatel není přihlášen - currentUser je null');
                     return;
                 }
 
@@ -3389,9 +3395,11 @@
         async function loadUserData() {
             console.log('💾 Loading user data...');
             try {
-                const currentUser = window.firebaseAuth.currentUser;
+                // Použít globální helper funkci pro spolehlivé získání currentUser
+                const currentUser = await (window.waitForCurrentUser || (async () => window.firebaseAuth?.currentUser || null))(5000);
+                
                 if (!currentUser) {
-                    console.log('⚠️ Uživatel není přihlášen');
+                    console.log('⚠️ Uživatel není přihlášen - currentUser je null v loadUserData');
                     return;
                 }
 

@@ -162,7 +162,8 @@ function normalizeUserType(value) {
 async function filterPackagesByUserType() {
     try {
         if (!window.firebaseAuth || !window.firebaseDb) return;
-        const user = window.firebaseAuth.currentUser;
+        // Použít globální helper funkci pro spolehlivé získání currentUser
+        const user = await (window.waitForCurrentUser || (async () => window.firebaseAuth?.currentUser || null))(5000);
         if (!user) return;
 
         const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
