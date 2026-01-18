@@ -5685,14 +5685,14 @@ footer.footer .container,
     max-width: 100%;
 }
 
-/* Footer na stránkách detailu (ad-detail, profile-detail) - zarovnat na šířku stránky */
+/* Footer na stránkách detailu (ad-detail, profile-detail) - zarovnat stejně jako main-content */
 body:has(.ad-detail-content) .footer,
 body:has(.profile-detail-main) .footer,
 .ad-detail-content ~ .footer,
 .profile-detail-main ~ .footer {
-    width: 100% !important;
-    max-width: 100% !important;
-    margin-left: 0 !important;
+    width: calc(100% - 70px) !important;
+    max-width: calc(100% - 70px) !important;
+    margin-left: 70px !important;
     margin-right: 0 !important;
     padding-left: 0 !important;
     padding-right: 0 !important;
@@ -5704,13 +5704,44 @@ body:has(.ad-detail-content) .footer .container,
 body:has(.profile-detail-main) .footer .container,
 .ad-detail-content ~ .footer .container,
 .profile-detail-main ~ .footer .container {
+    max-width: 1400px !important;
     width: 100% !important;
-    max-width: 100% !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
     padding-left: 2rem !important;
     padding-right: 2rem !important;
     box-sizing: border-box !important;
+}
+
+/* Footer na detail stránkách při collapsed sidebar */
+body.sidebar-collapsed:has(.ad-detail-content) .footer,
+body.sidebar-collapsed:has(.profile-detail-main) .footer {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+}
+
+/* Footer na mobilu - stejně jako main-content (bez margin-left) */
+@media (max-width: 768px) {
+    body:has(.ad-detail-content) .footer,
+    body:has(.profile-detail-main) .footer,
+    .ad-detail-content ~ .footer,
+    .profile-detail-main ~ .footer {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+    
+    body:has(.ad-detail-content) .footer .container,
+    body:has(.profile-detail-main) .footer .container,
+    .ad-detail-content ~ .footer .container,
+    .profile-detail-main ~ .footer .container {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
 }
 
 footer.footer .footer-content,
