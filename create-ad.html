@@ -12,8 +12,12 @@
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>BULLDOGO – Vytvořit inzerát</title>
-    <link rel="canonical" href="https://bulldogo.cz/create-ad">
+    <title>Vytvořit inzerát zdarma - BULLDOGO | Vložte svou službu</title>
+    <meta name="description" content="Vytvořte si inzerát zdarma na BULLDOGO. Vložte svou službu, popis, cenu a fotky. Oslovte tisíce zákazníků v ČR a SR. Jednoduchý formulář, rychlá registrace.">
+    <meta name="keywords" content="vytvořit inzerát, vložit inzerát zdarma, inzerce služeb, přidat službu, nabídka služeb, inzerát zdarma ČR">
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+    <meta name="author" content="BULLDOGO">
+    <link rel="canonical" href="https://bulldogo.cz/create-ad.html">
     <link rel="dns-prefetch" href="https://www.gstatic.com">
     <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
     <link rel="dns-prefetch" href="https://firebasestorage.googleapis.com">
@@ -30,6 +34,27 @@
     <link rel="preconnect" href="https://lh3.googleusercontent.com" crossorigin>
     <link rel="preload" as="style" href="/styles.css" fetchpriority="high">
     <link rel="preload" as="style" href="/electric-border.css">
+    <link rel="icon" type="image/png" href="fotky/bulldogo-logo.png">
+    <link rel="apple-touch-icon" href="fotky/bulldogo-logo.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <meta name="theme-color" content="#ff6a00">
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="BULLDOGO">
+    <meta property="og:title" content="Vytvořit inzerát zdarma - BULLDOGO | Vložte svou službu">
+    <meta property="og:description" content="Vytvořte si inzerát zdarma na BULLDOGO. Vložte svou službu, popis, cenu a fotky. Oslovte tisíce zákazníků v ČR a SR.">
+    <meta property="og:url" content="https://bulldogo.cz/create-ad.html">
+    <meta property="og:image" content="https://bulldogo.cz/fotky/bulldogo-logo.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="BULLDOGO - Vytvořit inzerát">
+    <meta property="og:locale" content="cs_CZ">
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Vytvořit inzerát zdarma - BULLDOGO">
+    <meta name="twitter:description" content="Vložte svou službu zdarma a oslovte tisíce zákazníků v ČR a SR.">
+    <meta name="twitter:image" content="https://bulldogo.cz/fotky/bulldogo-logo.png">
+    <meta name="twitter:image:alt" content="BULLDOGO - Vytvořit inzerát">
     <!-- CSS načítání - synchronní pro rychlejší zobrazení -->
     <link rel="stylesheet" href="/styles.css">
     <link rel="stylesheet" href="/electric-border.css">
@@ -39,6 +64,33 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <style>
+        /* Na PC: container přes celou stránku s fixní šířkou - nemění se podle obsahu */
+        @media (min-width: 1025px) {
+            /* Container přes celou stránku */
+            body:has(.ad-create-layout) .main-content .container,
+            .main-content:has(.ad-create-layout) .container {
+                max-width: 100% !important;
+                width: 100% !important;
+                padding-left: 2rem !important;
+                padding-right: 2rem !important;
+                margin: 0 !important;
+                align-items: stretch !important; /* Roztáhnout na celou šířku */
+            }
+            /* Layout má fixní šířku - vždy 100% */
+            .ad-create-layout {
+                max-width: 100% !important;
+                width: 100% !important;
+                min-width: 100% !important; /* Zajistit minimální šířku */
+                box-sizing: border-box !important;
+            }
+            /* Formulář má fixní šířku */
+            .ad-create-card {
+                width: 100% !important;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
+            }
+        }
+        
         .ad-create-layout{
             display:grid;
             grid-template-columns: 1fr 320px;
@@ -557,6 +609,27 @@
     </div>
 
     <script type="module" src="/firebase-init.js" defer></script>
+    <!-- Structured Data - BreadcrumbList -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Domů",
+          "item": "https://bulldogo.cz/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Vytvořit inzerát",
+          "item": "https://bulldogo.cz/create-ad.html"
+        }
+      ]
+    }
+    </script>
     <!-- Jednotný auth service a hash modal hook (načítat před auth.js) -->
     <script src="/lib/hashModal.js" defer></script>
     <script src="/lib/authService.js" defer></script>

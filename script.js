@@ -787,17 +787,38 @@ function updateAuthUI(user) {
             // 1) Okamžitě zkusit vykreslit odznak z cache (bdg_plan), aby byl vidět hned
             try {
                 const cachedPlan = localStorage.getItem('bdg_plan');
-                if (cachedPlan) applySidebarBadge(cachedPlan);
+                if (cachedPlan && typeof applySidebarBadge === 'function') {
+                    applySidebarBadge(cachedPlan);
+                }
             } catch (_) {}
             // 2) Asynchronně stáhnout skutečný plán a odznak případně opravit
+            // Použít retry mechanismus pro spolehlivost na Hostingeru
             try {
                 if (typeof window.checkUserPlanFromDatabase === 'function') {
-                    window.checkUserPlanFromDatabase(user.uid).then((plan) => {
+                    (async () => {
+                        let plan = null;
+                        // Zkusit až 5x s postupným prodloužením čekání
+                        for (let attempt = 0; attempt < 5; attempt++) {
+                            try {
+                                plan = await window.checkUserPlanFromDatabase(user.uid);
+                                if (plan) break; // Úspěšně načteno
+                            } catch (e) {
+                                console.warn(`⚠️ Pokus ${attempt + 1}/5 načíst balíček v script.js selhal:`, e);
+                                if (attempt < 4) {
+                                    await new Promise(r => setTimeout(r, 500 * (attempt + 1)));
+                                }
+                            }
+                        }
                         if (plan) {
                             try { localStorage.setItem('bdg_plan', plan); } catch (_) {}
-                            applySidebarBadge(plan);
+                            if (typeof applySidebarBadge === 'function') {
+                                applySidebarBadge(plan);
+                            }
+                        } else {
+                            // Pokud není aktivní plán, odstranit z cache
+                            try { localStorage.removeItem('bdg_plan'); } catch (_) {}
                         }
-                    }).catch(() => {});
+                    })();
                 }
             } catch (_) {}
         }
@@ -1399,9 +1420,10 @@ console.log(`
         banner.id = 'cookieBanner';
         banner.innerHTML = `
             <div class="cookie-banner__content">
+                <button id="cookieClose" class="cookie-banner__close" aria-label="Zavřít cookies lištu">&times;</button>
                 <div class="cookie-banner__text">
                     Používáme <a href="soubory/cookies.pdf" target="_blank" rel="noopener noreferrer">cookies</a> pro zajištění funkcí webu a zlepšení služeb. 
-                    Před uložením nepovinných cookies potřebujeme váš souhlas. 
+                    Nepovinné cookies, k jejich použití je nezbytný Váš souhlas, používáme k optimálnějšímu poskytování služeb, personalizaci inzerátů nebo analýze návštěvnosti webu. 
                     Více informací najdete v <a href="https://commission.europa.eu/cookies-policy_cs" target="_blank" rel="noopener noreferrer">zásadách EU o cookies</a>.
                 </div>
                 <div class="cookie-banner__actions">
@@ -1413,8 +1435,15 @@ console.log(`
         document.body.appendChild(banner);
 
         // Wire buttons
+        const closeBtn = document.getElementById('cookieClose');
         const rejectBtn = document.getElementById('cookieReject');
         const acceptBtn = document.getElementById('cookieAccept');
+        
+        // Tlačítko zavření - pouze zavře lištu bez uložení souhlasu
+        closeBtn?.addEventListener('click', () => {
+            hideBanner();
+        });
+        
         rejectBtn?.addEventListener('click', () => {
             storeConsent({ necessary: true, analytics: false, marketing: false, timestamp: new Date().toISOString() });
             hideBanner();
@@ -1461,7 +1490,7 @@ console.log(`
             pointer-events: all;
             width: min(960px, calc(100% - 32px));
             box-sizing: border-box;
-            padding: 16px 18px;
+            padding: 16px 48px 16px 18px;
             border-radius: 14px;
             color: #fff;
             background: linear-gradient(135deg, rgba(255,156,32,0.96) 0%, rgba(255,106,0,0.96) 100%);
@@ -1472,6 +1501,33 @@ console.log(`
             grid-template-columns: 1fr auto;
             grid-gap: 16px;
             align-items: center;
+            position: relative;
+        }
+        .cookie-banner__close {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 24px;
+            line-height: 1;
+            cursor: pointer;
+            padding: 4px;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+            z-index: 10;
+        }
+        .cookie-banner__close:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        .cookie-banner__close:active {
+            background-color: rgba(255, 255, 255, 0.3);
         }
         .cookie-banner__text {
             line-height: 1.55;
@@ -1487,7 +1543,7 @@ console.log(`
             #cookieBanner .cookie-banner__content {
                 grid-template-columns: 1fr;
                 row-gap: 12px;
-                padding: 14px;
+                padding: 14px 40px 14px 14px;
             }
             .cookie-banner__actions { 
                 justify-content: center; 

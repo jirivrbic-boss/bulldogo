@@ -248,7 +248,8 @@ function displayAdDetail() {
         const emailEl = document.getElementById('adEmail');
         const phoneEl = document.getElementById('adPhone');
         const fullEmail = adOwner.email || 'Neuvedeno';
-        const fullPhone = adOwner.phone || adOwner.companyPhone || adOwner.telefon || 'Neuvedeno';
+        // Telefon se načítá z users/{uid}/profile/profile jako phoneNumber
+        const fullPhone = adOwner.phoneNumber || adOwner.phone || adOwner.companyPhone || adOwner.telefon || 'Neuvedeno';
         const viewer = window.firebaseAuth?.currentUser;
         
         if (viewer) {

@@ -305,13 +305,17 @@ async function loadUserAdsFromFirebase(preSelectedAdId = null) {
             console.log('⚠️ No ads found, showing message');
             adsList.innerHTML = `
                 <div class="no-ads-message">
-                    <i class="fas fa-info-circle"></i>
-                    <h3>Žádné inzeráty nenalezeny</h3>
-                    <p>Nemáte žádné inzeráty k topování. Nejdříve vytvořte inzerát v sekci "Mé inzeráty".</p>
-                    <button class="btn btn-primary" onclick="window.location.href='my-ads.html'">
-                        <i class="fas fa-list"></i>
-                        Moje inzeráty
-                    </button>
+                    <div class="no-ads-message-icon">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                    <div class="no-ads-message-content">
+                        <h3 class="no-ads-message-title">Žádné inzeráty nenalezeny</h3>
+                        <p class="no-ads-message-text">Nemáte žádné inzeráty k topování. Nejdříve vytvořte inzerát v sekci "Mé inzeráty".</p>
+                        <button class="btn-bulldogo" onclick="window.location.href='my-ads.html'">
+                            <i class="fas fa-list"></i>
+                            Moje inzeráty
+                        </button>
+                    </div>
                 </div>
             `;
             return;
@@ -405,6 +409,24 @@ async function loadUserAdsFromFirebase(preSelectedAdId = null) {
             }
         });
         
+        // Přidat event listenery pro obrázky - přidat třídu .loaded po načtení (stejně jako v my-ads.js)
+        const images = adsList.querySelectorAll('.ad-thumb img');
+        images.forEach(img => {
+            if (img.complete && img.naturalWidth > 0) {
+                // Obrázek už je načtený
+                img.classList.add('loaded');
+            } else {
+                // Obrázek se ještě načítá
+                img.addEventListener('load', function() {
+                    this.classList.add('loaded');
+                });
+                img.addEventListener('error', function() {
+                    // I při chybě přidat třídu, aby se spinner skryl
+                    this.classList.add('loaded');
+                });
+            }
+        });
+        
         if (preSelectedAdId && !foundPreSelected) {
             console.log('⚠️ Pre-selected ad not found:', preSelectedAdId);
         }
@@ -414,13 +436,17 @@ async function loadUserAdsFromFirebase(preSelectedAdId = null) {
         const adsList = document.getElementById('adsList');
         adsList.innerHTML = `
             <div class="no-ads-message">
-                <i class="fas fa-exclamation-triangle"></i>
-                <h3>Chyba při načítání</h3>
-                <p>Nepodařilo se načíst vaše inzeráty. Zkuste to prosím znovu.</p>
-                <button class="btn btn-primary" onclick="location.reload()">
-                    <i class="fas fa-refresh"></i>
-                    Obnovit stránku
-                </button>
+                <div class="no-ads-message-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="no-ads-message-content">
+                    <h3 class="no-ads-message-title">Chyba při načítání</h3>
+                    <p class="no-ads-message-text">Nepodařilo se načíst vaše inzeráty. Zkuste to prosím znovu.</p>
+                    <button class="btn-bulldogo" onclick="location.reload()">
+                        <i class="fas fa-refresh"></i>
+                        Obnovit stránku
+                    </button>
+                </div>
             </div>
         `;
     }

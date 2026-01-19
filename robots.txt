@@ -8,5 +8,38 @@ Disallow: /debug
 Disallow: /*test*.html
 Disallow: /*debug*.html
 
+# Nepublikovat soukromé a admin stránky
+Disallow: /chat.html
+Disallow: /my-ads.html
+Disallow: /profile.html
+Disallow: /profile-settings.html
+Disallow: /profile-detail.html
+Disallow: /profile-services.html
+Disallow: /profile-ratings.html
+Disallow: /profile-plan.html
+Disallow: /profile-top.html
+Disallow: /uzivatele.html
+Disallow: /inzeraty.html
+Disallow: /statistiky.html
+Disallow: /admin-reviews.html
+Disallow: /nahlaseni.html
+Disallow: /dashboard.html
+Disallow: /reset-password.html
+Disallow: /success.html
+Disallow: /failed.html
+
+# Povolit indexaci veřejných stránek
+Allow: /index.html
+Allow: /services.html
+Allow: /create-ad.html
+Allow: /packages.html
+Allow: /top-ads.html
+Allow: /ad-detail.html
+Allow: /terms.html
+
+# Crawl-delay pro respektování serveru
+Crawl-delay: 1
+
+# Sitemap
 Sitemap: https://bulldogo.cz/sitemap.xml
 

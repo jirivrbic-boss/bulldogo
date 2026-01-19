@@ -249,6 +249,30 @@
 .promo-cta .btn-cta-secondary {
     background: #111827;
     color: #ffffff;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+}
+
+/* Zajistit správné centrování pro všechny elementy uvnitř tlačítek */
+.btn-cta-primary,
+.btn-cta-secondary {
+    white-space: nowrap; /* Zabraň zalomení textu */
+}
+
+.btn-cta-primary i,
+.btn-cta-secondary i {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.btn-cta-primary span,
+.btn-cta-secondary span {
+    display: inline-block;
+    text-align: center;
 }
 
 /* Rotující benefit vedle CTA (pilulka) */
@@ -597,18 +621,38 @@
     width: 100% !important;
     max-width: 100% !important;
     box-sizing: border-box !important;
-    overflow: hidden !important;
+    overflow: visible !important; /* Změněno z hidden na visible - zabrání uřezání karet */
+}
+
+/* Zajistit dostatečný prostor pod inzeráty na stránce "Mé inzeráty" - i na mobilu */
+@media (max-width: 768px) {
+    #myAdsGrid.ads-grid {
+        margin-bottom: 60px !important; /* Prostor pod inzeráty na mobilu */
+    }
+    
+    .ads-section:has(#myAdsGrid) {
+        padding-bottom: 80px !important; /* Zvýšené padding-bottom na mobilu */
+    }
 }
 
 /* Zajistit správné formátování containeru v ads-section na PC */
 @media (min-width: 769px) {
+    .ads-section {
+        padding-bottom: 120px !important;
+    }
+    
+    /* Pro stránku "Mé inzeráty" zajistit dostatečný prostor pod gridem */
+    .ads-section:has(#myAdsGrid) {
+        padding-bottom: 120px !important;
+    }
+    
     .ads-section .container {
         max-width: 1600px !important;
         width: 100% !important;
         margin: 0 auto !important;
         padding: 0 2rem !important;
         box-sizing: border-box !important;
-        overflow: hidden !important;
+        overflow: visible !important; /* Změněno z hidden na visible - zabrání uřezání karet */
     }
 }
 
@@ -618,12 +662,20 @@
     justify-content: center;
     align-items: center;
     margin-top: 48px;
+    margin-bottom: 0;
     width: 100%;
     max-width: 1600px;
     margin-left: auto;
     margin-right: auto;
     padding: 0 2rem;
     box-sizing: border-box;
+}
+
+/* Přidat mezeru za tlačítko na PC pro plynulý fade efekt */
+@media (min-width: 769px) {
+    .ads-more-container {
+        margin-bottom: 80px;
+    }
 }
 
 /* Tlačítko "Zobrazit více inzerátů" - stejný design jako inzeráty */
@@ -902,6 +954,7 @@
 .btn-cta-secondary {
     display: inline-flex;
     align-items: center;
+    justify-content: center; /* Vycentrovat obsah horizontálně */
     gap: 10px;
     padding: 12px 18px;
     border-radius: 12px;
@@ -909,6 +962,7 @@
     text-decoration: none;
     min-height: 48px; /* Zajistí stejnou minimální výšku */
     box-sizing: border-box;
+    text-align: center; /* Zajistit centrování textu */
 }
 .btn-cta-primary { color: #111827; background: #ffffff; box-shadow: 0 10px 22px rgba(17, 24, 39, 0.08); }
 .btn-cta-primary i { color: #ffffff; }
@@ -969,6 +1023,7 @@
         margin: 0 auto !important;
         width: 100% !important;
         justify-items: start !important;
+        overflow: visible !important; /* Zajistit, aby se karty neřezaly */
     }
     
     #servicesGrid.ads-grid > .ad-card {
@@ -988,6 +1043,7 @@
         margin: 0 auto !important;
         width: 100% !important;
         justify-items: start !important;
+        overflow: visible !important; /* Zajistit, aby se karty neřezaly */
     }
     
     #servicesGrid.ads-grid > .ad-card {
@@ -1008,6 +1064,7 @@
         width: 100% !important;
         padding: 0 1rem !important;
         box-sizing: border-box !important;
+        overflow: visible !important; /* Zajistit, aby se karty neřezaly */
     }
     
     #servicesGrid.ads-grid > .ad-card {
@@ -1025,6 +1082,7 @@
     max-width: 1600px !important;
     margin: 0 auto !important;
     width: 100% !important;
+    overflow: visible !important; /* Zajistit, aby se karty neřezaly */
 }
 
 .ads-grid:not(#servicesGrid) > .ad-card {
@@ -1063,16 +1121,16 @@
     box-sizing: border-box !important;
     display: flex !important; /* Flexbox pro stejnou výšku */
     flex-direction: column !important; /* Vertikální uspořádání */
-    height: 100% !important; /* Plná výška v gridu */
+    min-height: auto !important; /* Minimální výška podle obsahu */
     position: relative !important;
     visibility: visible !important;
     opacity: 1 !important;
     text-align: left !important;
-    padding: 0 !important;
+    padding: 0 0 20px 0 !important; /* Padding-bottom pro tlačítka akcí */
     float: none !important;
     clear: both !important;
-    /* Zabraň změně velikosti při filtrování */
-    contain: layout style !important;
+    /* Zabraň změně velikosti při filtrování, ale povol overflow pro tlačítka */
+    contain: none !important; /* Změněno z layout style na none - umožní zobrazení tlačítek */
     will-change: transform !important;
 }
 
@@ -1170,7 +1228,7 @@
     flex: 1 !important; /* Vyplní zbývající prostor v kartě */
     visibility: visible !important;
     opacity: 1 !important; 
-    padding: 12px 14px 90px !important; 
+    padding: 12px 14px 100px !important; /* Zvýšený padding-bottom pro tlačítka akcí */
     position: relative;
     text-align: left !important; /* Zarovnání textů vlevo */
     overflow: visible !important; /* Umožnit stínům tlačítek vyčnívat */
@@ -1182,7 +1240,42 @@
     box-sizing: border-box !important; /* Zahrnout padding a border do šířky */
     margin: 0 !important; /* Odstranit všechny marginy */
     /* Zajistit, aby stíny tlačítek nebyly ořezané */
-    padding-bottom: 100px !important; /* Větší padding pro stíny */
+    min-height: 150px !important; /* Minimální výška pro zobrazení obsahu */
+}
+
+/* Zajistit, aby se karty inzerátů nikdy neřezaly - pro všechny velikosti obrazovek */
+.ads-section,
+.ads-section .container,
+.ads-section .container > *,
+.ads-grid,
+#servicesGrid.ads-grid,
+#myAdsGrid.ads-grid {
+    overflow: visible !important;
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+}
+
+/* Zajistit, aby tlačítka akcí byly vždy viditelná */
+.ad-card .ad-actions {
+    position: absolute !important;
+    bottom: 20px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    z-index: 10 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: flex !important;
+}
+
+/* Na větších monitorech zajistit větší padding pro tlačítka */
+@media (min-width: 1400px) {
+    .ad-body {
+        padding-bottom: 110px !important; /* Ještě větší padding na velkých monitorech */
+    }
+    
+    .ad-card {
+        padding-bottom: 25px !important; /* Větší padding na kartě */
+    }
 }
 .ad-title { 
     display: block !important;
@@ -1509,8 +1602,31 @@
 }
 
 .top-ads-pricing {
-    padding: 80px 0;
+    padding: 80px 0 120px 0; /* Zvýšen padding-bottom, aby bylo místo pro success sekci */
     background: #ffffff; /* čisté bílé pozadí za kartami */
+    position: relative;
+    z-index: 1;
+}
+
+/* Fixní bílé pole jako oddělovač mezi balíčky/topováním a footerem - zabraňuje překrývání */
+.packages-footer-spacer {
+    width: 100%;
+    height: 120px;
+    background: #ffffff;
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+}
+
+/* Responsive - na mobilu menší výška */
+@media (max-width: 768px) {
+    .packages-footer-spacer {
+        height: 80px;
+    }
+    
+    .top-ads-pricing {
+        padding: 60px 0;
+    }
 }
 
 .pricing-header {
@@ -1856,6 +1972,41 @@
     font-size: 1rem;
 }
 
+/* Responzivní styly pro no-ads-message */
+@media (max-width: 768px) {
+    .no-ads-message {
+        margin: 2rem 1rem;
+        padding: 1.5rem;
+        border-radius: 12px;
+        gap: 0.75rem;
+    }
+    
+    .no-ads-message-icon i {
+        font-size: 2.5rem;
+    }
+    
+    .no-ads-message-title {
+        font-size: 1.25rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .no-ads-message-text {
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+    }
+    
+    .no-ads-message .btn-bulldogo {
+        width: 100%;
+        justify-content: center;
+        padding: 14px 24px;
+        font-size: 0.95rem;
+    }
+    
+    #adsList:has(.no-ads-message) {
+        min-height: 300px;
+    }
+}
+
 .selection-actions {
     text-align: center;
 }
@@ -2035,8 +2186,11 @@
 /* Success Section Styles */
 .success-section {
     padding: 4rem 0;
+    margin-top: 80px; /* Mezera nad success sekcí, aby nepresahovala přes balíčky */
     background: #ffffff;
     text-align: center;
+    position: relative;
+    z-index: 1;
 }
 
 .success-content {
@@ -2179,6 +2333,7 @@
 @media (max-width: 768px) {
     .success-section {
         padding: 2rem 0;
+        margin-top: 60px; /* Mezera nad success sekcí na mobilu */
     }
     
     .success-content {
@@ -5731,7 +5886,9 @@ body.sidebar-collapsed:has(.profile-detail-main) footer.footer {
 }
 
 /* Footer na mobilu - stejně jako main-content (bez margin-left) */
+/* Stejné CSS jako na hlavní stránce - bez odsazení od kraje */
 @media (max-width: 768px) {
+    /* Footer samotný - stejně jako na hlavní stránce */
     body:has(.ad-detail-content) .footer,
     body:has(.profile-detail-main) .footer,
     body:has(.ad-detail-content) footer.footer,
@@ -5751,12 +5908,38 @@ body.sidebar-collapsed:has(.profile-detail-main) footer.footer {
         overflow-x: hidden !important;
     }
     
+    /* Footer container - lehké odsazení obsahu od kraje (bílé pozadí zůstává od kraje) */
     body:has(.ad-detail-content) .footer .container,
     body:has(.profile-detail-main) .footer .container,
     .ad-detail-content ~ .footer .container,
-    .profile-detail-main ~ .footer .container {
+    .profile-detail-main ~ .footer .container,
+    footer.footer .container,
+    .footer .container {
         padding-left: 1rem !important;
         padding-right: 1rem !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    
+    /* Přepsat všechna desktopová pravidla pro footer na mobilu - důležité kvůli pravidlům na řádcích 18005 a 18028 */
+    body:has(.ad-detail-content) footer.footer,
+    body:has(.profile-detail-main) footer.footer {
+        margin-left: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 100% !important;
+    }
+    
+    body:has(.ad-detail-content) footer.footer .container,
+    body:has(.profile-detail-main) footer.footer .container {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
     }
 }
 
@@ -6483,9 +6666,14 @@ body.profile-plan-page .plan-info {
     border: 1px solid #e5e7eb;
     transition: all 0.2s ease;
     width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
     height: 100%;
     display: flex;
     flex-direction: column;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .review-card:hover {
@@ -6587,16 +6775,49 @@ body.profile-plan-page .plan-info {
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: 20px;
     width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .reviews-list-container {
     width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 @media (max-width: 768px) {
     .reviews-list,
     .reviews-list-container .reviews-list {
         grid-template-columns: 1fr;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    
+    /* Zajistit, aby kontejner recenzí nebyl oříznutý */
+    #userReviewsSection,
+    #userReviewsSection .user-other-ads {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+    
+    /* Zajistit, aby okna recenzí byla vždy celá viditelná */
+    .review-card-modern,
+    .review-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
     }
 }
 
@@ -6609,6 +6830,11 @@ body.profile-plan-page .plan-info {
     border: 1px solid #e5e7eb;
     transition: all 0.3s ease;
     width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    min-width: 0;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .review-card-modern:hover {
@@ -6706,16 +6932,28 @@ body.profile-plan-page .plan-info {
     .review-card-modern {
         padding: 20px;
         border-radius: 12px;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
     }
     
     .review-card-header {
         flex-direction: column;
         gap: 12px;
         align-items: flex-start;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
     }
     
     .reviewer-info-modern {
         width: 100%;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
     }
     
     .review-rating-modern {
@@ -6726,14 +6964,26 @@ body.profile-plan-page .plan-info {
         width: 44px;
         height: 44px;
         font-size: 18px;
+        flex-shrink: 0;
     }
     
     .reviewer-name {
         font-size: 15px;
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
     }
     
     .review-text {
         font-size: 14px;
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+        max-width: 100% !important;
+    }
+    
+    .reviewer-details-modern {
+        min-width: 0 !important;
+        flex: 1 !important;
+        max-width: 100% !important;
     }
 }
 
@@ -9539,10 +9789,10 @@ html {
         gap: 24px !important;
         max-width: 1600px !important;
         width: 100% !important;
-        margin: 0 auto !important;
+        margin: 0 auto 80px auto !important; /* Přidán margin-bottom pro prostor pod inzeráty */
         padding: 0 !important;
         box-sizing: border-box !important;
-        overflow: visible !important;
+        overflow: visible !important; /* Zajistit, aby se karty neřezaly */
     }
     
     #myAdsGrid.ads-grid > .ad-card {
@@ -13773,7 +14023,8 @@ body:has(.ad-detail-content) .main-content .ad-detail-content,
     min-width: 0 !important;
     box-sizing: border-box !important;
     margin-top: 2rem !important;
-    overflow: hidden !important;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
     position: relative !important;
 }
 
@@ -14030,6 +14281,19 @@ body:has(.ad-detail-content) .main-content .ad-detail-content,
         background: #ffffff !important;
         border-radius: 16px !important;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+    }
+    
+    /* Pro sekci recenzí - upravit padding, aby se okna neorezala */
+    .ad-user-profile:has(#userReviewsSection),
+    #userReviewsSection {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+    
+    /* Zajistit, aby inner kontejner měl správný padding */
+    .ad-user-profile:has(#userReviewsSection) .user-other-ads {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
     }
     
     /* ===== HLAVNÍ OBRÁZEK - PŘES CELOU ŠÍŘKU ===== */
@@ -14554,6 +14818,84 @@ body:has(.ad-detail-content) .main-content .ad-detail-content,
         margin-right: 0 !important;
         box-sizing: border-box !important;
         overflow-x: hidden !important;
+    }
+    
+    /* Sekce recenzí - zajistit, aby se okna nikdy neorezala */
+    #userReviewsSection,
+    #userReviewsSection.user-other-ads {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+    
+    /* Grid recenzí na mobilu - vždy celé okno, bez ořezávání */
+    #userReviewsGrid,
+    #userReviewsGrid.reviews-list,
+    .user-other-ads #userReviewsGrid,
+    #userReviewsSection #userReviewsGrid {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+        overflow-x: visible !important;
+        overflow-y: visible !important;
+    }
+    
+    /* Okna recenzí - nikdy nesmí být oříznutá, vždy celé na stránce */
+    #userReviewsGrid .review-card-modern,
+    #userReviewsGrid .review-card,
+    .reviews-list .review-card-modern,
+    .reviews-list .review-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+        overflow-x: hidden !important;
+        overflow-y: visible !important;
+    }
+    
+    /* Všechny elementy uvnitř recenzí - zajistit, aby se neorezaly */
+    #userReviewsGrid .review-card-modern *,
+    #userReviewsGrid .review-card * {
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+    }
+    
+    /* Zajistit, aby parent kontejnery neorezaly obsah */
+    .ad-user-profile:has(#userReviewsGrid),
+    .profile-detail-main:has(#userReviewsGrid),
+    body:has(#userReviewsGrid) .main-content {
+        overflow-x: hidden !important;
+    }
+    
+    /* Konkrétní úprava pro okno recenze - vždy celé viditelné */
+    .review-card-modern .review-card-header,
+    .review-card-modern .review-card-content,
+    .review-card-modern .reviewer-info-modern,
+    .review-card-modern .reviewer-details-modern {
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
     }
     
     .user-other-ads .ads-grid,
@@ -16404,8 +16746,8 @@ body.chat-page .message.other .message-content { margin-right: auto !important; 
     }
     
     .footer .container {
-        padding-left: 1rem;
-        padding-right: 1rem;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
     }
     
     .footer-content {
@@ -17976,38 +18318,41 @@ html:has(.profile-detail-main) {
     width: 100% !important;
 }
 
-/* Footer na stránkách detailu - zajistit správné zarovnání */
+/* Footer na stránkách detailu - zajistit správné zarovnání (POUZE PRO DESKTOP) */
 /* Footer na detail stránkách - zarovnat stejně jako main-content - PŘEPISUJE VŠECHNY PŘEDCHOZÍ PRAVIDLA */
-body:has(.ad-detail-content) footer.footer,
-body:has(.profile-detail-main) footer.footer,
-body:has(.ad-detail-content) .footer,
-body:has(.profile-detail-main) .footer {
-    margin-left: 70px !important;
-    width: calc(100% - 70px) !important;
-    max-width: calc(100% - 70px) !important;
-    margin-right: 0 !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    padding-top: 2.5rem !important;
-    padding-bottom: 1rem !important;
-    box-sizing: border-box !important;
-    overflow-x: hidden !important;
-    position: relative !important;
-    left: 0 !important;
-    right: 0 !important;
-}
+/* POUZE PRO DESKTOP - na mobilu se nepoužije (jsou přepsána mobilním media query) */
+@media (min-width: 769px) {
+    body:has(.ad-detail-content) footer.footer,
+    body:has(.profile-detail-main) footer.footer,
+    body:has(.ad-detail-content) .footer,
+    body:has(.profile-detail-main) .footer {
+        margin-left: 70px !important;
+        width: calc(100% - 70px) !important;
+        max-width: calc(100% - 70px) !important;
+        margin-right: 0 !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        padding-top: 2.5rem !important;
+        padding-bottom: 1rem !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
+        position: relative !important;
+        left: 0 !important;
+        right: 0 !important;
+    }
 
-body:has(.ad-detail-content) footer.footer .container,
-body:has(.profile-detail-main) footer.footer .container,
-body:has(.ad-detail-content) .footer .container,
-body:has(.profile-detail-main) .footer .container {
-    width: 100% !important;
-    max-width: 1400px !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
-    padding-left: 2rem !important;
-    padding-right: 2rem !important;
-    box-sizing: border-box !important;
+    body:has(.ad-detail-content) footer.footer .container,
+    body:has(.profile-detail-main) footer.footer .container,
+    body:has(.ad-detail-content) .footer .container,
+    body:has(.profile-detail-main) .footer .container {
+        width: 100% !important;
+        max-width: 1400px !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        padding-left: 2rem !important;
+        padding-right: 2rem !important;
+        box-sizing: border-box !important;
+    }
 }
 
 .main-content:has(.ad-detail-content) {
@@ -18066,7 +18411,20 @@ body:has(.profile-detail-main) .footer .container {
     max-width: 100% !important;
     min-width: 0 !important;
     box-sizing: border-box !important;
-    overflow: hidden !important;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+}
+
+/* Speciální úprava pro sekci recenzí - zabránit ořezávání */
+#userReviewsSection,
+.ad-user-profile:has(#userReviewsSection) {
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+}
+
+#userReviewsGrid {
+    overflow-x: visible !important;
+    overflow-y: visible !important;
 }
 
 .ad-title-section,

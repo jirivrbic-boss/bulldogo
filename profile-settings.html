@@ -13,7 +13,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Nastavení - BULLDOGO</title>
-    <link rel="canonical" href="https://bulldogo.cz/profile-settings">
+    <meta name="description" content="Nastavení profilu na BULLDOGO">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="canonical" href="https://bulldogo.cz/profile-settings.html">
     <link rel="stylesheet" href="styles.css">
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"></noscript>
@@ -580,7 +582,10 @@
                     // Datum narození se neukládá zde - je read-only a nelze ho změnit po registraci
                     city: cityEl ? cityEl.value : '',
                     bio: bioText,
-                    updatedAt: new Date()
+                    updatedAt: new Date(),
+                    // Flag pro povolení emailové notifikace při manuální změně
+                    _userInitiatedChange: true,
+                    _skipChangeNotification: null // Odstranit flag z registrace
                 };
                 
                 // Uložit jméno a příjmení pouze pokud nejsou read-only
@@ -694,7 +699,10 @@
                         businessDescription: businessDescriptionText,
                         // U firmy se businessAddress ukládá také do location, aby se zobrazovala v profilu
                         location: businessAddressEl ? businessAddressEl.value : null,
-                        updatedAt: new Date()
+                        updatedAt: new Date(),
+                        // Flag pro povolení emailové notifikace při manuální změně
+                        _userInitiatedChange: true,
+                        _skipChangeNotification: null // Odstranit flag z registrace
                     };
 
                 console.log('💾 Ukládám obchodní informace:', businessData);
@@ -999,7 +1007,10 @@
                     await setDoc(doc(window.firebaseDb, 'users', uid, 'profile', 'profile'), {
                         emailPending: newEmail,
                         emailPendingAt: serverTimestamp(),
-                        updatedAt: serverTimestamp()
+                        updatedAt: serverTimestamp(),
+                        // Flag pro povolení emailové notifikace při manuální změně
+                        _userInitiatedChange: true,
+                        _skipChangeNotification: null // Odstranit flag z registrace
                     }, { merge: true });
                     
                     // Zobrazit upozornění
@@ -1020,7 +1031,10 @@
                     const uid = currentUser.uid;
                     const updateData = { 
                         phoneNumber: normalizedPhone,
-                        updatedAt: serverTimestamp() 
+                        updatedAt: serverTimestamp(),
+                        // Flag pro povolení emailové notifikace při manuální změně
+                        _userInitiatedChange: true,
+                        _skipChangeNotification: null // Odstranit flag z registrace
                     };
 
                     // Aktualizace v root users dokumentu
@@ -1194,7 +1208,10 @@
                 await setDoc(doc(window.firebaseDb, 'users', uid, 'profile', 'profile'), {
                     emailPending: newEmail,
                     emailPendingAt: serverTimestamp(),
-                    updatedAt: serverTimestamp()
+                    updatedAt: serverTimestamp(),
+                    // Flag pro povolení emailové notifikace při manuální změně
+                    _userInitiatedChange: true,
+                    _skipChangeNotification: null // Odstranit flag z registrace
                 }, { merge: true });
                 
                 // Zobrazit upozornění
@@ -1273,7 +1290,10 @@
                 const uid = currentUser.uid;
                 const passwordUpdateData = { 
                     passwordChangedAt: new Date(),
-                    updatedAt: new Date()
+                    updatedAt: new Date(),
+                    // Flag pro povolení emailové notifikace při manuální změně
+                    _userInitiatedChange: true,
+                    _skipChangeNotification: null // Odstranit flag z registrace
                 };
                 
                 // Aktualizace v root users dokumentu
@@ -2329,12 +2349,18 @@
                                             email: currentEmail,
                                             emailPending: null,
                                             emailPendingAt: null,
-                                            updatedAt: serverTimestamp()
+                                            updatedAt: serverTimestamp(),
+                                            // Flag pro povolení emailové notifikace při manuální změně (pokud ještě není nastaven)
+                                            _userInitiatedChange: true,
+                                            _skipChangeNotification: null // Odstranit flag z registrace
                                         }, { merge: true });
                                         
                                         await setDoc(doc(window.firebaseDb, 'users', uid), {
                                             email: currentEmail,
-                                            updatedAt: serverTimestamp()
+                                            updatedAt: serverTimestamp(),
+                                            // Flag pro povolení emailové notifikace při manuální změně
+                                            _userInitiatedChange: true,
+                                            _skipChangeNotification: null // Odstranit flag z registrace
                                         }, { merge: true });
                                         
                                         showMessage('✅ Email byl úspěšně změněn!', 'success');
@@ -2419,8 +2445,12 @@
                     const displayName = currentUser.displayName || currentUser.email?.split('@')[0] || '';
                     const nameParts = displayName.split(' ');
                     
+                    // DŮLEŽITÉ: Pokud je v root dokumentu userType='company', použít 'company', jinak použít 'person'
+                    // NIKDY nepoužít 'person' jako default, pokud je v root dokumentu 'company'
+                    const initialUserType = rootUserType || 'person';
+                    
                     userProfile = {
-                        userType: rootUserType || 'person',
+                        userType: initialUserType,
                         firstName: nameParts[0] || '',
                         lastName: nameParts.slice(1).join(' ') || '',
                         name: displayName, // Zachovat složené jméno pro kompatibilitu
@@ -2443,7 +2473,7 @@
                     
                     // Uložit základní profil
                     await setDoc(profileRef, userProfile, { merge: true });
-                    console.log('✅ Automaticky vytvořen základní profil:', userProfile);
+                    console.log('✅ Automaticky vytvořen základní profil:', userProfile, 's userType:', initialUserType);
                 }
 
                 // Email fallback: někdy je v root users/{uid} nebo jen v Auth profilu
@@ -2455,14 +2485,116 @@
                 }
 
                 // Uložit/propagovat userType do UI (Hobby vs Firma)
-                const resolvedType = normalizeUserType(userProfile?.userType || userProfile?.type) || rootUserType || 'person';
+                // DŮLEŽITÉ: Detekce typu s fallback logikou - pokud existuje businessName/businessIco, pak je to company
+                // KRITICKÉ: Načteme z dat PRVNÍ, pak teprve zkontrolujeme konzistenci s existujícími daty
+                let resolvedType = normalizeUserType(userProfile?.userType || userProfile?.type) || rootUserType;
+                
+                // DŮLEŽITÉ: Pokud je userType='company' v root dokumentu nebo v profilu, NIKDY ho nepřepisovat na 'person'
+                const isExplicitlyCompany = normalizeUserType(rootUserType) === 'company' || normalizeUserType(userProfile?.userType || userProfile?.type) === 'company';
+                
+                // VŽDY zkontrolovat skutečná data v profilu - pokud data ukazují na firmu, ale resolvedType je person, opravit to
+                // Toto řeší race condition, kdy se userType načte jako "person" z defaultní hodnoty, ale data obsahují firemní údaje
+                if (userProfile) {
+                    const hasBusinessName = !!(userProfile?.businessName || userProfile?.companyName || userProfile?.company?.companyName);
+                    const hasBusinessIco = !!(userProfile?.businessIco || userProfile?.ico || userProfile?.company?.ico);
+                    const hasBusinessData = hasBusinessName || hasBusinessIco;
+                    
+                    const hasFirstName = !!(userProfile?.firstName);
+                    const hasLastName = !!(userProfile?.lastName);
+                    const hasPersonalData = hasFirstName || hasLastName;
+                    
+                    // Pokud je explicitně nastaveno company, zůstat company - NIKDY nepřepisovat na person
+                    if (isExplicitlyCompany) {
+                        resolvedType = 'company';
+                        console.log('🔒 UserType je explicitně nastaven na "company", zůstává company', { rootUserType, profileUserType: userProfile?.userType || userProfile?.type });
+                    }
+                    // Pokud máme firemní data (businessName/IČO), je to určitě company
+                    else if (hasBusinessData) {
+                        // Pokud resolvedType není "company", opravit ho - data mají přednost!
+                        if (normalizeUserType(resolvedType) !== 'company') {
+                            console.log('🔍 Opravuji userType na "company" podle businessName/IČO:', { hasBusinessName, hasBusinessIco, originalType: resolvedType });
+                            resolvedType = 'company';
+                        }
+                    } else if (hasPersonalData && normalizeUserType(resolvedType) !== 'company') {
+                        // Pokud máme osobní data a není to firma, je to person
+                        // DŮLEŽITÉ: NIKDY nepřepisovat z 'company' na 'person'
+                        if (!resolvedType && normalizeUserType(rootUserType) !== 'company') {
+                            resolvedType = 'person';
+                            console.log('🔍 Detekován osobní typ podle firstName/lastName:', { hasFirstName, hasLastName });
+                        }
+                    } else if (!resolvedType && normalizeUserType(rootUserType) !== 'company') {
+                        // Fallback: Pokud nemáme žádná data, použít default
+                        // DŮLEŽITÉ: NIKDY nepoužít 'person' jako default, pokud je v root dokumentu 'company'
+                        resolvedType = 'person';
+                    }
+                }
+                
+                // Finální normalizace - pokud je explicitně company, zůstat company
+                // DŮLEŽITÉ: NIKDY nepřepisovat z 'company' na 'person'
+                if (isExplicitlyCompany || normalizeUserType(rootUserType) === 'company') {
+                    resolvedType = 'company';
+                    console.log('🔒 Finální normalizace: zůstává company', { isExplicitlyCompany, rootUserType, resolvedType });
+                } else {
+                    resolvedType = normalizeUserType(resolvedType) || 'person';
+                }
+                
+                console.log('🎯 Resolved userType:', resolvedType, 'z profilu:', { 
+                    userType: userProfile?.userType, 
+                    type: userProfile?.type, 
+                    rootUserType,
+                    businessName: userProfile?.businessName || userProfile?.companyName,
+                    businessIco: userProfile?.businessIco || userProfile?.ico,
+                    company: userProfile?.company
+                });
+                
                 window.__profileUserType = resolvedType;
                 applyUserTypeToSettingsUI(resolvedType);
-                if (userProfile && normalizeUserType(userProfile.userType) !== resolvedType) {
-                    try { await setDoc(profileRef, { userType: resolvedType }, { merge: true }); } catch (e) { /* noop */ }
+                
+                // Uložit userType do profilu, pokud chybí nebo neodpovídá
+                // DŮLEŽITÉ: NIKDY nepřepisovat z 'company' na 'person' - pokud je v profilu nebo root dokumentu 'company', zůstat 'company'
+                const currentProfileUserType = normalizeUserType(userProfile?.userType || userProfile?.type);
+                
+                // Pokud je v root dokumentu nebo v profilu 'company', NIKDY nepřepisovat na 'person'
+                const isCompanyProtected = normalizeUserType(rootUserType) === 'company' || currentProfileUserType === 'company';
+                
+                // Pokud je protected company, použít 'company' místo resolvedType
+                const finalUserType = isCompanyProtected && resolvedType === 'person' ? 'company' : resolvedType;
+                
+                const shouldUpdate = currentProfileUserType !== finalUserType && 
+                                    !(currentProfileUserType === 'company' && finalUserType === 'person') &&
+                                    !(rootUserType === 'company' && finalUserType === 'person');
+                
+                if (userProfile && shouldUpdate) {
+                    console.log('💾 Ukládám userType do profilu:', { 
+                        from: currentProfileUserType, 
+                        to: finalUserType,
+                        rootUserType,
+                        isCompanyProtected,
+                        resolvedType
+                    });
+                    try { await setDoc(profileRef, { userType: finalUserType }, { merge: true }); } catch (e) { 
+                        console.warn('⚠️ Nepodařilo se uložit userType:', e);
+                    }
+                } else if (userProfile && (currentProfileUserType === 'company' && finalUserType === 'person')) {
+                    console.log('🔒 Chráním userType="company" před přepsáním na "person"', { 
+                        currentProfileUserType, 
+                        finalUserType,
+                        resolvedType,
+                        rootUserType,
+                        isCompanyProtected
+                    });
+                } else if (userProfile && isCompanyProtected && resolvedType === 'person') {
+                    console.log('🔒 Chráním userType="company" - resolvedType je "person", ale je protected', { 
+                        currentProfileUserType, 
+                        finalUserType,
+                        resolvedType,
+                        rootUserType,
+                        isCompanyProtected
+                    });
                 }
 
                 // Automaticky aktualizovat formulář s daty (vždy prefilled)
+                // DŮLEŽITÉ: Voláme až PO detekci userType, aby se formulář vykreslil správně
                 updateFormFields(userProfile);
                 
                 // Tichá notifikace o úspěšném načtení (pouze při prvním načtení)
@@ -2478,52 +2610,50 @@
         }
 
         // Real-time listener pro změny v profilu
-        function setupRealtimeListener() {
+        async function setupRealtimeListener() {
             try {
                 const currentUser = window.firebaseAuth.currentUser;
                 if (!currentUser) return;
 
-                const { onSnapshot, doc } = import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                const { onSnapshot, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
                 
-                onSnapshot.then(({ onSnapshot }) => {
-                    const profileRef = doc(window.firebaseDb, 'users', currentUser.uid, 'profile', 'profile');
-                    
-                    profileListener = onSnapshot(profileRef, (snapshot) => {
-                        if (snapshot.exists()) {
-                            const userProfile = snapshot.data();
-                            console.log('🔄 Real-time aktualizace profilu:', userProfile);
-                            
-                            // Aktualizovat pouze pokud uživatel neupravuje formulář
-                            const activeElement = document.activeElement;
-                            const isEditing = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.tagName === 'SELECT');
-                            
-                            // Neaktualizovat, pokud uživatel právě upravuje formulář nebo má upravená pole
-                            // Také neaktualizovat pole pro změnu hesla/emailu/telefonu, pokud jsou právě upravována
-                            const passwordAndEmailFields = ['currentPassword', 'newPassword', 'confirmPassword', 'currentPasswordForChange', 'newEmail', 'confirmEmail', 'newPhone'];
-                            const isEditingPasswordOrEmail = activeElement && passwordAndEmailFields.includes(activeElement.id);
-                            
-                            // Neaktualizovat také pokud má pole hodnotu (uživatel je právě upravuje)
-                            const hasValueInPasswordFields = passwordAndEmailFields.some(fieldId => {
-                                const el = document.getElementById(fieldId);
-                                return el && el.value.trim();
+                const profileRef = doc(window.firebaseDb, 'users', currentUser.uid, 'profile', 'profile');
+                
+                profileListener = onSnapshot(profileRef, (snapshot) => {
+                    if (snapshot.exists()) {
+                        const userProfile = snapshot.data();
+                        console.log('🔄 Real-time aktualizace profilu:', userProfile);
+                        
+                        // Aktualizovat pouze pokud uživatel neupravuje formulář
+                        const activeElement = document.activeElement;
+                        const isEditing = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.tagName === 'SELECT');
+                        
+                        // Neaktualizovat, pokud uživatel právě upravuje formulář nebo má upravená pole
+                        // Také neaktualizovat pole pro změnu hesla/emailu/telefonu, pokud jsou právě upravována
+                        const passwordAndEmailFields = ['currentPassword', 'newPassword', 'confirmPassword', 'currentPasswordForChange', 'newEmail', 'confirmEmail', 'newPhone'];
+                        const isEditingPasswordOrEmail = activeElement && passwordAndEmailFields.includes(activeElement.id);
+                        
+                        // Neaktualizovat také pokud má pole hodnotu (uživatel je právě upravuje)
+                        const hasValueInPasswordFields = passwordAndEmailFields.some(fieldId => {
+                            const el = document.getElementById(fieldId);
+                            return el && el.value.trim();
+                        });
+                        
+                        // Neaktualizovat během změny hesla/emailu (zabránit glitchi)
+                        const isChangingPasswordOrEmail = isUserEditing || editedFields.size > 0 || hasValueInPasswordFields;
+                        
+                        if (!isEditing && !isChangingPasswordOrEmail && !isEditingPasswordOrEmail) {
+                            // Použít requestAnimationFrame pro smooth aktualizaci bez glitchi
+                            requestAnimationFrame(() => {
+                                // Znovu zkontrolovat podmínky, protože se mohly změnit
+                                if (!isUserEditing && editedFields.size === 0 && !hasValueInPasswordFields) {
+                                    updateFormFields(userProfile);
+                                }
                             });
-                            
-                            // Neaktualizovat během změny hesla/emailu (zabránit glitchi)
-                            const isChangingPasswordOrEmail = isUserEditing || editedFields.size > 0 || hasValueInPasswordFields;
-                            
-                            if (!isEditing && !isChangingPasswordOrEmail && !isEditingPasswordOrEmail) {
-                                // Použít requestAnimationFrame pro smooth aktualizaci bez glitchi
-                                requestAnimationFrame(() => {
-                                    // Znovu zkontrolovat podmínky, protože se mohly změnit
-                                    if (!isUserEditing && editedFields.size === 0 && !hasValueInPasswordFields) {
-                                        updateFormFields(userProfile);
-                                    }
-                                });
-                            }
                         }
-                    }, (error) => {
-                        console.error('❌ Chyba real-time listeneru:', error);
-                    });
+                    }
+                }, (error) => {
+                    console.error('❌ Chyba real-time listeneru:', error);
                 });
                 
             } catch (error) {
@@ -2620,50 +2750,133 @@
             console.log('🔄 Aktualizuji formulář s daty:', userProfile);
 
             // Aplikovat viditelnost sekcí podle typu účtu (Hobby vs Firma)
-            const resolvedType = normalizeUserType(userProfile?.userType || userProfile?.type) || normalizeUserType(window.__profileUserType) || 'person';
+            // DŮLEŽITÉ: Detekce typu s fallback logikou - pokud existuje businessName/businessIco, pak je to company
+            // KRITICKÉ: Načteme z dat PRVNÍ, pak teprve zkontrolujeme konzistenci s existujícími daty
+            let resolvedType = normalizeUserType(userProfile?.userType || userProfile?.type) || normalizeUserType(window.__profileUserType);
+            
+            // DŮLEŽITÉ: Pokud je userType='company' v profilu nebo v window.__profileUserType, NIKDY ho nepřepisovat na 'person'
+            const isExplicitlyCompany = normalizeUserType(userProfile?.userType || userProfile?.type) === 'company' || normalizeUserType(window.__profileUserType) === 'company';
+            
+            // VŽDY zkontrolovat skutečná data v profilu - pokud data ukazují na firmu, ale resolvedType je person, opravit to
+            // Toto řeší race condition, kdy se userType načte jako "person" z defaultní hodnoty, ale data obsahují firemní údaje
+            if (userProfile) {
+                const hasBusinessName = !!(userProfile?.businessName || userProfile?.companyName || userProfile?.company?.companyName);
+                const hasBusinessIco = !!(userProfile?.businessIco || userProfile?.ico || userProfile?.company?.ico);
+                const hasBusinessData = hasBusinessName || hasBusinessIco;
+                
+                const hasFirstName = !!(userProfile?.firstName);
+                const hasLastName = !!(userProfile?.lastName);
+                const hasPersonalData = hasFirstName || hasLastName;
+                
+                // Pokud je explicitně nastaveno company, zůstat company - NIKDY nepřepisovat na person
+                if (isExplicitlyCompany) {
+                    resolvedType = 'company';
+                    console.log('🔒 [updateFormFields] UserType je explicitně nastaven na "company", zůstává company', { profileUserType: userProfile?.userType || userProfile?.type, windowType: window.__profileUserType });
+                }
+                // Pokud máme firemní data (businessName/IČO), je to určitě company
+                else if (hasBusinessData) {
+                    // Pokud resolvedType není "company", opravit ho - data mají přednost!
+                    if (normalizeUserType(resolvedType) !== 'company') {
+                        console.log('🔍 [updateFormFields] Opravuji userType na "company" podle businessName/IČO:', { hasBusinessName, hasBusinessIco, originalType: resolvedType });
+                        resolvedType = 'company';
+                    }
+                } else if (hasPersonalData && normalizeUserType(resolvedType) !== 'company') {
+                    // Pokud máme osobní data a není to firma, je to person
+                    // DŮLEŽITÉ: NIKDY nepřepisovat z 'company' na 'person'
+                    if (!resolvedType && !isExplicitlyCompany) {
+                        resolvedType = 'person';
+                        console.log('🔍 [updateFormFields] Detekován osobní typ podle firstName/lastName:', { hasFirstName, hasLastName });
+                    }
+                } else if (!resolvedType && !isExplicitlyCompany) {
+                    // Fallback: Pokud nemáme žádná data, použít default
+                    // DŮLEŽITÉ: NIKDY nepoužít 'person' jako default, pokud je explicitně company
+                    resolvedType = 'person';
+                }
+            }
+            
+            // Finální normalizace - pokud je explicitně company, zůstat company
+            // DŮLEŽITÉ: NIKDY nepřepisovat z 'company' na 'person'
+            if (isExplicitlyCompany) {
+                resolvedType = 'company';
+                console.log('🔒 [updateFormFields] Finální normalizace: zůstává company', { isExplicitlyCompany, resolvedType });
+            } else {
+                resolvedType = normalizeUserType(resolvedType) || 'person';
+            }
+            
+            console.log('🎯 [updateFormFields] Resolved userType:', resolvedType, 'z profilu:', { 
+                userType: userProfile?.userType, 
+                type: userProfile?.type, 
+                windowType: window.__profileUserType,
+                businessName: userProfile?.businessName || userProfile?.companyName,
+                businessIco: userProfile?.businessIco || userProfile?.ico,
+                company: userProfile?.company
+            });
+            
             window.__profileUserType = resolvedType;
             applyUserTypeToSettingsUI(resolvedType);
             
-            // Osobní informace - vždy prefilled (bez emailu a telefonu)
-            console.log('📝 Před naplněním formuláře - firstName:', userProfile?.firstName, 'lastName:', userProfile?.lastName);
-            const personalFields = {
+            // Kontrola, zda je uživatel hobby (person) - pro hobby uživatele jsou jméno a příjmení read-only
+            const isHobbyUser = normalizeUserType(resolvedType) === 'person';
+            const isCompanyUser = normalizeUserType(resolvedType) === 'company';
+            
+            // Osobní informace - pouze pro Hobby uživatele (Firma nemá firstName, lastName, birthdate)
+            console.log('📝 Před naplněním formuláře - firstName:', userProfile?.firstName, 'lastName:', userProfile?.lastName, 'userType:', resolvedType);
+            const personalFields = isHobbyUser ? {
                 'firstName': userProfile?.firstName || '',
                 'lastName': userProfile?.lastName || '',
+                'city': userProfile?.city || '',
+                'bio': userProfile?.bio || ''
+            } : {
                 'city': userProfile?.city || '',
                 'bio': userProfile?.bio || ''
             };
             console.log('📝 personalFields:', personalFields);
             
-            // Datum narození - prefilled a read-only (nelze změnit po registraci)
+            // Datum narození - pouze pro Hobby uživatele (Firma nemá birthdate, může být undefined)
+            // DŮLEŽITÉ: Nikdy nevolat .toDate() nebo jiné metody na undefined!
             const birthDateEl = document.getElementById('birthDate');
-            if (birthDateEl) {
-                const birthDate = userProfile?.birthDate || '';
-                if (birthDate) {
-                    // Formátovat datum pro input type="date" (YYYY-MM-DD)
-                    let formattedDate = '';
-                    if (birthDate instanceof Date) {
-                        formattedDate = birthDate.toISOString().split('T')[0];
-                    } else if (typeof birthDate === 'string') {
-                        // Pokud je to timestamp nebo jiný formát
-                        const date = new Date(birthDate);
-                        if (!isNaN(date.getTime())) {
-                            formattedDate = date.toISOString().split('T')[0];
-                        } else {
-                            // Zkusit parsovat jako YYYY-MM-DD
-                            formattedDate = birthDate.split('T')[0];
+            if (birthDateEl && isHobbyUser) {
+                try {
+                    const birthDate = userProfile?.birthDate;
+                    if (birthDate) {
+                        // Formátovat datum pro input type="date" (YYYY-MM-DD)
+                        let formattedDate = '';
+                        // Zkontrolovat, zda je to Firestore Timestamp (má metodu toDate)
+                        if (birthDate && typeof birthDate.toDate === 'function') {
+                            const date = birthDate.toDate();
+                            if (date instanceof Date && !isNaN(date.getTime())) {
+                                formattedDate = date.toISOString().split('T')[0];
+                            }
+                        } else if (birthDate instanceof Date) {
+                            formattedDate = birthDate.toISOString().split('T')[0];
+                        } else if (typeof birthDate === 'string') {
+                            // Pokud je to timestamp nebo jiný formát
+                            const date = new Date(birthDate);
+                            if (!isNaN(date.getTime())) {
+                                formattedDate = date.toISOString().split('T')[0];
+                            } else {
+                                // Zkusit parsovat jako YYYY-MM-DD
+                                formattedDate = birthDate.split('T')[0];
+                            }
+                        }
+                        if (formattedDate) {
+                            birthDateEl.value = formattedDate;
+                            birthDateEl.readOnly = true;
+                            birthDateEl.style.backgroundColor = '#f3f4f6';
+                            birthDateEl.style.cursor = 'not-allowed';
                         }
                     }
-                    if (formattedDate) {
-                        birthDateEl.value = formattedDate;
-                        birthDateEl.readOnly = true;
-                        birthDateEl.style.backgroundColor = '#f3f4f6';
-                        birthDateEl.style.cursor = 'not-allowed';
-                    }
+                } catch (error) {
+                    console.warn('⚠️ Chyba při zpracování birthdate:', error);
+                    // Ignorovat chybu - u firmy je birthdate undefined a to je v pořádku
                 }
+            } else if (birthDateEl && isCompanyUser) {
+                // U firmy ponechat pole prázdné a read-only (nemá birthdate)
+                birthDateEl.value = '';
+                birthDateEl.readOnly = true;
+                birthDateEl.style.backgroundColor = '#f3f4f6';
+                birthDateEl.style.cursor = 'not-allowed';
             }
-
-            // Kontrola, zda je uživatel hobby (person) - pro hobby uživatele jsou jméno a příjmení read-only
-            const isHobbyUser = normalizeUserType(resolvedType) === 'person';
             
             Object.entries(personalFields).forEach(([fieldId, value]) => {
                 const element = document.getElementById(fieldId);
@@ -2762,23 +2975,22 @@
                 }
             } catch (e) { /* noop */ }
 
-            // Obchodní informace - vždy prefilled
-            // Načíst z hlavní úrovně profilu, nebo z company objektu (pro zpětnou kompatibilitu)
-            const company = userProfile?.company || {};
-            const businessFields = {
-                'businessName': userProfile?.companyName || company?.companyName || '',
-                'businessType': userProfile?.businessType || '',
-                'businessIco': userProfile?.businessIco || userProfile?.ico || company?.ico || '',
-                'businessDic': userProfile?.businessDic || company?.dic || '',
-                'businessAddress': userProfile?.businessAddress || company?.address || '',
-                'businessWebsite': userProfile?.businessWebsite || company?.website || '',
-                'businessDescription': userProfile?.businessDescription || ''
-            };
+            // Obchodní informace - POUZE pro firemní uživatele (company)
+            // DŮLEŽITÉ: Firemní pole zpracováváme POUZE pokud je uživatel typu "company"
+            if (isCompanyUser) {
+                // Načíst z hlavní úrovně profilu, nebo z company objektu (pro zpětnou kompatibilitu)
+                const company = userProfile?.company || {};
+                const businessFields = {
+                    'businessName': userProfile?.companyName || company?.companyName || '',
+                    'businessType': userProfile?.businessType || '',
+                    'businessIco': userProfile?.businessIco || userProfile?.ico || company?.ico || '',
+                    'businessDic': userProfile?.businessDic || company?.dic || '',
+                    'businessAddress': userProfile?.businessAddress || company?.address || '',
+                    'businessWebsite': userProfile?.businessWebsite || company?.website || '',
+                    'businessDescription': userProfile?.businessDescription || ''
+                };
 
-            // Kontrola, zda je uživatel firma
-            const isCompanyUser = normalizeUserType(resolvedType) === 'company';
-
-            Object.entries(businessFields).forEach(([fieldId, value]) => {
+                Object.entries(businessFields).forEach(([fieldId, value]) => {
                 const element = document.getElementById(fieldId);
                 if (element) {
                     console.log(`📝 Zpracovávám firemní pole ${fieldId} s hodnotou:`, value);
@@ -2836,7 +3048,8 @@
                 } else {
                     console.warn(`⚠️ Firemní element ${fieldId} nebyl nalezen v DOM`);
                 }
-            });
+                });
+            }
 
             // Předvolby upozornění - vždy prefilled
             const preferenceFields = {

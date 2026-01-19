@@ -1,64 +1,49 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+        http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+  <!-- Hlavní stránka -->
   <url>
     <loc>https://bulldogo.cz/</loc>
+    <lastmod>2025-01-20</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
+  <!-- Katalog služeb -->
   <url>
-    <loc>https://bulldogo.cz/services</loc>
+    <loc>https://bulldogo.cz/services.html</loc>
+    <lastmod>2025-01-20</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
+  <!-- Vytvoření inzerátu -->
   <url>
-    <loc>https://bulldogo.cz/my-ads</loc>
+    <loc>https://bulldogo.cz/create-ad.html</loc>
+    <lastmod>2025-01-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <!-- Balíčky -->
+  <url>
+    <loc>https://bulldogo.cz/packages.html</loc>
+    <lastmod>2025-01-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
+  <!-- Topování inzerátů -->
   <url>
-    <loc>https://bulldogo.cz/ad-detail</loc>
+    <loc>https://bulldogo.cz/top-ads.html</loc>
+    <lastmod>2025-01-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
+  <!-- Obchodní podmínky -->
   <url>
-    <loc>https://bulldogo.cz/profile</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://bulldogo.cz/profile-detail</loc>
-    <changefreq>weekly</changefreq>
+    <loc>https://bulldogo.cz/terms.html</loc>
+    <lastmod>2025-01-20</lastmod>
+    <changefreq>monthly</changefreq>
     <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://bulldogo.cz/profile-settings</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://bulldogo.cz/profile-services</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://bulldogo.cz/profile-ratings</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://bulldogo.cz/packages</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://bulldogo.cz/top-ads</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://bulldogo.cz/chat</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.4</priority>
   </url>
 </urlset>
 

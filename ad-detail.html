@@ -12,10 +12,12 @@
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Detail inzerátu - BULLDOGO</title>
-    <meta name="description" content="Detail nabídky služby na BULLDOGO – popis, kontakt, galerie a možnost chatu.">
-    <meta name="robots" content="index, follow">
-    <link rel="canonical" href="https://bulldogo.cz/ad-detail">
+    <title>Detail inzerátu - BULLDOGO | Popis služby, kontakt a galerie</title>
+    <meta name="description" content="Detail nabídky služby na BULLDOGO – kompletní popis, fotky, cena, lokalita, kontakt a možnost chatu. Zjistěte více o poskytovateli služby a jeho hodnocení.">
+    <meta name="keywords" content="detail služby, popis služby, kontakt poskytovatele, hodnocení služby, galerie služby">
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+    <meta name="author" content="BULLDOGO">
+    <link rel="canonical" href="https://bulldogo.cz/ad-detail.html">
     <meta name="theme-color" content="#ff6a00">
     <link rel="dns-prefetch" href="https://www.gstatic.com">
     <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
@@ -41,16 +43,74 @@
             }
         });
     </script>
+    <!-- Open Graph / Facebook -->
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="BULLDOGO">
-    <meta property="og:title" content="Detail inzerátu - BULLDOGO">
-    <meta property="og:description" content="Popis, fotky a kontakt na poskytovatele služby.">
+    <meta property="og:title" content="Detail inzerátu - BULLDOGO | Popis služby, kontakt a galerie">
+    <meta property="og:description" content="Detail nabídky služby na BULLDOGO – kompletní popis, fotky, cena, lokalita, kontakt a možnost chatu. Zjistěte více o poskytovateli služby.">
     <meta property="og:url" content="https://bulldogo.cz/ad-detail.html">
     <meta property="og:image" content="https://bulldogo.cz/fotky/bulldogo-logo.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="BULLDOGO - Detail inzerátu">
+    <meta property="og:locale" content="cs_CZ">
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Detail inzerátu - BULLDOGO">
+    <meta name="twitter:description" content="Popis, fotky a kontakt na poskytovatele služby.">
+    <meta name="twitter:image" content="https://bulldogo.cz/fotky/bulldogo-logo.png">
+    <meta name="twitter:image:alt" content="BULLDOGO - Detail inzerátu">
     <link rel="stylesheet" href="styles.css">
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"></noscript>
-    
+    <!-- Structured Data - Service (dynamicky se naplní z dat inzerátu) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Service",
+      "name": "Služba na BULLDOGO",
+      "description": "Detail služby na platformě BULLDOGO",
+      "provider": {
+        "@type": "Person",
+        "name": "Poskytovatel služby"
+      },
+      "areaServed": {
+        "@type": "Country",
+        "name": ["Czech Republic", "Slovakia"]
+      },
+      "offers": {
+        "@type": "Offer",
+        "priceCurrency": "CZK"
+      }
+    }
+    </script>
+    <!-- Structured Data - BreadcrumbList -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Domů",
+          "item": "https://bulldogo.cz/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Služby",
+          "item": "https://bulldogo.cz/services.html"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Detail inzerátu",
+          "item": "https://bulldogo.cz/ad-detail.html"
+        }
+      ]
+    }
+    </script>
     
     <style>
         /* Start Chat Button Styles */
@@ -437,10 +497,10 @@
                 <div class="footer-section">
                     <h3>Rychlé odkazy</h3>
                     <ul>
-                        <li><a href="index.html">Domů</a></li>
-                        <li><a href="services.html">Služby</a></li>
-                        <li><a href="index.html#features">O nás</a></li>
-                        <li><a href="index.html#contact">Kontakt</a></li>
+                        <li><a href="#home">Domů</a></li>
+                        <li><a href="#services">Služby</a></li>
+                        <li><a href="#features">O nás</a></li>
+                        <li><a href="#contact">Kontakt</a></li>
                     </ul>
                 </div>
                 <div class="footer-section">
@@ -461,7 +521,7 @@
             </div>
             <div class="footer-bottom">
                 <p>&copy; 2026 BULLDOGO. Všechna práva vyhrazena.</p>
-                <p>Vytvořilo <a href="https://www.wloom.eu" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: underline;">Kreativní Studio Wloom</a></p>
+                    <p>Vytvořilo <a href="https://www.wloom.eu" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: underline;">Kreativní Studio Wloom</a></p>
             </div>
         </div>
     </footer>

@@ -12,10 +12,12 @@
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Balíčky - BULLDOGO</title>
-    <meta name="description" content="Vyberte si balíček na BULLDOGO – začněte zdarma nebo zvolte firemní plán.">
-    <meta name="robots" content="index, follow">
-    <link rel="canonical" href="https://bulldogo.cz/packages">
+    <title>Balíčky a předplatné - BULLDOGO | Hobby a Firma plány</title>
+    <meta name="description" content="Vyberte si balíček na BULLDOGO – začněte zdarma s Hobby plánem nebo zvolte firemní plán s extra funkcemi. Neomezené inzeráty, chat, firemní profil a prioritní podpora.">
+    <meta name="keywords" content="balíčky BULLDOGO, předplatné, hobby plán, firemní plán, inzerce služeb, předplatné služeb, balíčky zdarma">
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+    <meta name="author" content="BULLDOGO">
+    <link rel="canonical" href="https://bulldogo.cz/packages.html">
     <meta name="theme-color" content="#ff6a00">
     <link rel="dns-prefetch" href="https://www.gstatic.com">
     <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
@@ -37,18 +39,92 @@
     <link rel="icon" type="image/png" href="fotky/bulldogo-logo.png">
     <link rel="apple-touch-icon" href="fotky/bulldogo-logo.png">
     <link rel="manifest" href="/site.webmanifest">
+    <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="BULLDOGO">
-    <meta property="og:title" content="Balíčky - BULLDOGO">
-    <meta property="og:description" content="Začněte zdarma, nebo zvolte balíček pro firmy s extra funkcemi.">
+    <meta property="og:title" content="Balíčky a předplatné - BULLDOGO | Hobby a Firma plány">
+    <meta property="og:description" content="Vyberte si balíček na BULLDOGO – začněte zdarma s Hobby plánem nebo zvolte firemní plán s extra funkcemi. Neomezené inzeráty, chat a prioritní podpora.">
     <meta property="og:url" content="https://bulldogo.cz/packages.html">
     <meta property="og:image" content="https://bulldogo.cz/fotky/bulldogo-logo.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="BULLDOGO - Balíčky a předplatné">
+    <meta property="og:locale" content="cs_CZ">
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Balíčky a předplatné - BULLDOGO">
+    <meta name="twitter:description" content="Začněte zdarma s Hobby plánem nebo zvolte firemní plán s extra funkcemi.">
+    <meta name="twitter:image" content="https://bulldogo.cz/fotky/bulldogo-logo.png">
+    <meta name="twitter:image:alt" content="BULLDOGO - Balíčky">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="electric-border.css">
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"></noscript>
     <!-- Firebase SDK (centralizovaná inicializace) -->
     <script type="module" src="firebase-init.js" defer></script>
+    <!-- Structured Data - BreadcrumbList -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Domů",
+          "item": "https://bulldogo.cz/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Balíčky",
+          "item": "https://bulldogo.cz/packages.html"
+        }
+      ]
+    }
+    </script>
+    <!-- Structured Data - Offer -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "OfferCatalog",
+      "name": "Balíčky BULLDOGO",
+      "itemListElement": [
+        {
+          "@type": "Offer",
+          "itemOffered": {
+            "@type": "Service",
+            "name": "Hobby balíček",
+            "description": "1. měsíc zdarma, neomezené inzeráty, chat"
+          },
+          "price": "49",
+          "priceCurrency": "CZK",
+          "priceSpecification": {
+            "@type": "UnitPriceSpecification",
+            "price": "49",
+            "priceCurrency": "CZK",
+            "unitCode": "MON"
+          }
+        },
+        {
+          "@type": "Offer",
+          "itemOffered": {
+            "@type": "Service",
+            "name": "Firma balíček",
+            "description": "1. měsíc zdarma, neomezené inzeráty, chat, firemní profil, prioritní podpora"
+          },
+          "price": "149",
+          "priceCurrency": "CZK",
+          "priceSpecification": {
+            "@type": "UnitPriceSpecification",
+            "price": "149",
+            "priceCurrency": "CZK",
+            "unitCode": "MON"
+          }
+        }
+      ]
+    }
+    </script>
     <!-- Mailchimp popup (newsletter) -->
     <script>
         window.addEventListener('load', function() {
@@ -416,6 +492,9 @@
                 </div>
             </div>
         </section>
+
+        <!-- Fixní bílé pole jako oddělovač mezi balíčky a footerem -->
+        <div class="packages-footer-spacer"></div>
 
         <!-- Footer -->
         <footer class="footer">

@@ -3,6 +3,28 @@ let selectedPlan = null;
 // Zpřístupnit globálně pro GoPay integraci
 window.selectedPlan = selectedPlan;
 
+// Spolehlivé čekání na Firebase (podobně jako v nastavení)
+async function waitForFirebase(timeoutMs = 10000) {
+    return new Promise((resolve, reject) => {
+        // Pokud už je Firebase připraven, vrátit okamžitě
+        if (window.firebaseAuth && window.firebaseDb) {
+            resolve();
+            return;
+        }
+        
+        const startedAt = Date.now();
+        const checkFirebase = setInterval(() => {
+            if (window.firebaseAuth && window.firebaseDb) {
+                clearInterval(checkFirebase);
+                resolve();
+            } else if (Date.now() - startedAt > timeoutMs) {
+                clearInterval(checkFirebase);
+                reject(new Error('Firebase se nenačetl včas'));
+            }
+        }, 100);
+    });
+}
+
 // Initialize page
 document.addEventListener('DOMContentLoaded', function() {
     initializePackages();
@@ -10,13 +32,17 @@ document.addEventListener('DOMContentLoaded', function() {
     setupPackagesUserTypeFilter();
     try { updatePackagesPricingLayout(); } catch (_) {}
     // Po načtení stránky vyčkej na Firebase a načti stav balíčku
-    (function waitAndLoadPlan(){
-        if (window.firebaseAuth && window.firebaseDb) {
-            loadCurrentPlan();
+    (async function waitAndLoadPlan(){
+        try {
+            await waitForFirebase(10000);
+            await loadCurrentPlan();
             // Po přihlášení schovej nepovolený balíček podle userType (person/company)
-            try { filterPackagesByUserType(); } catch (_) {}
-        } else {
-            setTimeout(waitAndLoadPlan, 100);
+            // Filtrování se také spouští v setupPackagesUserTypeFilter, ale pro jistotu i zde
+            try { await filterPackagesByUserType(); } catch (_) {}
+        } catch (e) {
+            console.warn('⚠️ Nepodařilo se načíst balíček při inicializaci:', e);
+            // Zkusit znovu po chvíli
+            setTimeout(waitAndLoadPlan, 1000);
         }
     })();
     // Zpracování návratu ze Stripe Checkout (?payment=success|canceled)
@@ -107,16 +133,55 @@ function setupPackagesUserTypeFilter() {
                     return;
                 }
 
-                // Přihlášený: aplikuj filtr + krátký retry (kvůli pomalému dočtení profilu)
-                for (let i = 0; i < 10; i++) {
-                    await filterPackagesByUserType();
-                    // Pokud se podařilo něco schovat, přestaň
-                    const visible = Array.from(document.querySelectorAll('.pricing-card[data-plan]'))
-                        .filter((c) => c.style.display !== 'none');
-                    if (visible.length <= 1) break;
-                    await new Promise(r => setTimeout(r, 200));
+                // Přihlášený: aplikuj filtr + retry (kvůli pomalému dočtení profilu)
+                // DŮLEŽITÉ: Když přichází z jiné stránky, profil se může načítat pomaleji
+                // Musíme počkat na načtení profilu, ne jen na auth state
+                let profileLoaded = false;
+                let retryCount = 0;
+                const maxRetries = 20; // Více pokusů pro pomalé načítání
+                
+                while (!profileLoaded && retryCount < maxRetries) {
+                    try {
+                        // Zkusit načíst profil a zkontrolovat, zda obsahuje data
+                        const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                        const profileRef = doc(window.firebaseDb, 'users', user.uid, 'profile', 'profile');
+                        const profileSnap = await getDoc(profileRef);
+                        
+                        if (profileSnap.exists()) {
+                            const profileData = profileSnap.data();
+                            // Zkontrolovat, zda profil obsahuje nějaká data (ne jen prázdný objekt)
+                            // Pokud má businessName/IČO nebo firstName/lastName, je to načtený profil
+                            const hasData = !!(profileData.businessName || profileData.companyName || profileData.businessIco || 
+                                             profileData.ico || profileData.firstName || profileData.lastName || 
+                                             profileData.userType || profileData.type);
+                            
+                            if (hasData) {
+                                profileLoaded = true;
+                                console.log(`✅ Profil načten po ${retryCount + 1} pokusech`);
+                            }
+                        }
+                    } catch (e) {
+                        console.warn(`⚠️ Pokus ${retryCount + 1} načíst profil selhal:`, e);
+                    }
+                    
+                    if (!profileLoaded) {
+                        retryCount++;
+                        await new Promise(r => setTimeout(r, 200)); // Čekat 200ms mezi pokusy
+                    }
                 }
+                
+                // Teď když je profil načten, aplikovat filtr
+                await filterPackagesByUserType();
                 try { updatePackagesPricingLayout(); } catch (_) {}
+                
+                // Pro jistotu ještě jednou zkontrolovat po krátké době (pro případ, že se data aktualizují)
+                setTimeout(async () => {
+                    try {
+                        await filterPackagesByUserType();
+                        try { updatePackagesPricingLayout(); } catch (_) {}
+                    } catch (_) {}
+                }, 1500);
+                
                 // Po přihlášení vždy načti aktuální plán a případně přepni CTA na "Spravovat balíček"
                 try { await loadCurrentPlan(); } catch (_) {}
             });
@@ -161,34 +226,160 @@ function normalizeUserType(value) {
 
 async function filterPackagesByUserType() {
     try {
-        if (!window.firebaseAuth || !window.firebaseDb) return;
+        // Spolehlivě počkat na Firebase
+        await waitForFirebase(10000);
+        
+        if (!window.firebaseAuth || !window.firebaseDb) {
+            // Pokud není Firebase připraven, zobrazit oba balíčky
+            document.querySelectorAll('.pricing-card[data-plan]').forEach((card) => {
+                card.style.display = '';
+            });
+            try { updatePackagesPricingLayout(); } catch (_) {}
+            return;
+        }
+        
         // Použít globální helper funkci pro spolehlivé získání currentUser
         const user = await (window.waitForCurrentUser || (async () => window.firebaseAuth?.currentUser || null))(5000);
-        if (!user) return;
+        if (!user) {
+            // Nepřihlášený uživatel - zobrazit oba balíčky
+            document.querySelectorAll('.pricing-card[data-plan]').forEach((card) => {
+                card.style.display = '';
+            });
+            try { updatePackagesPricingLayout(); } catch (_) {}
+            try { setPricingButtonsMode('select'); } catch (_) {}
+            return;
+        }
 
+        // KRITICKÉ: Když přichází z jiné stránky, profil se může načítat pomaleji
+        // Musíme počkat na načtení profilu z databáze, ne jen na auth state
+        // Zkusit načíst profil s retry mechanismem
         const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
-        const profileRef = doc(window.firebaseDb, 'users', user.uid, 'profile', 'profile');
-        const rootRef = doc(window.firebaseDb, 'users', user.uid);
-        const [profileSnap, rootSnap] = await Promise.all([getDoc(profileRef), getDoc(rootRef)]);
-        const profile = profileSnap.exists() ? (profileSnap.data() || {}) : {};
-        const root = rootSnap.exists() ? (rootSnap.data() || {}) : {};
-        const rawType = profile?.userType || profile?.type || root?.userType || root?.type || '';
-        const userType = normalizeUserType(rawType) || 'person'; // person/company
+        let profile = {};
+        let root = {};
+        let profileLoaded = false;
+        
+        // Zkusit načíst profil až 10x (pro pomalé načítání při přechodu ze stránky)
+        for (let attempt = 0; attempt < 10; attempt++) {
+            try {
+                const profileRef = doc(window.firebaseDb, 'users', user.uid, 'profile', 'profile');
+                const rootRef = doc(window.firebaseDb, 'users', user.uid);
+                const [profileSnap, rootSnap] = await Promise.all([getDoc(profileRef), getDoc(rootRef)]);
+                
+                profile = profileSnap.exists() ? (profileSnap.data() || {}) : {};
+                root = rootSnap.exists() ? (rootSnap.data() || {}) : {};
+                
+                // Zkontrolovat, zda profil obsahuje nějaká data (ne jen prázdný objekt)
+                // Pokud má businessName/IČO nebo firstName/lastName nebo userType, je to načtený profil
+                const hasData = !!(profile.businessName || profile.companyName || profile.businessIco || 
+                                 profile.ico || profile.firstName || profile.lastName || 
+                                 profile.userType || profile.type || root.userType || root.type);
+                
+                if (hasData || attempt >= 9) {
+                    // Profil je načten nebo jsme dosáhli max pokusů
+                    profileLoaded = true;
+                    if (hasData) {
+                        console.log(`✅ Profil načten pro filtrování po ${attempt + 1} pokusech`);
+                    } else {
+                        console.warn(`⚠️ Profil se nepodařilo načíst po ${attempt + 1} pokusech, používám prázdný profil`);
+                    }
+                    break;
+                }
+            } catch (e) {
+                console.warn(`⚠️ Pokus ${attempt + 1}/10 načíst profil selhal:`, e);
+            }
+            
+            // Počkat před dalším pokusem (postupné prodloužení)
+            await new Promise(r => setTimeout(r, 200 * (attempt + 1)));
+        }
+        
+        // Načíst userType z různých míst (stejně jako v nastavení)
+        const rootUserType = normalizeUserType(root?.userType || root?.type || '');
+        let resolvedType = normalizeUserType(profile?.userType || profile?.type || '') || rootUserType;
+        
+        // DŮLEŽITÉ: Pokud je userType='company' v root dokumentu nebo v profilu, NIKDY ho nepřepisovat na 'person'
+        const isExplicitlyCompany = normalizeUserType(rootUserType) === 'company' || normalizeUserType(profile?.userType || profile?.type) === 'company';
+        
+        // KRITICKÉ: VŽDY zkontrolovat skutečná data v profilu - pokud data ukazují na firmu, ale resolvedType je person, opravit to
+        // Toto řeší race condition, kdy se userType načte jako "person" z defaultní hodnoty, ale data obsahují firemní údaje
+        if (profile) {
+            const hasBusinessName = !!(profile?.businessName || profile?.companyName || profile?.company?.companyName);
+            const hasBusinessIco = !!(profile?.businessIco || profile?.ico || profile?.company?.ico);
+            const hasBusinessData = hasBusinessName || hasBusinessIco;
+            
+            const hasFirstName = !!(profile?.firstName);
+            const hasLastName = !!(profile?.lastName);
+            const hasPersonalData = hasFirstName || hasLastName;
+            
+            // Pokud je explicitně nastaveno company, zůstat company
+            if (isExplicitlyCompany) {
+                resolvedType = 'company';
+                console.log('🔒 [packages] UserType je explicitně nastaven na "company", zůstává company', { rootUserType, profileUserType: profile?.userType || profile?.type });
+            }
+            // Pokud máme firemní data (businessName/IČO), je to určitě company
+            else if (hasBusinessData) {
+                // Pokud resolvedType není "company", opravit ho - data mají přednost!
+                if (normalizeUserType(resolvedType) !== 'company') {
+                    console.log('🔍 Opravuji userType na "company" podle businessName/IČO:', { hasBusinessName, hasBusinessIco, originalType: resolvedType });
+                    resolvedType = 'company';
+                }
+            } else if (hasPersonalData && normalizeUserType(resolvedType) !== 'company') {
+                // Pokud máme osobní data a není to firma, je to person
+                if (!resolvedType) {
+                    resolvedType = 'person';
+                    console.log('🔍 Detekován osobní typ podle firstName/lastName:', { hasFirstName, hasLastName });
+                }
+            } else if (!resolvedType) {
+                // Fallback: Pokud nemáme žádná data, použít default
+                resolvedType = 'person';
+            }
+        }
+        
+        // Finální normalizace - pokud je explicitně company, zůstat company
+        if (isExplicitlyCompany) {
+            resolvedType = 'company';
+        } else {
+            resolvedType = normalizeUserType(resolvedType) || 'person';
+        }
+        
+        const userType = resolvedType;
+        
+        console.log('🎯 Resolved userType pro balíčky:', userType, 'z profilu:', { 
+            userType: profile?.userType, 
+            type: profile?.type, 
+            rootUserType,
+            businessName: profile?.businessName || profile?.companyName,
+            businessIco: profile?.businessIco || profile?.ico,
+            company: profile?.company,
+            hasBusinessName: !!(profile?.businessName || profile?.companyName || profile?.company?.companyName),
+            hasBusinessIco: !!(profile?.businessIco || profile?.ico || profile?.company?.ico),
+            hasFirstName: !!(profile?.firstName),
+            hasLastName: !!(profile?.lastName),
+            profileLoaded: profileLoaded
+        });
 
+        // Určit, který balíček má být zobrazen podle typu uživatele
         const allowedPlan = userType === 'company' ? 'business' : 'hobby';
 
+        // Zobrazit pouze příslušný balíček
         document.querySelectorAll('.pricing-card[data-plan]').forEach((card) => {
             const plan = card.getAttribute('data-plan');
             card.style.display = (plan === allowedPlan) ? '' : 'none';
         });
         try { updatePackagesPricingLayout(); } catch (_) {}
 
-        // Pokud byl vybraný "jiný" plán, reset
+        // Pokud byl vybraný "jiný" plán (neodpovídající typu uživatele), reset
         if (window.selectedPlan && window.selectedPlan.plan && window.selectedPlan.plan !== allowedPlan) {
             try { resetPackages(); } catch (_) {}
         }
+        
+        console.log(`✅ Filtrování balíčků dokončeno: zobrazen balíček "${allowedPlan}" pro typ uživatele "${userType}"`);
     } catch (e) {
         console.warn('filterPackagesByUserType failed:', e);
+        // V případě chyby zobrazit oba balíčky
+        document.querySelectorAll('.pricing-card[data-plan]').forEach((card) => {
+            card.style.display = '';
+        });
+        try { updatePackagesPricingLayout(); } catch (_) {}
     }
 }
 
@@ -801,7 +992,22 @@ async function refreshBadge() {
 // Načíst aktuální balíček a aktualizovat manage UI
 async function loadCurrentPlan() {
     try {
-        const user = window.firebaseAuth && window.firebaseAuth.currentUser;
+        // Spolehlivě počkat na Firebase
+        await waitForFirebase(10000);
+        
+        if (!window.firebaseAuth || !window.firebaseDb) {
+            console.warn('⚠️ Firebase není připraven pro loadCurrentPlan');
+            return;
+        }
+        
+        // Použít globální helper funkci pro spolehlivé získání currentUser
+        const user = await (window.waitForCurrentUser || (async () => window.firebaseAuth?.currentUser || null))(5000);
+        if (!user) {
+            // Nepřihlášený uživatel - zobrazit tlačítka pro výběr
+            try { setPricingButtonsMode('select'); } catch (_) {}
+            return;
+        }
+        
         const pPlan = document.getElementById('currentPlan');
         const pEnd = document.getElementById('currentPlanEnd');
         const pCancel = document.getElementById('currentPlanCancelAt');
@@ -810,7 +1016,7 @@ async function loadCurrentPlan() {
         const btnUndo = document.getElementById('btnUndoCancel');
         // Pozn.: packages.html nemusí mít sekci "aktuální balíček", ale i tak potřebujeme načíst plán
         // kvůli přepnutí CTA na "Spravovat balíček".
-        if (!user || !window.firebaseDb) return;
+        
         const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
         const ref = doc(window.firebaseDb, 'users', user.uid, 'profile', 'profile');
         const snap = await getDoc(ref);
@@ -844,6 +1050,18 @@ async function loadCurrentPlan() {
 
         // Přepnout CTA podle aktivního plánu
         try { setPricingButtonsMode(isActivePlan ? 'manage' : 'select'); } catch (_) {}
+        
+        // Aktualizovat odznak v navbaru
+        if (isActivePlan && plan !== 'none') {
+            try {
+                if (typeof window.applySidebarBadge === 'function') {
+                    window.applySidebarBadge(plan);
+                }
+                try { localStorage.setItem('bdg_plan', plan); } catch (_) {}
+            } catch (_) {}
+        }
+        
+        console.log(`✅ loadCurrentPlan dokončeno: plan="${plan}", isActive=${isActivePlan}`);
     } catch (e) {
         console.error('❌ loadCurrentPlan:', e);
     }

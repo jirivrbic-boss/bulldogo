@@ -377,14 +377,18 @@ function createAdCard(ad) {
             <i class="fas fa-play"></i>
            </button>`;
     
+    // Získat formátovanou lokaci - stejně jako na stránce služeb
+    const formattedLocation = getLocationName(ad.location || ad.region || ad.serviceRegion || '') || 'Neuvedeno';
+    
     return `
         <article class="ad-card${ad.isTop ? ' is-top' : ''}" ${topStyle}>
             <div class="ad-thumb">
                 <img src="${imageUrl}" alt="Inzerát" loading="lazy" decoding="async">
             </div>
             <div class="ad-body">
+                <div class="ad-meta"><span>${categoryNames[ad.category] || ad.category}</span></div>
                 <h3 class="ad-title">${ad.title}</h3>
-                <div class="ad-meta"><span>${ad.location}</span> • <span>${categoryNames[ad.category] || ad.category}</span></div>
+                <div class="ad-location">${formattedLocation}</div>
                 <div class="ad-status" style="background-color: ${statusColor}; color: white; padding: 0.2rem 0.5rem; border-radius: 10px; font-size: 0.8rem; margin-top: 0.5rem; display: inline-block;">
                     ${statusText}
                 </div>

@@ -401,19 +401,80 @@ function initAuth() {
             // Toto opraví i existující účty, které byly vytvořeny bez profilu
             if (user && window.userProfileService && typeof window.userProfileService.ensureUserProfile === 'function') {
                 // Volat asynchronně, aby neblokovalo UI
-                window.userProfileService.ensureUserProfile(user.uid, {
-                    email: user.email || '',
-                    phoneNumber: user.phoneNumber || '',
-                    provider: user.providerData?.[0]?.providerId || 'unknown',
-                    type: 'person'
-                }).catch(err => {
-                    console.error('[AUTH] ❌ Chyba při ensureUserProfile v onAuthStateChanged:', err);
-                    console.error('[AUTH] ❌ Error details:', {
-                        code: err?.code,
-                        message: err?.message,
-                        pathname: window.location.pathname
-                    });
-                });
+                // DŮLEŽITÉ: Načíst userType z root dokumentu nebo profilu, aby se nepřepsal 'company' na 'person'
+                (async () => {
+                    try {
+                        const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                        const db = window.firebaseDb || firebaseDb;
+                        if (!db) {
+                            // Fallback na 'person' pokud není DB dostupná
+                            window.userProfileService.ensureUserProfile(user.uid, {
+                                email: user.email || '',
+                                phoneNumber: user.phoneNumber || '',
+                                provider: user.providerData?.[0]?.providerId || 'unknown',
+                                type: 'person'
+                            }).catch(err => {
+                                console.error('[AUTH] ❌ Chyba při ensureUserProfile v onAuthStateChanged:', err);
+                            });
+                            return;
+                        }
+                        
+                        // Načíst userType z root dokumentu nebo profilu
+                        const rootRef = doc(db, 'users', user.uid);
+                        const profileRef = doc(db, 'users', user.uid, 'profile', 'profile');
+                        let userType = 'person'; // Default
+                        
+                        try {
+                            const rootSnap = await getDoc(rootRef);
+                            if (rootSnap.exists()) {
+                                const rootData = rootSnap.data();
+                                const rootUserType = rootData?.userType || rootData?.type;
+                                if (rootUserType === 'company') {
+                                    userType = 'company';
+                                }
+                            }
+                            
+                            // Pokud není v root, zkontrolovat profil
+                            if (userType === 'person') {
+                                const profileSnap = await getDoc(profileRef);
+                                if (profileSnap.exists()) {
+                                    const profileData = profileSnap.data();
+                                    const profileUserType = profileData?.userType || profileData?.type;
+                                    if (profileUserType === 'company') {
+                                        userType = 'company';
+                                    }
+                                }
+                            }
+                        } catch (readError) {
+                            console.warn('[AUTH] ⚠️ Nepodařilo se načíst userType, použiji default:', readError);
+                        }
+                        
+                        window.userProfileService.ensureUserProfile(user.uid, {
+                            email: user.email || '',
+                            phoneNumber: user.phoneNumber || '',
+                            provider: user.providerData?.[0]?.providerId || 'unknown',
+                            type: userType
+                        }).catch(err => {
+                            console.error('[AUTH] ❌ Chyba při ensureUserProfile v onAuthStateChanged:', err);
+                            console.error('[AUTH] ❌ Error details:', {
+                                code: err?.code,
+                                message: err?.message,
+                                pathname: window.location.pathname
+                            });
+                        });
+                    } catch (error) {
+                        console.error('[AUTH] ❌ Chyba při načítání userType pro ensureUserProfile:', error);
+                        // Fallback na 'person' při chybě
+                        window.userProfileService.ensureUserProfile(user.uid, {
+                            email: user.email || '',
+                            phoneNumber: user.phoneNumber || '',
+                            provider: user.providerData?.[0]?.providerId || 'unknown',
+                            type: 'person'
+                        }).catch(err => {
+                            console.error('[AUTH] ❌ Chyba při ensureUserProfile v onAuthStateChanged:', err);
+                        });
+                    }
+                })();
             } else if (user && window.authService && typeof window.authService.ensureUserProfile === 'function') {
                 // Fallback na starý authService
                 window.authService.ensureUserProfile(user).catch(err => {
@@ -866,12 +927,17 @@ async function register(email, password, userData) {
         const user = userCredential.user;
         
         // Vytvořit root dokument uživatele a profil subdokument
+        // DŮLEŽITÉ: Nastavit flag před vytvořením profilu, aby Cloud Function věděla, že jde o registraci
         const { setDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
         await setDoc(doc(firebaseDb, 'users', user.uid), {
             uid: user.uid,
             email: user.email,
+            phoneNumber: normalizedPhone || null,
             createdAt: new Date(),
-            userType: userData.type
+            userType: userData.type,
+            // Flag pro zabránění odeslání emailu při registraci
+            _skipChangeNotification: true,
+            _isRegistration: true // Dodatečný flag pro identifikaci registrace
         });
         
         // Vytvořit profil podle typu uživatele s rozšířenými informacemi
@@ -883,6 +949,7 @@ async function register(email, password, userData) {
             // Základní informace
             name: userData.firstName && userData.lastName ? `${userData.firstName} ${userData.lastName}` : (userData.companyName || 'Uživatel'),
             phone: normalizedPhone || null,
+            phoneNumber: normalizedPhone || null, // Duplicitní pole pro kompatibilitu
             city: userData.city || null,
             bio: userData.bio || null,
             // Obchodní informace (pro firmy i osoby, které mohou mít obchodní údaje)
@@ -905,7 +972,10 @@ async function register(email, password, userData) {
             totalAds: 0,
             activeAds: 0,
             totalViews: 0,
-            totalContacts: 0
+            totalContacts: 0,
+            // Flag pro zabránění odeslání emailu při registraci
+            _skipChangeNotification: true,
+            _isRegistration: true // Dodatečný flag pro identifikaci registrace
         };
         
         if (userData.type === 'person') {
@@ -1147,7 +1217,7 @@ async function updateUI(user) {
             const displayName = userProfileSection.querySelector('.user-display-name');
             const userEmail = userProfileSection.querySelector('.user-email');
             
-            if (displayName && userEmail) {
+            if (displayName && userEmail && user && user.uid) {
                 // Zkusit načíst jméno z Firestore
                 loadUserProfile(user.uid).then(userProfile => {
                     if (userProfile && userProfile.name) {
@@ -1204,25 +1274,59 @@ async function updateUI(user) {
             }
 
             // Odznak podle balíčku (hobby/firma/?) vedle tlačítka Profil - získat z databáze
+            // Použít spolehlivé načítání s retry mechanismem (podobně jako v nastavení)
             try {
                 (async () => {
                     try {
-                        const activePlan = await checkUserPlanFromDatabase(user.uid);
+                        // 1) Okamžitě zkusit vykreslit odznak z cache, aby byl vidět hned
+                        const cachedPlan = localStorage.getItem('bdg_plan');
+                        if (cachedPlan && typeof window.applySidebarBadge === 'function') {
+                            window.applySidebarBadge(cachedPlan);
+                        }
+                        
+                        // 2) Asynchronně načíst skutečný plán z databáze a odznak případně opravit
+                        // Použít retry mechanismus pro spolehlivost na Hostingeru
+                        let activePlan = null;
+                        for (let attempt = 0; attempt < 5; attempt++) {
+                            try {
+                                activePlan = await checkUserPlanFromDatabase(user.uid);
+                                if (activePlan) break; // Úspěšně načteno
+                            } catch (e) {
+                                console.warn(`⚠️ Pokus ${attempt + 1}/5 načíst balíček selhal:`, e);
+                                if (attempt < 4) {
+                                    await new Promise(r => setTimeout(r, 500 * (attempt + 1))); // Postupné prodloužení čekání
+                                }
+                            }
+                        }
+                        
                         const btnProfile = userProfileSection.querySelector('.btn-profile');
                         if (btnProfile) {
                             const old = btnProfile.querySelector('.user-badge');
                             if (old) old.remove();
                             
                             if (activePlan) {
-                                const badge = document.createElement('span');
-                                const label = activePlan === 'business' ? 'Firma' : activePlan === 'hobby' ? 'Hobby' : '?';
-                                const cls = activePlan === 'business' ? 'badge-business' : activePlan === 'hobby' ? 'badge-hobby' : 'badge-unknown';
-                                badge.className = 'user-badge ' + cls;
-                                badge.textContent = label;
-                                btnProfile.appendChild(badge);
+                                // Použít globální funkci applySidebarBadge pokud existuje
+                                if (typeof window.applySidebarBadge === 'function') {
+                                    window.applySidebarBadge(activePlan);
+                                } else {
+                                    // Fallback: vytvořit badge ručně
+                                    const badge = document.createElement('span');
+                                    const label = activePlan === 'business' ? 'Firma' : activePlan === 'hobby' ? 'Hobby' : '?';
+                                    const cls = activePlan === 'business' ? 'badge-business' : activePlan === 'hobby' ? 'badge-hobby' : 'badge-unknown';
+                                    badge.className = 'user-badge ' + cls;
+                                    badge.textContent = label;
+                                    btnProfile.appendChild(badge);
+                                }
+                                // Aktualizovat cache
+                                try { localStorage.setItem('bdg_plan', activePlan); } catch (_) {}
+                            } else {
+                                // Pokud není aktivní plán, odstranit z cache
+                                try { localStorage.removeItem('bdg_plan'); } catch (_) {}
                             }
                         }
-                    } catch (_) {}
+                    } catch (e) {
+                        console.warn('⚠️ Chyba při načítání odznaku balíčku:', e);
+                    }
                 })();
             } catch (_) {}
         }
@@ -1872,7 +1976,34 @@ window.setupAuthModalEvents = setupAuthModalEvents;
 // Funkce pro kontrolu aktivního balíčku z databáze (globální)
 window.checkUserPlanFromDatabase = async function(userId) {
     try {
-        if (!userId || !window.firebaseDb) return null;
+        if (!userId) return null;
+        
+        // Spolehlivě počkat na Firebase (podobně jako v nastavení)
+        const waitForFirebase = async (timeoutMs = 10000) => {
+            return new Promise((resolve, reject) => {
+                if (window.firebaseAuth && window.firebaseDb) {
+                    resolve();
+                    return;
+                }
+                const startedAt = Date.now();
+                const checkFirebase = setInterval(() => {
+                    if (window.firebaseAuth && window.firebaseDb) {
+                        clearInterval(checkFirebase);
+                        resolve();
+                    } else if (Date.now() - startedAt > timeoutMs) {
+                        clearInterval(checkFirebase);
+                        reject(new Error('Firebase se nenačetl včas'));
+                    }
+                }, 100);
+            });
+        };
+        
+        await waitForFirebase(10000);
+        
+        if (!window.firebaseDb) {
+            console.warn('⚠️ Firebase DB není připraven pro checkUserPlanFromDatabase');
+            return null;
+        }
         
         const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
         const profileRef = doc(window.firebaseDb, 'users', userId, 'profile', 'profile');

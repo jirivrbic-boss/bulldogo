@@ -665,8 +665,8 @@ function updateProfileInfo() {
             addContactItem('fas fa-envelope', 'Email', email, true);
         }
         
-        // Telefon (pokud je vyplněn)
-        const phone = userProfile.phone || currentProfileUser.phone || '';
+        // Telefon (pokud je vyplněn) - načítat z phoneNumber (users/{uid}/profile/profile)
+        const phone = userProfile.phoneNumber || userProfile.phone || currentProfileUser.phoneNumber || currentProfileUser.phone || '';
         if (phone && phone !== 'Telefon neuveden') {
             // Formátovat telefon pro zobrazení
             let formattedPhone = phone;

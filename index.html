@@ -12,9 +12,14 @@
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>BULLDOGO - Inzerce služeb</title>
-    <meta name="description" content="BULLDOGO – inzerce služeb v ČR. Najděte řemeslníky, IT specialisty, doučování, péči a další. Vložte inzerát zdarma a oslovte zákazníky.">
-    <meta name="robots" content="index, follow">
+    <title>BULLDOGO - Inzerce služeb v ČR | Najděte řemeslníky, IT specialisty a další služby</title>
+    <meta name="description" content="BULLDOGO – největší platforma pro inzerci služeb v ČR a SR. Najděte řemeslníky, IT specialisty, doučování, péči, fotografy a další služby. Vložte inzerát zdarma a oslovte tisíce zákazníků. Jednoduše, rychle a férově.">
+    <meta name="keywords" content="inzerce služeb, řemeslníci, IT služby, doučování, fotograf, instalatér, elektrikář, malíř, úklid, catering, masáže, kadeřnictví, služby ČR, služby SR, inzerát zdarma">
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+    <meta name="author" content="BULLDOGO">
+    <meta name="language" content="Czech">
+    <meta name="geo.region" content="CZ">
+    <meta name="geo.placename" content="Česká republika">
     <link rel="canonical" href="https://bulldogo.cz/">
     <meta name="theme-color" content="#ff6a00">
     <link rel="dns-prefetch" href="https://www.gstatic.com">
@@ -43,16 +48,23 @@
                 .catch((err) => console.log('⚠️ Service Worker registrace selhala:', err));
         }
     </script>
+    <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="BULLDOGO">
-    <meta property="og:title" content="BULLDOGO – inzerce služeb pro každého">
-    <meta property="og:description" content="Najděte nebo nabídněte službu. Jednoduše, rychle a férově. Vložte inzerát zdarma.">
+    <meta property="og:title" content="BULLDOGO – Inzerce služeb v ČR | Najděte řemeslníky, IT specialisty a další">
+    <meta property="og:description" content="Největší platforma pro inzerci služeb v ČR a SR. Najděte řemeslníky, IT specialisty, doučování, péči a další služby. Vložte inzerát zdarma a oslovte tisíce zákazníků.">
     <meta property="og:url" content="https://bulldogo.cz/">
     <meta property="og:image" content="https://bulldogo.cz/fotky/bulldogo-logo.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="BULLDOGO - Inzerce služeb v ČR">
+    <meta property="og:locale" content="cs_CZ">
+    <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="BULLDOGO – inzerce služeb pro každého">
-    <meta name="twitter:description" content="Najděte nebo nabídněte službu v ČR. Vložte inzerát zdarma.">
+    <meta name="twitter:title" content="BULLDOGO – Inzerce služeb v ČR | Najděte řemeslníky a specialisty">
+    <meta name="twitter:description" content="Největší platforma pro inzerci služeb v ČR a SR. Vložte inzerát zdarma a oslovte tisíce zákazníků.">
     <meta name="twitter:image" content="https://bulldogo.cz/fotky/bulldogo-logo.png">
+    <meta name="twitter:image:alt" content="BULLDOGO - Inzerce služeb v ČR">
     <!-- CSS načítání - synchronní pro rychlejší zobrazení -->
     <link rel="stylesheet" href="/styles.css">
     <link rel="stylesheet" href="/electric-border.css">
@@ -74,17 +86,64 @@
             }
         });
     </script>
+    <!-- Structured Data - Organization -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "BULLDOGO",
+      "url": "https://bulldogo.cz/",
+      "logo": "https://bulldogo.cz/fotky/bulldogo-logo.png",
+      "description": "Největší platforma pro inzerci služeb v ČR a SR. Spojujeme zákazníky s kvalifikovanými profesionály.",
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "telephone": "+420-605-121-023",
+        "contactType": "customer service",
+        "email": "support@bulldogo.cz",
+        "availableLanguage": ["Czech", "Slovak"]
+      },
+      "sameAs": [
+        "https://wa.me/message/KHLC3RTZYZRFE1"
+      ],
+      "address": {
+        "@type": "PostalAddress",
+        "addressCountry": "CZ"
+      }
+    }
+    </script>
+    <!-- Structured Data - WebSite -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "WebSite",
       "name": "BULLDOGO",
       "url": "https://bulldogo.cz/",
+      "description": "Největší platforma pro inzerci služeb v ČR a SR",
       "potentialAction": {
         "@type": "SearchAction",
-        "target": "https://bulldogo.cz/services.html?q={search_term_string}",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://bulldogo.cz/services.html?q={search_term_string}"
+        },
         "query-input": "required name=search_term_string"
       }
+    }
+    </script>
+    <!-- Structured Data - Service -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Service",
+      "serviceType": "Online Marketplace",
+      "provider": {
+        "@type": "Organization",
+        "name": "BULLDOGO"
+      },
+      "areaServed": {
+        "@type": "Country",
+        "name": ["Czech Republic", "Slovakia"]
+      },
+      "description": "Platforma pro inzerci a vyhledávání služeb v České republice a na Slovensku"
     }
     </script>
 </head>
@@ -408,7 +467,7 @@
 					setTimeout(() => {
 						const s = states[ci];
 						ctaAlternate.setAttribute('href', s.href);
-						ctaAlternate.innerHTML = `${s.icon}${s.text ? '\n\t\t\t\t\t\t\t' + s.text : ''}`;
+						ctaAlternate.innerHTML = `${s.icon}<span>${s.text || ''}</span>`;
 						ctaAlternate.classList.remove('out');
 						ci = (ci + 1) % states.length;
 					}, 220);
@@ -618,7 +677,7 @@
                             </a>
 							<a class="btn-cta-secondary fade-like-pill" id="ctaAlternate" href="packages.html">
 								<i class="fas fa-bolt"></i>
-								Zobrazit balíčky
+								<span>Zobrazit balíčky</span>
 							</a>
 							<!-- Rotující benefit vedle tlačítek -->
 							<div class="promo-rotate-inline" id="promoRotateInline" aria-live="polite">

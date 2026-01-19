@@ -12,10 +12,12 @@
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Topování inzerátů - BULLDOGO</title>
-    <meta name="description" content="Zvýrazněte svůj inzerát na BULLDOGO. Vyberte délku topování a získejte více zobrazení.">
-    <meta name="robots" content="index, follow">
-    <link rel="canonical" href="https://bulldogo.cz/top-ads">
+    <title>Topování inzerátů - BULLDOGO | Zvýrazněte svůj inzerát</title>
+    <meta name="description" content="Zvýrazněte svůj inzerát na BULLDOGO a získejte více zobrazení. Vyberte délku topování – 1 den, 1 týden nebo 1 měsíc. TOP odznak, zlatý rámeček a zvýraznění v seznamu.">
+    <meta name="keywords" content="topování inzerátů, zvýraznění inzerátu, TOP odznak, zvýrazněný inzerát, propagace služeb, zvýšení viditelnosti">
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+    <meta name="author" content="BULLDOGO">
+    <link rel="canonical" href="https://bulldogo.cz/top-ads.html">
     <meta name="theme-color" content="#ff6a00">
     <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
@@ -24,18 +26,90 @@
     <link rel="icon" type="image/png" href="fotky/bulldogo-logo.png">
     <link rel="apple-touch-icon" href="fotky/bulldogo-logo.png">
     <link rel="manifest" href="/site.webmanifest">
+    <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="BULLDOGO">
-    <meta property="og:title" content="Topování inzerátů - BULLDOGO">
-    <meta property="og:description" content="Zvýrazněte svůj inzerát pro vyšší viditelnost.">
+    <meta property="og:title" content="Topování inzerátů - BULLDOGO | Zvýrazněte svůj inzerát">
+    <meta property="og:description" content="Zvýrazněte svůj inzerát na BULLDOGO a získejte více zobrazení. TOP odznak, zlatý rámeček a zvýraznění v seznamu. Vyberte délku topování – 1 den, 1 týden nebo 1 měsíc.">
     <meta property="og:url" content="https://bulldogo.cz/top-ads.html">
     <meta property="og:image" content="https://bulldogo.cz/fotky/bulldogo-logo.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="BULLDOGO - Topování inzerátů">
+    <meta property="og:locale" content="cs_CZ">
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Topování inzerátů - BULLDOGO">
+    <meta name="twitter:description" content="Zvýrazněte svůj inzerát a získejte více zobrazení. TOP odznak, zlatý rámeček a zvýraznění.">
+    <meta name="twitter:image" content="https://bulldogo.cz/fotky/bulldogo-logo.png">
+    <meta name="twitter:image:alt" content="BULLDOGO - Topování inzerátů">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="electric-border.css">
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"></noscript>
     <!-- Firebase SDK (centralizovaná inicializace) -->
     <script type="module" src="firebase-init.js" defer></script>
+    <!-- Structured Data - BreadcrumbList -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Domů",
+          "item": "https://bulldogo.cz/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Topování inzerátů",
+          "item": "https://bulldogo.cz/top-ads.html"
+        }
+      ]
+    }
+    </script>
+    <!-- Structured Data - Offer -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "OfferCatalog",
+      "name": "Topování inzerátů BULLDOGO",
+      "itemListElement": [
+        {
+          "@type": "Offer",
+          "itemOffered": {
+            "@type": "Service",
+            "name": "Základní topování - 1 den",
+            "description": "TOP odznak, zlatý rámeček, zvýraznění v seznamu"
+          },
+          "price": "19",
+          "priceCurrency": "CZK"
+        },
+        {
+          "@type": "Offer",
+          "itemOffered": {
+            "@type": "Service",
+            "name": "Pokročilé topování - 1 týden",
+            "description": "TOP odznak, zlatý rámeček, zvýraznění v seznamu, 7 dní"
+          },
+          "price": "69",
+          "priceCurrency": "CZK"
+        },
+        {
+          "@type": "Offer",
+          "itemOffered": {
+            "@type": "Service",
+            "name": "Premium topování - 1 měsíc",
+            "description": "TOP odznak, zlatý rámeček, zvýraznění v seznamu, 30 dní"
+          },
+          "price": "179",
+          "priceCurrency": "CZK"
+        }
+      ]
+    }
+    </script>
 </head>
 <body>
     <!-- Sidebar Navigation -->
@@ -457,6 +531,9 @@
                 </div>
             </div>
         </section>
+
+        <!-- Fixní bílé pole jako oddělovač mezi topováním a footerem -->
+        <div class="packages-footer-spacer"></div>
 
         <!-- Footer -->
         <footer class="footer">
