@@ -96,11 +96,21 @@
                 margin: 0 !important;
             }
             
-            /* Sekce "O uživateli" - maximální výška a scroll */
+            /* Sekce "O uživateli" - maximální výška a scroll, ale tlačítko musí být viditelné */
             .ad-description-section {
                 max-height: calc(100vh - 400px) !important;
                 overflow-y: auto !important;
                 overflow-x: hidden !important;
+            }
+            
+            /* Zajistit, že tlačítko "číst dále" je vždy viditelné */
+            .ad-description-section .read-more-btn {
+                display: inline-block !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                position: relative !important;
+                z-index: 10 !important;
+                margin-top: 0.75rem !important;
             }
             
             .ad-description {

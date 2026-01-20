@@ -487,7 +487,7 @@ function updateProfileInfo() {
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#039;');
         
-        // Funkce pro vytvoření textu s tlačítkem "číst dále" - STEJNĚ jako u popisu inzerátu
+        // Funkce pro vytvoření textu s tlačítkem "číst dále"
         const MAX_WORDS = 50;
         // Nejdříve převést \n na placeholder, pak rozdělit na slova
         const PLACEHOLDER = '__NEWLINE__';
@@ -495,12 +495,23 @@ function updateProfileInfo() {
         const words = textWithPlaceholder.split(/\s+/).filter(w => w.length > 0);
         const isLongText = words.length > MAX_WORDS;
         
+        console.log('📝 Bio text check:', { 
+            totalWords: words.length, 
+            maxWords: MAX_WORDS, 
+            isLongText 
+        });
+        
         if (isLongText) {
             // Vzít prvních MAX_WORDS slov
             const shortWords = words.slice(0, MAX_WORDS);
             const shortText = shortWords.join(' ').replace(new RegExp(PLACEHOLDER, 'g'), '\n');
             const fullText = escapedText.replace(/\n/g, '<br>');
             const shortTextWithBreaks = shortText.replace(/\n/g, '<br>');
+            
+            console.log('📝 Creating truncated bio:', { 
+                shortWordsCount: shortWords.length, 
+                totalWords: words.length 
+            });
             
             // Vytvořit unikátní ID pro tento element
             const bioId = 'profileBio_' + Date.now();
@@ -1472,16 +1483,22 @@ console.log('✅ Profile detail functions exported:', {
     removeReviewPhoto: typeof window.removeReviewPhoto
 });
 
-// Funkce pro přepínání zobrazení textu profilu - STEJNĚ jako u popisu inzerátu
+// Funkce pro přepínání zobrazení textu profilu
 window.toggleBioText = function(bioId) {
     const bioEl = document.getElementById(bioId);
-    if (!bioEl) return;
+    if (!bioEl) {
+        console.error('❌ Bio element not found:', bioId);
+        return;
+    }
     
     const shortText = bioEl.querySelector('.bio-text-short');
     const fullText = bioEl.querySelector('.bio-text-full');
     const button = bioEl.querySelector('.read-more-btn');
     
-    if (!shortText || !fullText || !button) return;
+    if (!shortText || !fullText || !button) {
+        console.error('❌ Bio text elements not found:', { shortText: !!shortText, fullText: !!fullText, button: !!button });
+        return;
+    }
     
     const isExpanded = fullText.style.display !== 'none' && fullText.style.display !== '';
     

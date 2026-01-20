@@ -13811,7 +13811,11 @@ body:has(.ad-detail-content) .main-content .ad-detail-content,
     font-weight: 600;
     transition: all 0.3s ease;
     font-size: 0.9rem;
-    display: inline-block;
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: relative !important;
+    z-index: 10 !important;
 }
 
 .read-more-btn:hover {
@@ -13821,6 +13825,71 @@ body:has(.ad-detail-content) .main-content .ad-detail-content,
 
 .read-more-btn:active {
     transform: translateY(0);
+}
+
+/* Zajistit zobrazení tlačítka na mobilu */
+@media (max-width: 768px) {
+    .read-more-btn {
+        display: inline-block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        position: relative !important;
+        z-index: 10 !important;
+        width: auto !important;
+        margin-top: 0.75rem !important;
+        padding: 0.6rem 1.2rem !important;
+        font-size: 0.95rem !important;
+    }
+    
+    /* Zajistit, že sekce s popisem neomezuje zobrazení tlačítka */
+    .ad-description-section,
+    .profile-detail-right .ad-description-section {
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        /* Tlačítko musí být viditelné i při scrollování */
+        padding-bottom: 1rem !important;
+    }
+    
+    /* Zajistit zobrazení tlačítka v sekci popisu */
+    .ad-description-section #profileBio,
+    .profile-detail-right #profileBio,
+    #profileBio {
+        overflow: visible !important;
+        position: relative !important;
+    }
+    
+    .ad-description-section #profileBio .read-more-btn,
+    .profile-detail-right #profileBio .read-more-btn,
+    #profileBio .read-more-btn,
+    #profileBio button.read-more-btn {
+        display: inline-block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        position: relative !important;
+        z-index: 10 !important;
+        margin-top: 0.75rem !important;
+        width: auto !important;
+        height: auto !important;
+    }
+    
+    /* Zajistit zobrazení tlačítka i v ad-description */
+    #adDescription .read-more-btn,
+    #adDescription button.read-more-btn {
+        display: inline-block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        position: relative !important;
+        z-index: 10 !important;
+        margin-top: 0.75rem !important;
+    }
+    
+    /* Zajistit zobrazení tlačítka v popisu profilu */
+    #profileBio .read-more-btn,
+    .profile-detail-right #profileBio .read-more-btn {
+        display: inline-block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
 }
 
 /* Skryté texty pro expandovatelný obsah */
@@ -14808,6 +14877,17 @@ body:has(.ad-detail-content) .main-content .ad-detail-content,
         margin-right: 0 !important;
         box-sizing: border-box !important;
         overflow-x: hidden !important;
+        overflow-y: visible !important;
+    }
+    
+    /* Zajistit, že tlačítko v profile-detail-right je viditelné */
+    .profile-detail-right .read-more-btn,
+    .profile-detail-right #profileBio .read-more-btn {
+        display: inline-block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        position: relative !important;
+        z-index: 10 !important;
     }
     
     .profile-header-info {
