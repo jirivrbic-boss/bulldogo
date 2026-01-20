@@ -220,23 +220,12 @@ function displayAdDetail() {
         const words = textWithPlaceholder.split(/\s+/).filter(w => w.length > 0);
         const isLongText = words.length > MAX_WORDS;
         
-        console.log('📝 Ad description check:', { 
-            totalWords: words.length, 
-            maxWords: MAX_WORDS, 
-            isLongText 
-        });
-        
         if (isLongText) {
             // Vzít prvních MAX_WORDS slov
             const shortWords = words.slice(0, MAX_WORDS);
             const shortText = shortWords.join(' ').replace(new RegExp(PLACEHOLDER, 'g'), '\n');
             const fullText = escapedText.replace(/\n/g, '<br>');
             const shortTextWithBreaks = shortText.replace(/\n/g, '<br>');
-            
-            console.log('📝 Creating truncated ad description:', { 
-                shortWordsCount: shortWords.length, 
-                totalWords: words.length 
-            });
             
             // Vytvořit unikátní ID pro tento element
             const descId = 'adDescription_' + Date.now();
@@ -1268,19 +1257,13 @@ document.addEventListener('click', (e) => {
 // Funkce pro přepínání zobrazení textu inzerátu
 window.toggleAdText = function(descId) {
     const descEl = document.getElementById(descId);
-    if (!descEl) {
-        console.error('❌ Description element not found:', descId);
-        return;
-    }
+    if (!descEl) return;
     
     const shortText = descEl.querySelector('.ad-text-short');
     const fullText = descEl.querySelector('.ad-text-full');
     const button = descEl.querySelector('.read-more-btn');
     
-    if (!shortText || !fullText || !button) {
-        console.error('❌ Ad text elements not found:', { shortText: !!shortText, fullText: !!fullText, button: !!button });
-        return;
-    }
+    if (!shortText || !fullText || !button) return;
     
     const isExpanded = fullText.style.display !== 'none' && fullText.style.display !== '';
     
