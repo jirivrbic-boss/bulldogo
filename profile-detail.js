@@ -486,7 +486,36 @@ function updateProfileInfo() {
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#039;');
-        profileBioEl.innerHTML = escapedText.replace(/\n/g, '<br>');
+        
+        // Funkce pro vytvoření textu s tlačítkem "číst dále"
+        const MAX_WORDS = 30;
+        // Nejdříve převést \n na placeholder, pak rozdělit na slova
+        const PLACEHOLDER = '__NEWLINE__';
+        const textWithPlaceholder = escapedText.replace(/\n/g, PLACEHOLDER);
+        const words = textWithPlaceholder.split(/\s+/).filter(w => w.length > 0);
+        const isLongText = words.length > MAX_WORDS;
+        
+        if (isLongText) {
+            // Vzít prvních MAX_WORDS slov
+            const shortWords = words.slice(0, MAX_WORDS);
+            const shortText = shortWords.join(' ').replace(new RegExp(PLACEHOLDER, 'g'), '\n');
+            const fullText = escapedText.replace(/\n/g, '<br>');
+            const shortTextWithBreaks = shortText.replace(/\n/g, '<br>');
+            
+            // Vytvořit unikátní ID pro tento element
+            const bioId = 'profileBio_' + Date.now();
+            profileBioEl.id = bioId;
+            
+            profileBioEl.innerHTML = `
+                <span class="bio-text-short">${shortTextWithBreaks}...</span>
+                <span class="bio-text-full" style="display: none;">${fullText}</span>
+                <button class="read-more-btn" onclick="toggleBioText('${bioId}')">
+                    Číst dále
+                </button>
+            `;
+        } else {
+            profileBioEl.innerHTML = escapedText.replace(/\n/g, '<br>');
+        }
     }
     
     // Update additional info (ICO, DIČ, Typ podnikání, Web, Město, Lokace) - v sekci s datem registrace
@@ -1442,4 +1471,30 @@ console.log('✅ Profile detail functions exported:', {
     handleReviewPhotosChange: typeof window.handleReviewPhotosChange,
     removeReviewPhoto: typeof window.removeReviewPhoto
 });
+
+// Funkce pro přepínání zobrazení textu profilu
+window.toggleBioText = function(bioId) {
+    const bioEl = document.getElementById(bioId);
+    if (!bioEl) return;
+    
+    const shortText = bioEl.querySelector('.bio-text-short');
+    const fullText = bioEl.querySelector('.bio-text-full');
+    const button = bioEl.querySelector('.read-more-btn');
+    
+    if (!shortText || !fullText || !button) return;
+    
+    const isExpanded = fullText.style.display !== 'none';
+    
+    if (isExpanded) {
+        // Sbalit text
+        shortText.style.display = 'inline';
+        fullText.style.display = 'none';
+        button.textContent = 'Číst dále';
+    } else {
+        // Rozbalit text
+        shortText.style.display = 'none';
+        fullText.style.display = 'inline';
+        button.textContent = 'Zobrazit méně';
+    }
+};
 

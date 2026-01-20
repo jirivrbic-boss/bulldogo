@@ -13799,6 +13799,41 @@ body:has(.ad-detail-content) .main-content .ad-detail-content,
     font-size: 1rem;
 }
 
+/* Tlačítko "číst dále" pro popis profilu a inzerátu */
+.read-more-btn {
+    margin-top: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: linear-gradient(135deg, #f77c00 0%, #fdf002 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    display: inline-block;
+}
+
+.read-more-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(247, 124, 0, 0.4);
+}
+
+.read-more-btn:active {
+    transform: translateY(0);
+}
+
+/* Skryté texty pro expandovatelný obsah */
+.bio-text-short,
+.ad-text-short {
+    display: inline;
+}
+
+.bio-text-full,
+.ad-text-full {
+    display: none;
+}
+
 .ad-contact-section {
     margin-bottom: 1.5rem;
     padding: 1.5rem;
