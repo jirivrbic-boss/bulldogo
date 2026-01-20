@@ -13826,12 +13826,23 @@ body:has(.ad-detail-content) .main-content .ad-detail-content,
 /* Skryté texty pro expandovatelný obsah */
 .bio-text-short,
 .ad-text-short {
-    display: inline;
+    display: inline !important;
 }
 
 .bio-text-full,
 .ad-text-full {
-    display: none;
+    display: none !important;
+}
+
+/* Když je text rozbalený */
+.bio-text-full[style*="display: inline"],
+.ad-text-full[style*="display: inline"] {
+    display: inline !important;
+}
+
+.bio-text-short[style*="display: none"],
+.ad-text-short[style*="display: none"] {
+    display: none !important;
 }
 
 .ad-contact-section {

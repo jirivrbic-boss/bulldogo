@@ -213,12 +213,18 @@ function displayAdDetail() {
             .replace(/'/g, '&#039;');
         
         // Funkce pro vytvoření textu s tlačítkem "číst dále"
-        const MAX_WORDS = 30;
+        const MAX_WORDS = 50;
         // Nejdříve převést \n na placeholder, pak rozdělit na slova
         const PLACEHOLDER = '__NEWLINE__';
         const textWithPlaceholder = escapedText.replace(/\n/g, PLACEHOLDER);
         const words = textWithPlaceholder.split(/\s+/).filter(w => w.length > 0);
         const isLongText = words.length > MAX_WORDS;
+        
+        console.log('📝 Ad description check:', { 
+            totalWords: words.length, 
+            maxWords: MAX_WORDS, 
+            isLongText 
+        });
         
         if (isLongText) {
             // Vzít prvních MAX_WORDS slov
@@ -227,14 +233,19 @@ function displayAdDetail() {
             const fullText = escapedText.replace(/\n/g, '<br>');
             const shortTextWithBreaks = shortText.replace(/\n/g, '<br>');
             
+            console.log('📝 Creating truncated ad description:', { 
+                shortWordsCount: shortWords.length, 
+                totalWords: words.length 
+            });
+            
             // Vytvořit unikátní ID pro tento element
             const descId = 'adDescription_' + Date.now();
             descriptionEl.id = descId;
             
             descriptionEl.innerHTML = `
-                <span class="ad-text-short">${shortTextWithBreaks}...</span>
-                <span class="ad-text-full" style="display: none;">${fullText}</span>
-                <button class="read-more-btn" onclick="toggleAdText('${descId}')">
+                <span class="ad-text-short" style="display: inline !important;">${shortTextWithBreaks}...</span>
+                <span class="ad-text-full" style="display: none !important;">${fullText}</span>
+                <button class="read-more-btn" onclick="toggleAdText('${descId}')" style="display: inline-block;">
                     Číst dále
                 </button>
             `;
@@ -1257,23 +1268,29 @@ document.addEventListener('click', (e) => {
 // Funkce pro přepínání zobrazení textu inzerátu
 window.toggleAdText = function(descId) {
     const descEl = document.getElementById(descId);
-    if (!descEl) return;
+    if (!descEl) {
+        console.error('❌ Description element not found:', descId);
+        return;
+    }
     
     const shortText = descEl.querySelector('.ad-text-short');
     const fullText = descEl.querySelector('.ad-text-full');
     const button = descEl.querySelector('.read-more-btn');
     
-    if (!shortText || !fullText || !button) return;
+    if (!shortText || !fullText || !button) {
+        console.error('❌ Ad text elements not found:', { shortText: !!shortText, fullText: !!fullText, button: !!button });
+        return;
+    }
     
-    const isExpanded = fullText.style.display !== 'none';
+    const isExpanded = fullText.style.display !== 'none' && fullText.style.display !== '';
     
     if (isExpanded) {
-        // Sbalit text
+        // Sbalit text - zobrazit jen prvních 50 slov
         shortText.style.display = 'inline';
         fullText.style.display = 'none';
         button.textContent = 'Číst dále';
     } else {
-        // Rozbalit text
+        // Rozbalit text - zobrazit celý text
         shortText.style.display = 'none';
         fullText.style.display = 'inline';
         button.textContent = 'Zobrazit méně';
