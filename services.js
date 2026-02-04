@@ -1432,22 +1432,22 @@ function createAdCard(service, showActions = true) {
     const escapedLocation = formattedLocation.replace(/"/g, '&quot;');
     
     return `
-        <article class="service-card ad-card${isTop ? ' is-top' : ''}" data-category="${service.category || ''}" data-status="${status}" data-location="${escapedLocation}" ${topStyle}>
-            <div class="service-thumb ad-thumb">
+        <article class="ad-card${isTop ? ' is-top' : ''}" data-category="${service.category || ''}" data-status="${status}" data-location="${escapedLocation}" ${topStyle}>
+            <div class="ad-thumb">
                 ${imageHtml}
             </div>
-            <div class="service-body ad-body" data-location="${escapedLocation}">
-                <div class="service-meta ad-meta"><span>${getCategoryName(service.category || '')}</span></div>
-                <h3 class="service-title ad-title">${service.title || 'Bez názvu'}</h3>
-                ${formattedPrice ? `<div class="service-price ad-price">${formattedPrice}</div>` : ''}
-                <div class="service-location ad-location" data-location-text="${escapedLocation}">${formattedLocation}</div>
+            <div class="ad-body" data-location="${escapedLocation}">
+                <div class="ad-meta"><span>${getCategoryName(service.category || '')}</span></div>
+                <h3 class="ad-title">${service.title || 'Bez názvu'}</h3>
+                ${formattedPrice ? `<div class="ad-price">${formattedPrice}</div>` : ''}
+                <div class="ad-location" data-location-text="${escapedLocation}">${formattedLocation}</div>
             </div>
             ${isTop ? `
-            <div class="service-badge-top ad-badge-top"><i class="fas fa-fire"></i> TOP</div>
-            <div class="service-flames ad-flames" aria-hidden="true"></div>
+            <div class="ad-badge-top"><i class="fas fa-fire"></i> TOP</div>
+            <div class="ad-flames" aria-hidden="true"></div>
             ` : ''}
             ${showActions ? `
-            <div class="service-actions ad-actions">
+            <div class="ad-actions">
                 <button class="btn-contact" onclick="contactService('${service.id}')" title="Kontaktovat">
                     <i class="fas fa-comment"></i>
                 </button>

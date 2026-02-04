@@ -94,19 +94,28 @@
         
         const warning = document.createElement('div');
         warning.id = 'adblock-warning';
+        warning.setAttribute('role', 'dialog');
+        warning.setAttribute('aria-modal', 'true');
+        warning.setAttribute('aria-labelledby', 'adblock-warning-title');
         warning.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.85);
-            z-index: 99999;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            position: fixed !important;
+            inset: 0 !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            min-width: 100vw !important;
+            min-height: 100vh !important;
+            background: rgba(0, 0, 0, 0.85) !important;
+            z-index: 2147483647 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 20px !important;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif !important;
+            box-sizing: border-box !important;
         `;
         
         warning.innerHTML = `
@@ -119,7 +128,7 @@
                 box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             ">
                 <div style="font-size: 64px; margin-bottom: 20px;">🚫</div>
-                <h2 style="
+                <h2 id="adblock-warning-title" style="
                     color: #f77c00;
                     margin: 0 0 16px 0;
                     font-size: 28px;
@@ -182,7 +191,7 @@
             </div>
         `;
         
-        document.body.appendChild(warning);
+        document.documentElement.appendChild(warning);
         
         // Tlačítko pro obnovení stránky
         document.getElementById('adblock-reload').addEventListener('click', function() {

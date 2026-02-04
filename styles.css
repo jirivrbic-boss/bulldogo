@@ -1,3 +1,19 @@
+/* ===== AdBlock varování - plné překrytí obrazovky ===== */
+#adblock-warning {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    min-width: 100vw !important;
+    min-height: 100vh !important;
+    z-index: 2147483647 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: rgba(0, 0, 0, 0.85) !important;
+    box-sizing: border-box !important;
+}
+
 /* ===== Notice Banner (Bulldogo style) ===== */
 .notice-banner {
   position: relative;
@@ -975,28 +991,16 @@
 
 /* Anti-AdBlock: Zajistit zobrazení elementů s "ad" v názvu */
 .ads-section,
-/* Duplicitní třídy bez "ad" v názvu pro obcházení AdBlocku */
-.services-grid,
 .ads-grid,
-.service-card,
 .ad-card,
-.service-body,
 .ad-body,
-.service-thumb,
 .ad-thumb,
-.service-title,
 .ad-title,
-.service-price,
 .ad-price,
-.service-location,
 .ad-location,
-.service-meta,
 .ad-meta,
-.service-actions,
 .ad-actions,
-.service-badge-top,
 .ad-badge-top,
-.service-flames,
 .ad-flames,
 [class*="ad-"],
 [id*="ad-"],
@@ -1087,8 +1091,6 @@
 }
 
 /* Základní grid pro ostatní stránky */
-/* Duplicitní třída bez "ad" v názvu pro obcházení AdBlocku */
-.services-grid,
 .ads-grid:not(#servicesGrid) {
     display: grid !important;
     grid-template-columns: repeat(4, 1fr) !important;
@@ -1125,8 +1127,6 @@
     }
 }
 
-/* Duplicitní třída bez "ad" v názvu pro obcházení AdBlocku */
-.service-card,
 .ad-card {
     background: white !important;
     border-radius: 15px !important;
@@ -1162,8 +1162,6 @@
     margin: 0 !important;
 }
 
-/* Duplicitní třídy bez "ad" v názvu pro obcházení AdBlocku */
-.service-card:hover,
 .ad-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 15px 40px rgba(247, 124, 0, 0.2);
@@ -1171,21 +1169,16 @@
 }
 
 /* Selectable ad cards (Topování – výběr inzerátu) */
-.service-card.selectable,
 .ad-card.selectable { cursor: pointer; }
-.service-card.selectable.selected,
 .ad-card.selectable.selected {
     border: 2px solid #ffd700 !important;
     box-shadow: 0 15px 40px rgba(255, 215, 0, 0.25);
 }
-.service-card.is-top:hover,
 .ad-card.is-top:hover { 
     transform: none !important;
     box-shadow: 0 8px 28px rgba(255, 138, 0, 0.6), 0 0 0 2px rgba(255, 138, 0, 0.4), inset 0 0 0 1px rgba(255, 138, 0, 0.1) !important;
 }
 
-/* Duplicitní třída bez "ad" v názvu pro obcházení AdBlocku */
-.service-thumb,
 .ad-thumb { 
     width: 100% !important; 
     aspect-ratio: 4 / 3 !important; /* FIXNÍ poměr stran - stejný všude */
@@ -1209,13 +1202,11 @@
 
 /* Zajistit, aby aspect-ratio mělo přednost, ale padding-bottom zajistí velikost během načítání */
 @supports (aspect-ratio: 4 / 3) {
-    .service-thumb,
     .ad-thumb {
         padding-bottom: 0 !important;
         height: auto !important;
     }
 }
-.service-thumb img,
 .ad-thumb img { 
     width: 100% !important; 
     height: 100% !important; 
@@ -1238,14 +1229,12 @@
 }
 
 /* Zajistit, že načtené obrázky jsou viditelné bez problikávání */
-.service-thumb img.loaded,
 .ad-thumb img.loaded {
     opacity: 1 !important;
     visibility: visible !important;
 }
 
 /* Oranžový loading spinner pro načítající se obrázky */
-.service-thumb:has(img:not(.loaded))::before,
 .ad-thumb:has(img:not(.loaded))::before {
     content: '\f110'; /* FontAwesome spinner ikona */
     font-family: 'Font Awesome 6 Free' !important;
@@ -1262,13 +1251,10 @@
 }
 
 /* Skrýt spinner po načtení obrázku */
-.service-thumb:has(img.loaded)::before,
 .ad-thumb:has(img.loaded)::before {
     display: none !important;
 }
 
-/* Duplicitní třída bez "ad" v názvu pro obcházení AdBlocku */
-.service-body,
 .ad-body {
     display: flex !important; /* Flexbox pro rozložení obsahu */
     flex-direction: column !important; /* Vertikální uspořádání */
@@ -4018,17 +4004,20 @@ body.dark-mode .contact {
     background: #1A1D29;
 }
 
-body.dark-mode .service-card {
+body.dark-mode .service-card,
+body.dark-mode .ad-card {
     background: #2A2D39;
     border-color: #3A3D49;
     color: #fff;
 }
 
-body.dark-mode .service-card h3 {
+body.dark-mode .service-card h3,
+body.dark-mode .ad-card h3 {
     color: #fff;
 }
 
-body.dark-mode .service-card p {
+body.dark-mode .service-card p,
+body.dark-mode .ad-card p {
     color: #ccc;
 }
 
