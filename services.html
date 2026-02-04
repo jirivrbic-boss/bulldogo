@@ -66,8 +66,31 @@
     <!-- Font Awesome - načítat až po načtení stránky -->
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"></noscript>
+    <!-- Polyfilly pro kompatibilitu napříč prohlížeči - načítat před Firebase -->
+    <script src="polyfills.js"></script>
+    <!-- Firebase import helper funkce - načítat před Firebase -->
+    <script src="firebase-imports.js"></script>
     <!-- Firebase SDK (centralizovaná inicializace) - defer pro neblokující načítání -->
     <script type="module" src="firebase-init.js" defer></script>
+    <!-- Fallback pro prohlížeče bez podpory ES6 modulů -->
+    <script nomodule>
+        console.warn('⚠️ Váš prohlížeč nepodporuje ES6 moduly. Některé funkce nemusí fungovat správně.');
+        if (!window.firebaseReady) {
+            setTimeout(function() {
+                if (window.firebaseAuth && window.firebaseDb) {
+                    window.firebaseReady = true;
+                    if (window.dispatchEvent) {
+                        try {
+                            var event = new Event('firebaseReady');
+                            window.dispatchEvent(event);
+                        } catch(e) {
+                            console.warn('⚠️ Nepodařilo se vyslat firebaseReady event:', e);
+                        }
+                    }
+                }
+            }, 2000);
+        }
+    </script>
     <!-- Mailchimp popup (newsletter) - načítat až po načtení stránky -->
     <script>
         window.addEventListener('load', function() {

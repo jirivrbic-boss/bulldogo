@@ -24,7 +24,8 @@ async function initStatsPage() {
     }
     
     // Počkat na přihlášení uživatele pomocí onAuthStateChanged
-    const { onAuthStateChanged } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+    const authModule = await (window.importFirebaseAuth || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js')))();
+    const { onAuthStateChanged } = authModule;
     
     onAuthStateChanged(auth, async (user) => {
         console.log('Auth state changed na statistiky.html:', user ? user.email : 'Odhlášen');
@@ -66,7 +67,8 @@ async function initStatsPage() {
 async function checkAdminStatus(uid) {
     if (!uid) return false;
     try {
-        const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+        const { getDoc, doc } = firestoreModule;
         const profileRef = doc(window.firebaseDb, 'users', uid, 'profile', 'profile');
         const profileSnap = await getDoc(profileRef);
         if (profileSnap.exists()) {
@@ -89,7 +91,8 @@ async function checkAdminStatus(uid) {
 // Načtení všech uživatelů
 async function loadAllUsers() {
     try {
-        const { getDocs, getDoc, collection, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+        const { getDocs, getDoc, collection, doc } = firestoreModule;
         const usersSnapshot = await getDocs(collection(window.firebaseDb, 'users'));
         allUsers = [];
         
@@ -115,7 +118,8 @@ async function loadAllUsers() {
 // Načtení všech inzerátů
 async function loadAllAds() {
     try {
-        const { getDocs, collection, collectionGroup } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+        const { getDocs, collection, collectionGroup } = firestoreModule;
         allAds = [];
         
         // Zkusit collectionGroup

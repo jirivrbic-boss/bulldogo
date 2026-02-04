@@ -321,7 +321,8 @@ window.checkAndShowAdminMenu = async function() {
         }
         
         // Zkontrolovat admin status
-        const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+        const { getDoc, doc } = firestoreModule;
         const profileRef = doc(window.firebaseDb, 'users', user.uid, 'profile', 'profile');
         const profileSnap = await getDoc(profileRef);
         
@@ -763,7 +764,8 @@ function initializeAuthState() {
 
 // Setup auth state listener
 function setupAuthStateListener() {
-    import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js').then(({ onAuthStateChanged }) => {
+    (window.importFirebaseAuth || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js')))()
+        .then(({ onAuthStateChanged }) => {
         onAuthStateChanged(window.firebaseAuth, (user) => {
             console.log('Auth state changed:', user);
             updateAuthUI(user);
@@ -860,7 +862,8 @@ const STOCK_AVATAR_URL = 'data:image/svg+xml;base64,' + btoa('<svg width="128" h
 async function loadAndApplyUserAvatar(uid) {
 	try {
 		if (!uid || !window.firebaseDb) return;
-		const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+		const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+		const { getDoc, doc } = firestoreModule;
 		const profileRef = doc(window.firebaseDb, 'users', uid, 'profile', 'profile');
 		const snap = await getDoc(profileRef);
 		const url = snap.exists() ? (snap.data()?.photoURL || snap.data()?.avatarUrl || '') : '';
@@ -1059,7 +1062,8 @@ function applyHeroAvatar(url) {
 // Logout function
 function logout() {
     if (window.firebaseAuth) {
-        import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js').then(({ signOut }) => {
+        (window.importFirebaseAuth || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js')))()
+            .then(({ signOut }) => {
             signOut(window.firebaseAuth).then(() => {
                 console.log('User logged out successfully');
                 // Redirect to home page

@@ -608,7 +608,26 @@
         </div> <!-- /container -->
     </div>
 
+    <!-- Polyfilly pro kompatibilitu napříč prohlížeči -->
+    <script src="/polyfills.js"></script>
+    <!-- Firebase import helper funkce -->
+    <script src="/firebase-imports.js"></script>
     <script type="module" src="/firebase-init.js" defer></script>
+    <script nomodule>
+        if (!window.firebaseReady) {
+            setTimeout(function() {
+                if (window.firebaseAuth && window.firebaseDb) {
+                    window.firebaseReady = true;
+                    if (window.dispatchEvent) {
+                        try {
+                            var event = new Event('firebaseReady');
+                            window.dispatchEvent(event);
+                        } catch(e) {}
+                    }
+                }
+            }, 2000);
+        }
+    </script>
     <!-- Structured Data - BreadcrumbList -->
     <script type="application/ld+json">
     {

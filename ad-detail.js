@@ -74,7 +74,8 @@ async function loadAdDetail(adId, userId) {
     try {
         console.log('📋 Loading ad detail:', adId, 'from user:', userId);
         
-        const { getDoc, doc, collection, query, where, getDocs } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+        const { getDoc, doc, collection, query, where, getDocs } = firestoreModule;
         
         // Try to load ad data from different possible locations
         let adData = null;
@@ -180,8 +181,11 @@ function displayAdDetail() {
     
     console.log('🖼️ Displaying ad detail:', currentAd);
     
-    // Title and price
-    document.getElementById('adTitle').textContent = currentAd.title || 'Bez názvu';
+    // Title and price - s kontrolou existence prvků
+    const adTitleEl = document.getElementById('adTitle');
+    if (adTitleEl) {
+        adTitleEl.textContent = currentAd.title || 'Bez názvu';
+    }
     
     // Formátování ceny - pokud je jen číslo, přidat Kč
     let formattedPrice = currentAd.price || '';
@@ -189,16 +193,28 @@ function displayAdDetail() {
         // Pokud je cena jen číslo, přidat "Kč"
         formattedPrice = `${formattedPrice} Kč`;
     }
-    document.getElementById('adPrice').textContent = formattedPrice || 'Cena na vyžádání';
+    const adPriceEl = document.getElementById('adPrice');
+    if (adPriceEl) {
+        adPriceEl.textContent = formattedPrice || 'Cena na vyžádání';
+    }
     
-    // Meta information
-    document.getElementById('adLocation').textContent = getLocationName(currentAd.location) || 'Neznámá lokalita';
-    document.getElementById('adCategory').textContent = getCategoryName(currentAd.category);
+    // Meta information - s kontrolou existence prvků
+    const adLocationEl = document.getElementById('adLocation');
+    if (adLocationEl) {
+        adLocationEl.textContent = getLocationName(currentAd.location) || 'Neznámá lokalita';
+    }
+    const adCategoryEl = document.getElementById('adCategory');
+    if (adCategoryEl) {
+        adCategoryEl.textContent = getCategoryName(currentAd.category);
+    }
     
     // Debug date information
     console.log('📅 Raw createdAt:', currentAd.createdAt);
     console.log('📅 Formatted date:', formatDate(currentAd.createdAt));
-    document.getElementById('adDate').textContent = formatDate(currentAd.createdAt);
+    const adDateEl = document.getElementById('adDate');
+    if (adDateEl) {
+        adDateEl.textContent = formatDate(currentAd.createdAt);
+    }
     
     // Description - zachovat odřádkování s funkcí "číst dále"
     const descriptionEl = document.getElementById('adDescription');
@@ -270,7 +286,10 @@ function displayAdDetail() {
             displayName = adOwner.email.split('@')[0];
         }
         
-        document.getElementById('adUser').textContent = displayName;
+        const adUserEl = document.getElementById('adUser');
+        if (adUserEl) {
+            adUserEl.textContent = displayName;
+        }
         // Avatar (hlavička profilu u detailu inzerátu)
         try {
             const STOCK_AVATAR_URL = 'data:image/svg+xml;base64,' + btoa('<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="avatarGradient" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#f77c00;stop-opacity:1" /><stop offset="100%" style="stop-color:#fdf002;stop-opacity:1" /></linearGradient></defs><circle cx="64" cy="64" r="64" fill="url(#avatarGradient)"/><circle cx="64" cy="48" r="16" fill="white"/><path d="M32 88C32 80.268 38.268 74 46 74H82C89.732 74 96 80.268 96 88V128H32V88Z" fill="white"/></svg>');
@@ -376,9 +395,12 @@ function displayAdDetail() {
         });
     } else {
         // Pokud není profil načtený, zobrazit výchozí hodnoty
-        document.getElementById('adUser').textContent = 'Uživatel';
-        document.getElementById('adEmail').textContent = 'Neuvedeno';
-        document.getElementById('adPhone').textContent = 'Neuvedeno';
+        const adUserEl = document.getElementById('adUser');
+        const adEmailEl = document.getElementById('adEmail');
+        const adPhoneEl = document.getElementById('adPhone');
+        if (adUserEl) adUserEl.textContent = 'Uživatel';
+        if (adEmailEl) adEmailEl.textContent = 'Neuvedeno';
+        if (adPhoneEl) adPhoneEl.textContent = 'Neuvedeno';
         const userProfileNameEl = document.getElementById('userProfileName');
         if (userProfileNameEl) {
             userProfileNameEl.textContent = 'Uživatel';
@@ -631,7 +653,8 @@ async function loadUserOtherAds(userId) {
     try {
         console.log('📋 Loading user other ads:', userId);
         
-        const { getDocs, collection, query, where } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+        const { getDocs, collection, query, where } = firestoreModule;
         
         const adsRef = collection(window.firebaseDb, 'users', userId, 'inzeraty');
         const q = query(adsRef, where('status', '==', 'active'));
@@ -1198,7 +1221,8 @@ async function submitReport() {
         
         // Try to get name from profile
         try {
-            const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+            const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+            const { getDoc, doc } = firestoreModule;
             const profileDoc = await getDoc(doc(window.firebaseDb, 'users', user.uid, 'profile', 'profile'));
             if (profileDoc.exists()) {
                 const profile = profileDoc.data();

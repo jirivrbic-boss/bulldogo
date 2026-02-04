@@ -151,7 +151,8 @@ async function checkAuth() {
         return false;
     }
     
-    const { onAuthStateChanged } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+    const authModule = await (window.importFirebaseAuth || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js')))();
+    const { onAuthStateChanged } = authModule;
     
     return new Promise((resolve) => {
         onAuthStateChanged(window.firebaseAuth, async (user) => {
@@ -164,7 +165,8 @@ async function checkAuth() {
             } else {
                 // Načíst avatar aktuálního uživatele
                 try {
-                    const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                    const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+                    const { doc, getDoc } = firestoreModule;
                     const profileRef = doc(window.firebaseDb, 'users', user.uid, 'profile', 'profile');
                     const profileSnap = await getDoc(profileRef);
                     if (profileSnap.exists()) {
@@ -226,7 +228,8 @@ async function loadConversations() {
     }
     
     try {
-        const { collection, query, where, orderBy, onSnapshot } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+        const { collection, query, where, orderBy, onSnapshot } = firestoreModule;
         
         const conversationsRef = collection(window.firebaseDb, 'conversations');
         
@@ -290,7 +293,8 @@ async function loadConversations() {
                 let otherParticipantPhone = '';
                 
                 try {
-                    const { doc: docFn, getDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                    const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+                    const { doc: docFn, getDoc } = firestoreModule;
                     const profileRef = docFn(window.firebaseDb, 'users', otherParticipantId, 'profile', 'profile');
                     const profileSnap = await getDoc(profileRef);
                     
@@ -443,7 +447,8 @@ async function openConversation(conversationId) {
     if (!conversation) {
         // Zkusit načíst konverzaci přímo z Firestore
         try {
-            const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+            const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+            const { doc, getDoc } = firestoreModule;
             const conversationRef = doc(window.firebaseDb, 'conversations', conversationId);
             const conversationSnap = await getDoc(conversationRef);
             
@@ -565,7 +570,8 @@ async function loadMessages(conversationId) {
     }
     
     try {
-        const { collection, query, orderBy, onSnapshot } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+        const { collection, query, orderBy, onSnapshot } = firestoreModule;
         
         const messagesRef = collection(window.firebaseDb, 'conversations', conversationId, 'messages');
         const q = query(messagesRef, orderBy('createdAt', 'asc'));

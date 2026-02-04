@@ -174,7 +174,8 @@ async function loadProfileDetail(userId) {
 async function loadUserProfile(userId) {
     try {
         console.log('🖼️ loadUserProfile called for userId:', userId);
-        const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+        const { getDoc, doc } = firestoreModule;
         
         // Try to load from users/{userId}/profile/profile first
         const profileRef = doc(window.firebaseDb, 'users', userId, 'profile', 'profile');
@@ -239,7 +240,8 @@ async function loadUserProfile(userId) {
 async function loadUserServices(userId) {
     try {
         console.log('🔍 Loading services for user:', userId);
-        const { getDocs, collection } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+        const { getDocs, collection } = firestoreModule;
         
         if (!window.firebaseDb) {
             throw new Error('Firebase DB není dostupný');

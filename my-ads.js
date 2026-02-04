@@ -139,7 +139,8 @@ function updateUI(user) {
 // Načtení uživatelského profilu z Firestore (users/{uid}/profile/profile)
 async function loadUserProfile(uid) {
     try {
-        const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+        const { getDoc, doc } = firestoreModule;
         const profileRef = doc(window.firebaseDb, 'users', uid, 'profile', 'profile');
         const snap = await getDoc(profileRef);
         return snap.exists() ? snap.data() : null;
@@ -159,7 +160,8 @@ async function loadUserAds() {
             return;
         }
 
-        const { getDocs, collection, getDoc, doc, updateDoc, writeBatch } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+        const { getDocs, collection, getDoc, doc, updateDoc, writeBatch } = firestoreModule;
         
         // Nejdříve zkontrolovat, zda má uživatel aktivní předplatné
         const profileRef = doc(window.firebaseDb, 'users', currentUser.uid, 'profile', 'profile');
@@ -1057,8 +1059,10 @@ async function updateAd() {
             return;
         }
         
-        const { updateDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
-        const { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js');
+        const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+        const storageModule = await (window.importFirebaseStorage || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js')))();
+        const { updateDoc, doc } = firestoreModule;
+        const { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } = storageModule;
         
         const storage = getStorage(window.firebaseApp);
         const userId = window.firebaseAuth.currentUser.uid;
@@ -1177,7 +1181,8 @@ async function updateAd() {
 // Přepnutí stavu inzerátu
 async function toggleAdStatus(adId, targetStatus) {
     try {
-        const { updateDoc, doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+        const { updateDoc, doc, getDoc } = firestoreModule;
         
         // targetStatus je buď 'paused' nebo 'active'
         const newStatus = targetStatus === 'paused' ? 'inactive' : 'active';
@@ -1274,7 +1279,8 @@ async function toggleAdStatus(adId, targetStatus) {
 // Provedení změny stavu inzerátu
 async function executeAdStatusChange(adId, newStatus) {
     try {
-        const { updateDoc, doc, deleteField } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+        const { updateDoc, doc, deleteField } = firestoreModule;
         
         // Připravit data pro aktualizaci
         const updateData = {
@@ -1366,7 +1372,8 @@ async function deleteAd(adId) {
     }
     
     try {
-        const { deleteDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+        const { deleteDoc, doc } = firestoreModule;
         
         await deleteDoc(doc(window.firebaseDb, 'users', window.firebaseAuth.currentUser.uid, 'inzeraty', adId));
         

@@ -115,9 +115,25 @@ try {
     window.firebaseReady = true;
 
     // Vyslat event, že Firebase je připraven (pro event-driven přístup)
-    if (typeof window.dispatchEvent !== 'undefined') {
-        window.dispatchEvent(new Event('firebaseReady'));
-        console.log('📢 Event firebaseReady vyslán');
+    // Kompatibilita napříč prohlížeči - použít CustomEvent pokud je dostupné
+    try {
+        if (typeof window.dispatchEvent !== 'undefined') {
+            // Použít CustomEvent pro lepší kompatibilitu
+            const event = typeof CustomEvent !== 'undefined' 
+                ? new CustomEvent('firebaseReady', { bubbles: false, cancelable: false })
+                : (() => {
+                    // Fallback pro starší prohlížeče
+                    const evt = document.createEvent('Event');
+                    evt.initEvent('firebaseReady', false, false);
+                    return evt;
+                })();
+            window.dispatchEvent(event);
+            console.log('📢 Event firebaseReady vyslán');
+        }
+    } catch (eventError) {
+        console.warn('⚠️ Nepodařilo se vyslat firebaseReady event:', eventError);
+        // Fallback - nastavit flag přímo
+        window.firebaseReady = true;
     }
 
     console.log('✅ Firebase inicializován a připraven:', { 
@@ -136,9 +152,21 @@ try {
     window.firebaseError = error;
     window.firebaseReady = false;
     
-    // Vyslat error event
-    if (typeof window.dispatchEvent !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('firebaseError', { detail: error }));
+    // Vyslat error event s fallbackem pro kompatibilitu
+    try {
+        if (typeof window.dispatchEvent !== 'undefined') {
+            const errorEvent = typeof CustomEvent !== 'undefined'
+                ? new CustomEvent('firebaseError', { detail: error, bubbles: false, cancelable: false })
+                : (() => {
+                    // Fallback pro starší prohlížeče
+                    const evt = document.createEvent('CustomEvent');
+                    evt.initCustomEvent('firebaseError', false, false, error);
+                    return evt;
+                })();
+            window.dispatchEvent(errorEvent);
+        }
+    } catch (eventError) {
+        console.warn('⚠️ Nepodařilo se vyslat firebaseError event:', eventError);
     }
 }
 

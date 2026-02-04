@@ -75,7 +75,8 @@
             if (window.firebaseReady && window.firebaseAuth && window.firebaseDb) {
                 clearInterval(waitForFirebase);
                 try {
-                    const { onAuthStateChanged } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+                    const authModule = await (window.importFirebaseAuth || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js')))();
+                    const { onAuthStateChanged } = authModule;
                     onAuthStateChanged(window.firebaseAuth, async (user) => {
                         if (user) {
                             initEditAdPage();
@@ -101,7 +102,8 @@
     async function checkAdminStatus(uid) {
         if (!uid) return false;
         try {
-            const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+            const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+            const { getDoc, doc } = firestoreModule;
             const profileRef = doc(window.firebaseDb, 'users', uid, 'profile', 'profile');
             const profileSnap = await getDoc(profileRef);
             if (profileSnap.exists()) {
@@ -153,7 +155,8 @@
         
         // Načíst data inzerátu
         try {
-            const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+            const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+            const { getDoc, doc } = firestoreModule;
             const adRef = doc(window.firebaseDb, 'users', targetUserId, 'inzeraty', adId);
             const adSnap = await getDoc(adRef);
             
@@ -644,8 +647,10 @@
                 return;
             }
             
-            const { updateDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
-            const { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js');
+            const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+            const storageModule = await (window.importFirebaseStorage || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js')))();
+            const { updateDoc, doc } = firestoreModule;
+            const { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } = storageModule;
             
             const storage = getStorage(window.firebaseApp);
             // Použít targetUserId pokud je nastaven (pro adminy), jinak currentUser

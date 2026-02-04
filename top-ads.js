@@ -88,7 +88,8 @@ async function activateTopFromPending() {
         console.warn('No pending top activation data found.');
         return;
     }
-    const { doc, setDoc, Timestamp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+    const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+    const { doc, setDoc, Timestamp } = firestoreModule;
     const now = new Date();
     const expires = new Date(now.getTime() + (Number(pending.durationDays) * 24 * 60 * 60 * 1000));
 
@@ -168,7 +169,8 @@ function setupAuthListener() {
     };
     
     // Use onAuthStateChanged to properly detect auth state
-    import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js').then(({ onAuthStateChanged }) => {
+    (window.importFirebaseAuth || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js')))()
+        .then(({ onAuthStateChanged }) => {
         onAuthStateChanged(window.firebaseAuth, (user) => {
             console.log('👤 Auth state changed:', user ? `Přihlášen: ${user.email}` : 'Odhlášen');
             
@@ -289,7 +291,8 @@ async function loadUserAdsFromFirebase(preSelectedAdId = null) {
             return;
         }
 
-        const { getDocs, collection } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+        const { getDocs, collection } = firestoreModule;
         
         const adsCollection = collection(window.firebaseDb, 'users', currentUser.uid, 'inzeraty');
         const querySnapshot = await getDocs(adsCollection);
@@ -522,7 +525,8 @@ async function checkPackageForTop(durationDays) {
             return { valid: false, reason: 'not_logged_in', message: 'Pro topování se musíte přihlásit.' };
         }
 
-        const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+        const { getDoc, doc } = firestoreModule;
         const profileRef = doc(window.firebaseDb, 'users', user.uid, 'profile', 'profile');
         const profileSnap = await getDoc(profileRef);
 
@@ -633,7 +637,8 @@ async function processPayment() {
     
     // Kontrola, jestli už má inzerát aktivní topování
     try {
-        const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+        const { getDoc, doc } = firestoreModule;
         const adRef = doc(window.firebaseDb, 'users', user.uid, 'inzeraty', selectedAd.id);
         const adSnap = await getDoc(adRef);
         
@@ -704,7 +709,8 @@ async function processPayment() {
             };
             const targetName = PRODUCT_NAME_BY_KEY[key];
             if (!targetName) return null;
-            const { getDocs, collection, query, where } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+            const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+            const { getDocs, collection, query, where } = firestoreModule;
             const productsQ = query(
                 collection(window.firebaseDb, 'products'),
                 where('active', '==', true),
@@ -762,7 +768,8 @@ async function processPayment() {
     // Vytvořit Stripe Checkout Session přes Firebase Extension
     (async () => {
         try {
-            const { addDoc, collection, getDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+            const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+            const { addDoc, collection, getDoc } = firestoreModule;
             const successUrl = `${window.location.origin}/top-ads.html?payment=success`;
             const cancelUrl = `${window.location.origin}/top-ads.html?payment=canceled`;
             // Pro 100% slevu použijeme coupon ID "BULLDOGOTOP" nebo promotion_code

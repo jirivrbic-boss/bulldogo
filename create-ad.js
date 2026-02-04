@@ -34,7 +34,8 @@
             if (window.firebaseReady && window.firebaseAuth && window.firebaseDb) {
                 clearInterval(waitForFirebase);
                 try {
-                    const { onAuthStateChanged } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+                    const authModule = await (window.importFirebaseAuth || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js')))();
+                    const { onAuthStateChanged } = authModule;
                     onAuthStateChanged(window.firebaseAuth, async (user) => {
                         if (user) {
                             // Zavřít případný auth modal, pokud se zobrazil dříve
@@ -47,7 +48,8 @@
                             // Kontrola aktivního předplatného - POVINNÁ
                             console.log('🔒 Kontroluji předplatné pro vytvoření inzerátu...');
                             
-                            const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                            const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+                            const { getDoc, doc } = firestoreModule;
                             const profileRef = doc(window.firebaseDb, 'users', user.uid, 'profile', 'profile');
                             const profileSnap = await getDoc(profileRef);
                             

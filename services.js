@@ -18,18 +18,26 @@ function initializeServices() {
         return;
     }
     
-    // Použít event listener místo polling (rychlejší a efektivnější)
+    // Robustnější inicializace s více fallbacky pro kompatibilitu
     const initOnceFirebaseReady = () => {
         if (window.firebaseAuth && window.firebaseDb) {
             servicesFirebaseAuth = window.firebaseAuth;
             servicesFirebaseDb = window.firebaseDb;
             initServices();
-            window.removeEventListener('firebaseReady', initOnceFirebaseReady);
+            // Odstranit listener pokud existuje
+            if (window.removeEventListener) {
+                window.removeEventListener('firebaseReady', initOnceFirebaseReady);
+            }
         }
     };
     
-    // Přidat event listener
-    window.addEventListener('firebaseReady', initOnceFirebaseReady);
+    // Přidat event listener s fallbackem pro starší prohlížeče
+    if (window.addEventListener) {
+        window.addEventListener('firebaseReady', initOnceFirebaseReady);
+    } else if (window.attachEvent) {
+        // Fallback pro IE
+        window.attachEvent('onfirebaseReady', initOnceFirebaseReady);
+    }
     
     // Fallback timeout po 5 sekundách (pokud event nepřijde)
     setTimeout(() => {
@@ -44,9 +52,19 @@ function initializeServices() {
                 console.log('🔄 Přepínám na lokální databázi...');
                 initLocalFallback();
             }
-            window.removeEventListener('firebaseReady', initOnceFirebaseReady);
+            // Odstranit listener pokud existuje
+            if (window.removeEventListener) {
+                window.removeEventListener('firebaseReady', initOnceFirebaseReady);
+            } else if (window.detachEvent) {
+                window.detachEvent('onfirebaseReady', initOnceFirebaseReady);
+            }
         }
     }, 5000);
+    
+    // Okamžitá kontrola (pro případ, že Firebase je už připraven)
+    if (window.firebaseAuth && window.firebaseDb && window.firebaseReady) {
+        initOnceFirebaseReady();
+    }
 }
 
 // Inicializace po načtení DOM
@@ -126,7 +144,29 @@ async function setupRealtimeListener() {
             throw new Error('Firebase DB není dostupný');
         }
         
-        const { collectionGroup, collection, onSnapshot, getDocs, query, limit } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        // Robustnější import s fallbackem pro kompatibilitu a cache
+        let firestoreModule;
+        if (typeof window.firestoreModuleCache !== 'undefined' && window.firestoreModuleCache) {
+            firestoreModule = window.firestoreModuleCache;
+        } else {
+            try {
+                firestoreModule = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                // Cache pro další použití
+                window.firestoreModuleCache = firestoreModule;
+            } catch (importError) {
+                console.error('❌ Chyba při importu Firestore modulu:', importError);
+                // Fallback - zkusit znovu po krátké pauze
+                await new Promise(resolve => setTimeout(resolve, 500));
+                try {
+                    firestoreModule = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                    window.firestoreModuleCache = firestoreModule;
+                } catch (retryError) {
+                    console.error('❌ Opakovaný pokus o import selhal:', retryError);
+                    throw new Error('Firestore modul není dostupný');
+                }
+            }
+        }
+        const { collectionGroup, collection, onSnapshot, getDocs, query, limit } = firestoreModule;
         
         // DIAGNOSTIKA: Nejdříve zkusit jednoduchý test - načíst jeden uživatelský dokument
         try {
@@ -171,7 +211,10 @@ async function setupRealtimeListener() {
         
         console.log('👂 Nastavuji onSnapshot listener...');
         
-        onSnapshot(servicesRef, async (snapshot) => {
+        // Robustnější onSnapshot s error handlingem
+        const unsubscribe = onSnapshot(
+            servicesRef, 
+            async (snapshot) => {
             // Real-time update - logy odstraněny pro čistší konzoli
             
             // Aktualizace stavu připojení
@@ -209,7 +252,22 @@ async function setupRealtimeListener() {
             const uniqueUserIds = [...new Set(servicesToCheck.map(s => s.userId).filter(Boolean))];
             
             // Načíst profily všech uživatelů paralelně
-            const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+            // Použít cache nebo znovu importovat
+            let getDoc, doc;
+            if (typeof window.firestoreModuleCache !== 'undefined' && window.firestoreModuleCache) {
+                ({ getDoc, doc } = window.firestoreModuleCache);
+            } else if (firestoreModule) {
+                ({ getDoc, doc } = firestoreModule);
+            } else {
+                try {
+                    const module = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                    ({ getDoc, doc } = module);
+                    window.firestoreModuleCache = module;
+                } catch (importError) {
+                    console.error('❌ Chyba při importu Firestore modulu pro profily:', importError);
+                    throw importError;
+                }
+            }
             const profilePromises = uniqueUserIds.map(async (userId) => {
                 try {
                     const profileRef = doc(servicesFirebaseDb, 'users', userId, 'profile', 'profile');
@@ -245,7 +303,13 @@ async function setupRealtimeListener() {
                 }
             });
             
-            await Promise.all(profilePromises);
+            // Robustnější Promise.all s error handlingem pro kompatibilitu
+            try {
+                await Promise.all(profilePromises);
+            } catch (promiseError) {
+                console.warn('⚠️ Některé profily se nepodařilo načíst:', promiseError);
+                // Pokračovat i při chybách - některé profily mohou být načteny
+            }
             
             // Filtrovat služby podle předplatného
             servicesToCheck.forEach((service) => {
@@ -382,7 +446,15 @@ async function checkAndExpireTopAdsInServices() {
             return;
         }
         
-        const { getDocs, collection, updateDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        // Robustnější import s fallbackem
+        let firestoreModule;
+        try {
+            firestoreModule = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        } catch (importError) {
+            console.error('❌ Chyba při importu Firestore modulu:', importError);
+            throw importError;
+        }
+        const { getDocs, collection, updateDoc } = firestoreModule;
         
         // Načíst pouze inzeráty přihlášeného uživatele (může je aktualizovat)
         const userAdsRef = collection(servicesFirebaseDb, 'users', currentUser.uid, 'inzeraty');
@@ -430,7 +502,21 @@ async function updateExpiredTopAd(adId, userId) {
     }
     
     try {
-        const { doc, updateDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        // Použít již načtený modul nebo znovu importovat
+        let doc, updateDoc, serverTimestamp;
+        if (typeof window.firestoreModuleCache !== 'undefined' && window.firestoreModuleCache) {
+            ({ doc, updateDoc, serverTimestamp } = window.firestoreModuleCache);
+        } else {
+            try {
+                const module = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                ({ doc, updateDoc, serverTimestamp } = module);
+                // Cache pro další použití
+                window.firestoreModuleCache = module;
+            } catch (importError) {
+                console.error('❌ Chyba při importu Firestore modulu:', importError);
+                throw importError;
+            }
+        }
         const adRef = doc(window.firebaseDb, 'users', userId, 'inzeraty', adId);
         await updateDoc(adRef, {
             isTop: false,
@@ -446,7 +532,29 @@ async function updateExpiredTopAd(adId, userId) {
 async function tryAlternativeLoadMethod() {
     try {
         // Alternativní metoda - logy odstraněny
-        const { collection, getDocs, query, limit, onSnapshot } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        // Robustnější import s fallbackem a cache
+        let firestoreModule;
+        if (typeof window.firestoreModuleCache !== 'undefined' && window.firestoreModuleCache) {
+            firestoreModule = window.firestoreModuleCache;
+        } else {
+            try {
+                firestoreModule = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                // Cache pro další použití
+                window.firestoreModuleCache = firestoreModule;
+            } catch (importError) {
+                console.error('❌ Chyba při importu Firestore modulu:', importError);
+                // Fallback - zkusit znovu
+                await new Promise(resolve => setTimeout(resolve, 500));
+                try {
+                    firestoreModule = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                    window.firestoreModuleCache = firestoreModule;
+                } catch (retryError) {
+                    console.error('❌ Opakovaný pokus o import selhal:', retryError);
+                    throw new Error('Firestore modul není dostupný');
+                }
+            }
+        }
+        const { collection, getDocs, query, limit, onSnapshot } = firestoreModule;
         
         // Funkce pro načtení všech inzerátů
         async function loadAllAds() {
@@ -471,6 +579,11 @@ async function tryAlternativeLoadMethod() {
                 const userAdsRef = collection(servicesFirebaseDb, 'users', userId, 'inzeraty');
                 
                 const loadPromise = getDocs(userAdsRef).then((adsSnapshot) => {
+                    // Error handling pro kompatibilitu
+                    if (!adsSnapshot || typeof adsSnapshot.forEach !== 'function') {
+                        console.warn('⚠️ Neplatný snapshot pro uživatele:', userId);
+                        return;
+                    }
                     adsSnapshot.forEach((adDoc) => {
                         const data = adDoc.data();
                         services.push({
@@ -481,13 +594,32 @@ async function tryAlternativeLoadMethod() {
                         });
                     });
                 }).catch((error) => {
-                    console.warn(`⚠️ Chyba při načítání inzerátů uživatele ${userId}:`, error);
+                    // Lepší error handling - neblokovat ostatní načítání
+                    console.warn(`⚠️ Chyba při načítání inzerátů uživatele ${userId}:`, error.message || error);
+                    return []; // Vrátit prázdné pole místo vyhození chyby
                 });
                 
                 loadPromises.push(loadPromise);
             });
             
-            await Promise.all(loadPromises);
+            // Robustnější Promise.all s error handlingem
+            try {
+                const results = await Promise.all(loadPromises.map(p => 
+                    p.catch(err => {
+                        console.warn('⚠️ Chyba při načítání inzerátů:', err);
+                        return []; // Vrátit prázdné pole při chybě
+                    })
+                ));
+                // Flatten results
+                results.forEach(userAds => {
+                    if (Array.isArray(userAds)) {
+                        services.push(...userAds);
+                    }
+                });
+            } catch (error) {
+                console.error('❌ Kritická chyba při načítání inzerátů:', error);
+                // Pokračovat s tím, co se podařilo načíst
+            }
             
             // Kontrola expirace topování před řazením
             const now = new Date();
@@ -751,6 +883,11 @@ function displayServices(list) {
     const searchInput = document.getElementById('searchInput');
     const categoryFilter = document.getElementById('categoryFilter');
     const regionFilter = document.getElementById('regionFilter');
+    
+    // Kontrola existence prvků před přidáním listenerů
+    if (!searchInput || !categoryFilter || !regionFilter) {
+        console.warn('⚠️ Některé filtry nejsou dostupné v DOM');
+    }
     const hasActiveFilters = (searchInput?.value?.trim() || '') || 
                             (categoryFilter?.value?.trim() || '') || 
                             (regionFilter?.value?.trim() || '');
@@ -885,48 +1022,88 @@ function displayServices(list) {
         noServices.style.display = 'none';
     }
 
-    // Zabraň změně velikosti při filtrování - použij requestAnimationFrame
-    requestAnimationFrame(() => {
-        // Nastavit minimální výšku gridu, aby se zabránilo změně velikosti
-        const currentHeight = grid.offsetHeight;
-        if (currentHeight > 0) {
-            grid.style.minHeight = currentHeight + 'px';
+    // Zabraň změně velikosti při filtrování - použij requestAnimationFrame s fallbackem
+    if (typeof requestAnimationFrame !== 'undefined') {
+        requestAnimationFrame(() => {
+            // Nastavit minimální výšku gridu, aby se zabránilo změně velikosti
+            if (grid) {
+                const currentHeight = grid.offsetHeight;
+                if (currentHeight > 0) {
+                    grid.style.minHeight = currentHeight + 'px';
+                }
+            }
+        });
+    } else {
+        // Fallback pro starší prohlížeče
+        setTimeout(() => {
+            if (grid) {
+                const currentHeight = grid.offsetHeight;
+                if (currentHeight > 0) {
+                    grid.style.minHeight = currentHeight + 'px';
+                }
+            }
+        }, 0);
+    }
         }
 
         // Vykreslit karty - univerzální šablona zajistí konzistentní vzhled
         let htmlContent = finalServices.map(service => createAdCard(service, showActions)).join('');
         grid.innerHTML = htmlContent;
         
-        // Po renderování odstranit min-height
-        requestAnimationFrame(() => {
-            grid.style.minHeight = '';
-        });
+        // Po renderování odstranit min-height s fallbackem
+        if (typeof requestAnimationFrame !== 'undefined') {
+            requestAnimationFrame(() => {
+                if (grid) grid.style.minHeight = '';
+            });
+        } else {
+            setTimeout(() => {
+                if (grid) grid.style.minHeight = '';
+            }, 0);
+        }
     });
     
-    // Optimalizace: Intersection Observer pro lepší lazy loading
-    if ('IntersectionObserver' in window) {
-        const imageObserver = new IntersectionObserver((entries, observer) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const img = entry.target;
-                    if (img.dataset.src) {
-                        img.src = img.dataset.src;
-                        img.removeAttribute('data-src');
-                        observer.unobserve(img);
+    // Optimalizace: Intersection Observer pro lepší lazy loading s robustním error handlingem
+    if (typeof IntersectionObserver !== 'undefined' && grid) {
+        try {
+            const imageObserver = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const img = entry.target;
+                        if (img && img.dataset && img.dataset.src) {
+                            img.src = img.dataset.src;
+                            img.removeAttribute('data-src');
+                            observer.unobserve(img);
+                        }
+                    }
+                });
+            }, {
+                rootMargin: '50px' // Začít načítat 50px před tím, než je obrázek viditelný
+            });
+            
+            // Najít všechny lazy obrázky a pozorovat je
+            const lazyImages = grid.querySelectorAll('img[loading="lazy"]');
+            lazyImages.forEach(img => {
+                if (img && img.src && !img.complete) {
+                    try {
+                        imageObserver.observe(img);
+                    } catch (observeError) {
+                        console.warn('⚠️ Chyba při pozorování obrázku:', observeError);
                     }
                 }
             });
-        }, {
-            rootMargin: '50px' // Začít načítat 50px před tím, než je obrázek viditelný
-        });
-        
-        // Najít všechny lazy obrázky a pozorovat je
-        const lazyImages = grid.querySelectorAll('img[loading="lazy"]');
-        lazyImages.forEach(img => {
-            if (img.src && !img.complete) {
-                imageObserver.observe(img);
+        } catch (observerError) {
+            console.warn('⚠️ IntersectionObserver není dostupný nebo selhal:', observerError);
+            // Fallback - načíst všechny obrázky najednou
+            if (grid) {
+                const lazyImages = grid.querySelectorAll('img[loading="lazy"]');
+                lazyImages.forEach(img => {
+                    if (img && img.dataset && img.dataset.src) {
+                        img.src = img.dataset.src;
+                        img.removeAttribute('data-src');
+                    }
+                });
             }
-        });
+        }
     }
 }
 
@@ -1700,7 +1877,8 @@ async function searchUsers() {
         }
 
         // Načti profily přes collectionGroup "profile"
-        const { collectionGroup, getDocs } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+        const { collectionGroup, getDocs } = firestoreModule;
         const profilesRef = collectionGroup(servicesFirebaseDb, 'profile');
         const snapshot = await getDocs(profilesRef);
 
@@ -2034,7 +2212,8 @@ async function addTestServices() {
         
         // Pokud máme Firebase, použij ho
         if (servicesFirebaseDb) {
-            const { addDoc, collection } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+            const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+            const { addDoc, collection } = firestoreModule;
             
             const testServices = [
                 {
@@ -2111,7 +2290,8 @@ async function addTestServices() {
                 console.log('➕ Přidávám službu:', service.title);
                 
                 // Nejdříve vytvořit uživatele, pokud neexistuje
-                const { setDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+                const { setDoc, doc } = firestoreModule;
                 
                 // Vytvořit root dokument uživatele
                 await setDoc(doc(servicesFirebaseDb, 'users', service.userId), {
@@ -2189,7 +2369,8 @@ async function testFirebaseConnection() {
         console.log('Testování připojení...');
         
         if (servicesFirebaseDb) {
-            const { collection, addDoc, getDocs } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+            const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+            const { collection, addDoc, getDocs } = firestoreModule;
             
             // Test zápisu
             const testRef = collection(servicesFirebaseDb, 'test');
@@ -2282,7 +2463,8 @@ async function submitProfileReview(targetUserId) {
         const text = (document.getElementById(`profileReviewText_${targetUserId}`)?.value || '').trim();
         if (rating < 1 || rating > 5) { showMessage('Vyberte počet hvězd (1-5)', 'error'); return; }
 
-        const { setDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+        const { setDoc, doc } = firestoreModule;
         const reviewRef = doc(window.firebaseDb, 'users', targetUserId, 'reviews', currentUser.uid);
         await setDoc(reviewRef, {
             type: 'profile',
@@ -2307,7 +2489,8 @@ async function loadCombinedUserReviews(userId) {
         if (!container) return;
         container.innerHTML = '<p>Načítám recenze...</p>';
 
-        const { getDocs, collection } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+        const { getDocs, collection } = firestoreModule;
         // Načíst pouze recenze z profilu uživatele
         const profileReviewsRef = collection(window.firebaseDb, 'users', userId, 'reviews');
         const profileSnap = await getDocs(profileReviewsRef);

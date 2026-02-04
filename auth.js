@@ -370,8 +370,9 @@ document.addEventListener('DOMContentLoaded', () => {
 function initAuth() {
     // Inicializace auth s Firebase - logy odstraněny
     
-    // Import Firebase funkcí dynamicky
-    import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js').then(({ onAuthStateChanged }) => {
+    // Import Firebase funkcí dynamicky s robustním error handlingem
+    (window.importFirebaseAuth || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js')))()
+        .then(({ onAuthStateChanged }) => {
         // Firebase Auth modul načten - logy odstraněny
         
         // DEV bypass pro reCAPTCHA – pouze na lokálu (nikoliv na vercel.app)
@@ -404,7 +405,8 @@ function initAuth() {
                 // DŮLEŽITÉ: Načíst userType z root dokumentu nebo profilu, aby se nepřepsal 'company' na 'person'
                 (async () => {
                     try {
-                        const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                        const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+                        const { getDoc, doc } = firestoreModule;
                         const db = window.firebaseDb || firebaseDb;
                         if (!db) {
                             // Fallback na 'person' pokud není DB dostupná
@@ -502,7 +504,22 @@ function initAuth() {
                 console.log('⚠️ Uživatel přihlášen, ale afterLoginCallback není nastaven');
             }
         });
-    }).catch(error => {
+        }).catch(error => {
+            console.error('❌ Chyba při inicializaci Auth:', error);
+            // Fallback - zkusit znovu po krátké pauze
+            setTimeout(() => {
+                if (window.importFirebaseAuth) {
+                    window.importFirebaseAuth().then(({ onAuthStateChanged }) => {
+                        onAuthStateChanged(firebaseAuth, (user) => {
+                            authCurrentUser = user;
+                            updateUI(user);
+                        });
+                    }).catch(err => {
+                        console.error('❌ Opakovaný pokus o inicializaci Auth selhal:', err);
+                    });
+                }
+            }, 2000);
+        });
         console.error('❌ Chyba při načítání Firebase Auth:', error);
     });
     
@@ -752,7 +769,8 @@ function normalizePhone(input) {
 async function isPhoneAvailable(normalizedPhone) {
     if (!normalizedPhone) return false;
     try {
-        const { getDocs, query, collectionGroup, where } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+        const { getDocs, query, collectionGroup, where } = firestoreModule;
         const q = query(collectionGroup(firebaseDb, 'profile'), where('phone', '==', normalizedPhone));
         const snap = await getDocs(q);
         return snap.empty;
@@ -880,8 +898,10 @@ async function register(email, password, userData) {
             return;
         }
         
-        const { createUserWithEmailAndPassword } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
-        const { addDoc, collection } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        const authModule = await (window.importFirebaseAuth || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js')))();
+        const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+        const { createUserWithEmailAndPassword } = authModule;
+        const { addDoc, collection } = firestoreModule;
 
         // Kontrola unikátnosti telefonního čísla před vytvořením účtu
         const rawPhone = userData.phone || '';

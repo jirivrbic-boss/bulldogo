@@ -121,7 +121,8 @@ function setupPackagesUserTypeFilter() {
             }
             if (!window.firebaseAuth) return;
 
-            const { onAuthStateChanged } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+            const authModule = await (window.importFirebaseAuth || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js')))();
+            const { onAuthStateChanged } = authModule;
             onAuthStateChanged(window.firebaseAuth, async (user) => {
                 if (!user) {
                     // Nepřihlášený: ukaž oba
@@ -143,7 +144,8 @@ function setupPackagesUserTypeFilter() {
                 while (!profileLoaded && retryCount < maxRetries) {
                     try {
                         // Zkusit načíst profil a zkontrolovat, zda obsahuje data
-                        const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                        const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+        const { getDoc, doc } = firestoreModule;
                         const profileRef = doc(window.firebaseDb, 'users', user.uid, 'profile', 'profile');
                         const profileSnap = await getDoc(profileRef);
                         
@@ -201,7 +203,8 @@ async function waitForSignedInUser(timeoutMs = 15000) {
     if (!window.firebaseAuth) throw new Error('Firebase Auth not ready');
 
     // 2) Počkat na auth state resolution
-    const { onAuthStateChanged } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+    const authModule = await (window.importFirebaseAuth || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js')))();
+    const { onAuthStateChanged } = authModule;
     return await new Promise((resolve, reject) => {
         const t = setTimeout(() => reject(new Error('Auth user not available in time')), Math.max(0, timeoutMs - (Date.now() - startedAt)));
         const unsub = onAuthStateChanged(window.firebaseAuth, (u) => {
@@ -253,7 +256,8 @@ async function filterPackagesByUserType() {
         // KRITICKÉ: Když přichází z jiné stránky, profil se může načítat pomaleji
         // Musíme počkat na načtení profilu z databáze, ne jen na auth state
         // Zkusit načíst profil s retry mechanismem
-        const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+        const { getDoc, doc } = firestoreModule;
         let profile = {};
         let root = {};
         let profileLoaded = false;
@@ -390,7 +394,8 @@ async function syncPlanFromStripeSubscription(options = {}) {
     const user = window.firebaseAuth.currentUser;
     if (!user) return;
 
-    const { collection, query, where, getDocs, setDoc, doc, Timestamp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+    const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+    const { collection, query, where, getDocs, setDoc, doc, Timestamp } = firestoreModule;
 
     // 0) Který plán uživatel kupoval (uloženo před redirectem) – použijeme jako primární mapování
     let pendingPlanId = null;
@@ -601,7 +606,8 @@ async function hasUserUsedTrial(userId) {
     try {
         if (!window.firebaseDb || !userId) return false;
         
-        const { collection, query, getDocs } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+        const { collection, query, getDocs } = firestoreModule;
         
         // Zkontrolovat všechny subscriptions uživatele (včetně těch, které už skončily)
         const subsRef = collection(window.firebaseDb, 'customers', userId, 'subscriptions');
@@ -698,7 +704,8 @@ async function processPayment() {
             };
             const targetName = PRODUCT_NAME_BY_PLAN[plan];
             if (!targetName) return null;
-            const { getDocs, collection, query, where } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+            const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+            const { getDocs, collection, query, where } = firestoreModule;
             const productsQ = query(
                 collection(window.firebaseDb, 'products'),
                 where('active', '==', true),
@@ -738,7 +745,8 @@ async function processPayment() {
         sessionStorage.setItem('package_pending', JSON.stringify({ planId, startedAt: Date.now() }));
     } catch (_) {}
     try {
-        const { addDoc, collection, getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+        const { addDoc, collection, getDoc, doc } = firestoreModule;
         const successUrl = `${window.location.origin}/packages.html?payment=success`;
         const cancelUrl = `${window.location.origin}/packages.html?payment=canceled`;
         // Připravit data pro Checkout Session – Stripe (Firebase Extension)
@@ -894,7 +902,8 @@ async function showSuccess() {
     try {
         const user = window.firebaseAuth && window.firebaseAuth.currentUser;
         if (user && window.firebaseDb && selectedPlan && selectedPlan.plan) {
-            const { setDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+            const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+            const { setDoc, doc } = firestoreModule;
             const now = new Date();
             const durationDays = 30; // měsíční předplatné
             const periodEnd = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000);
@@ -945,7 +954,8 @@ async function refreshBadge() {
             plan = await window.checkUserPlanFromDatabase(user.uid);
         } else {
             // Fallback: načíst přímo z databáze
-            const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+            const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+        const { getDoc, doc } = firestoreModule;
             const ref = doc(window.firebaseDb, 'users', user.uid, 'profile', 'profile');
             const snap = await getDoc(ref);
             if (snap.exists()) {
@@ -1017,7 +1027,8 @@ async function loadCurrentPlan() {
         // Pozn.: packages.html nemusí mít sekci "aktuální balíček", ale i tak potřebujeme načíst plán
         // kvůli přepnutí CTA na "Spravovat balíček".
         
-        const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+        const { getDoc, doc } = firestoreModule;
         const ref = doc(window.firebaseDb, 'users', user.uid, 'profile', 'profile');
         const snap = await getDoc(ref);
         let plan = 'none', planPeriodEnd = null, planCancelAt = null;
@@ -1072,7 +1083,8 @@ async function cancelPlan() {
     try {
         const user = window.firebaseAuth && window.firebaseAuth.currentUser;
         if (!user || !window.firebaseDb) return;
-        const { getDoc, setDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+        const { getDoc, setDoc, doc } = firestoreModule;
         const ref = doc(window.firebaseDb, 'users', user.uid, 'profile', 'profile');
         const snap = await getDoc(ref);
         if (!snap.exists()) return;
@@ -1093,7 +1105,8 @@ async function undoCancel() {
     try {
         const user = window.firebaseAuth && window.firebaseAuth.currentUser;
         if (!user || !window.firebaseDb) return;
-        const { setDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        const firestoreModule = await (window.importFirebaseFirestore || (() => import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js')))();
+        const { setDoc, doc } = firestoreModule;
         const ref = doc(window.firebaseDb, 'users', user.uid, 'profile', 'profile');
         await setDoc(ref, { planCancelAt: null }, { merge: true });
         alert('Zrušení bylo odebráno');
