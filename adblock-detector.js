@@ -6,7 +6,7 @@
     function detectAdBlock(callback) {
         let detected = false;
         let checksCompleted = 0;
-        const totalChecks = 3;
+        const totalChecks = 4;
         
         function checkComplete(result) {
             checksCompleted++;
@@ -20,60 +20,56 @@
             }
         }
         
-        // Metoda 1: Zkusit načíst skript s názvem, který adblockery typicky blokují
-        const testScript = document.createElement('script');
+        // Metoda 1: Zkusit načíst skript s názvem, který adblockery typicky blokují (Opera, uBlock...)
+        var scriptDone = false;
+        var testScript = document.createElement('script');
         testScript.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js';
         testScript.onerror = function() {
-            checkComplete(true);
+            if (!scriptDone) { scriptDone = true; checkComplete(true); }
         };
         testScript.onload = function() {
-            checkComplete(false);
+            if (!scriptDone) { scriptDone = true; checkComplete(false); }
         };
-        
-        // Timeout pro skript
         setTimeout(function() {
-            if (!detected) {
-                checkComplete(false);
-            }
+            if (!scriptDone && !detected) { scriptDone = true; checkComplete(false); }
         }, 2000);
-        
         document.head.appendChild(testScript);
         
-        // Metoda 2: Zkontrolovat, zda se blokují elementy s třídou "ad"
+        // Metoda 2: Bait element s id="ad" - Brave a další blokují kosmetickými filtry
         setTimeout(function() {
-            if (!detected) {
-                const testDiv = document.createElement('div');
-                testDiv.className = 'adsbox';
-                testDiv.style.position = 'absolute';
-                testDiv.style.left = '-9999px';
-                testDiv.style.top = '-9999px';
-                testDiv.innerHTML = '&nbsp;';
-                document.body.appendChild(testDiv);
-                
+            if (!detected && document.body) {
+                var bait = document.createElement('div');
+                bait.id = 'ad';
+                bait.className = 'advertisement';
+                bait.style.cssText = 'position:absolute;left:-9999px;width:1px;height:1px;visibility:visible;display:block !important;';
+                bait.innerHTML = '&nbsp;';
+                document.body.appendChild(bait);
+                // Počkat na aplikaci kosmetických filtrů (Brave, uBlock...)
                 setTimeout(function() {
-                    const computedStyle = window.getComputedStyle(testDiv);
-                    const isBlocked = testDiv.offsetHeight === 0 || 
-                                     testDiv.offsetWidth === 0 ||
-                                     testDiv.style.display === 'none' ||
-                                     computedStyle.display === 'none' ||
-                                     computedStyle.visibility === 'hidden' ||
-                                     computedStyle.opacity === '0';
-                    
-                    document.body.removeChild(testDiv);
-                    checkComplete(isBlocked);
-                }, 100);
+                    var cs = window.getComputedStyle(bait);
+                    var hidden = cs.display === 'none' || cs.visibility === 'hidden' || 
+                                 bait.offsetHeight === 0 || bait.offsetWidth === 0;
+                    if (bait.parentNode) document.body.removeChild(bait);
+                    checkComplete(hidden);
+                }, 150);
             }
-        }, 500);
+        }, 300);
         
-        // Metoda 3: Zkontrolovat, zda jsou služby skutečně zobrazené (pokud už jsou načtené)
+        // Metoda 3: Fetch na blokovanou URL - Brave a další blokují request (mode: no-cors kvůli CORS)
         setTimeout(function() {
             if (!detected) {
-                const grid = document.getElementById('servicesGrid');
+                fetch('https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js', { method: 'HEAD', mode: 'no-cors', cache: 'no-store' })
+                    .then(function() { checkComplete(false); })
+                    .catch(function() { checkComplete(true); });
+            }
+        }, 600);
+        
+        // Metoda 4: Zkontrolovat, zda jsou služby zobrazené (grid prázdný, ale data existují)
+        setTimeout(function() {
+            if (!detected) {
+                var grid = document.getElementById('servicesGrid');
                 if (grid && grid.children.length === 0) {
-                    // Grid existuje, ale nemá děti - možná jsou blokované
-                    // Zkontrolovat, zda jsou služby v allServices, ale nezobrazují se
                     if (typeof allServices !== 'undefined' && allServices && allServices.length > 0) {
-                        // Máme služby v paměti, ale nezobrazují se - pravděpodobně AdBlocker
                         checkComplete(true);
                     } else {
                         checkComplete(false);
@@ -82,7 +78,7 @@
                     checkComplete(false);
                 }
             }
-        }, 3000); // Počkat 3 sekundy, aby se služby stihly načíst
+        }, 3500);
     }
     
     // Zobrazit varování o AdBlocku
