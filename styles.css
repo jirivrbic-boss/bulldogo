@@ -975,16 +975,28 @@
 
 /* Anti-AdBlock: Zajistit zobrazení elementů s "ad" v názvu */
 .ads-section,
+/* Duplicitní třídy bez "ad" v názvu pro obcházení AdBlocku */
+.services-grid,
 .ads-grid,
+.service-card,
 .ad-card,
+.service-body,
 .ad-body,
+.service-thumb,
 .ad-thumb,
+.service-title,
 .ad-title,
+.service-price,
 .ad-price,
+.service-location,
 .ad-location,
+.service-meta,
 .ad-meta,
+.service-actions,
 .ad-actions,
+.service-badge-top,
 .ad-badge-top,
+.service-flames,
 .ad-flames,
 [class*="ad-"],
 [id*="ad-"],
@@ -1075,6 +1087,8 @@
 }
 
 /* Základní grid pro ostatní stránky */
+/* Duplicitní třída bez "ad" v názvu pro obcházení AdBlocku */
+.services-grid,
 .ads-grid:not(#servicesGrid) {
     display: grid !important;
     grid-template-columns: repeat(4, 1fr) !important;
@@ -1111,6 +1125,8 @@
     }
 }
 
+/* Duplicitní třída bez "ad" v názvu pro obcházení AdBlocku */
+.service-card,
 .ad-card {
     background: white !important;
     border-radius: 15px !important;

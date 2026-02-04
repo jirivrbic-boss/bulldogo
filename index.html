@@ -78,6 +78,8 @@
     </style>
     <!-- Polyfilly pro kompatibilitu napříč prohlížeči - načítat před Firebase -->
     <script src="/polyfills.js"></script>
+    <!-- AdBlock detektor - načítat brzy pro včasnou detekci -->
+    <script src="/adblock-detector.js"></script>
     <!-- Firebase import helper funkce - načítat před Firebase -->
     <script src="/firebase-imports.js"></script>
     <!-- Firebase SDK (centralizovaná inicializace) - defer pro neblokující načítání -->
@@ -720,7 +722,7 @@
     <section class="ads-section">
         <div class="container">
             <!-- data-limit: omezí počet dlaždic (např. na homepage 12), data-show-actions: zda zobrazit spodní ikonky -->
-            <div class="ads-grid" id="servicesGrid" data-limit="12" data-show-actions="true"></div>
+            <div class="services-grid ads-grid" id="servicesGrid" data-limit="12" data-show-actions="true"></div>
             <!-- Tlačítko pro zobrazení více inzerátů -->
             <div class="ads-more-container">
                 <a href="services.html" class="btn-more-ads">

@@ -68,6 +68,8 @@
     <noscript><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"></noscript>
     <!-- Polyfilly pro kompatibilitu napříč prohlížeči - načítat před Firebase -->
     <script src="polyfills.js"></script>
+    <!-- AdBlock detektor - načítat brzy pro včasnou detekci -->
+    <script src="adblock-detector.js"></script>
     <!-- Firebase import helper funkce - načítat před Firebase -->
     <script src="firebase-imports.js"></script>
     <!-- Firebase SDK (centralizovaná inicializace) - defer pro neblokující načítání -->
@@ -358,7 +360,7 @@
     <!-- Services Grid -->
     <section class="ads-section">
         <div class="container">
-            <div class="ads-grid" id="servicesGrid">
+            <div class="services-grid ads-grid" id="servicesGrid">
                 <!-- Služby se načtou dynamicky -->
                 <div class="loading-services">
                     <i class="fas fa-spinner fa-spin"></i>
