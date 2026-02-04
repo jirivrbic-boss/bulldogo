@@ -6,6 +6,10 @@ const itemsPerPage = 16; // 16 inzerátů na stránku
 let servicesFirebaseAuth = null;
 let servicesFirebaseDb = null;
 
+// Globální IntersectionObserver pro lazy loading obrázků (zabrání problikávání)
+let globalImageObserver = null;
+let observedImages = new WeakSet(); // Sledování již pozorovaných obrázků
+
 // services.js se načítá - logy odstraněny
 
 // Funkce pro inicializaci služeb
@@ -1032,6 +1036,21 @@ function displayServices(list) {
                     grid.style.minHeight = currentHeight + 'px';
                 }
             }
+            
+            // Vykreslit karty - univerzální šablona zajistí konzistentní vzhled
+            let htmlContent = finalServices.map(service => createAdCard(service, showActions)).join('');
+            grid.innerHTML = htmlContent;
+            
+            // Po renderování odstranit min-height s fallbackem
+            if (typeof requestAnimationFrame !== 'undefined') {
+                requestAnimationFrame(() => {
+                    if (grid) grid.style.minHeight = '';
+                });
+            } else {
+                setTimeout(() => {
+                    if (grid) grid.style.minHeight = '';
+                }, 0);
+            }
         });
     } else {
         // Fallback pro starší prohlížeče
@@ -1042,53 +1061,97 @@ function displayServices(list) {
                     grid.style.minHeight = currentHeight + 'px';
                 }
             }
-        }, 0);
-    }
-        }
-
-        // Vykreslit karty - univerzální šablona zajistí konzistentní vzhled
-        let htmlContent = finalServices.map(service => createAdCard(service, showActions)).join('');
-        grid.innerHTML = htmlContent;
-        
-        // Po renderování odstranit min-height s fallbackem
-        if (typeof requestAnimationFrame !== 'undefined') {
-            requestAnimationFrame(() => {
-                if (grid) grid.style.minHeight = '';
-            });
-        } else {
+            
+            // Vykreslit karty
+            let htmlContent = finalServices.map(service => createAdCard(service, showActions)).join('');
+            grid.innerHTML = htmlContent;
+            
+            // Po renderování odstranit min-height
             setTimeout(() => {
                 if (grid) grid.style.minHeight = '';
             }, 0);
-        }
-    });
+        }, 0);
+    }
     
-    // Optimalizace: Intersection Observer pro lepší lazy loading s robustním error handlingem
+    // Optimalizace: Globální Intersection Observer pro lazy loading obrázků (zabrání problikávání)
     if (typeof IntersectionObserver !== 'undefined' && grid) {
         try {
-            const imageObserver = new IntersectionObserver((entries, observer) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        const img = entry.target;
-                        if (img && img.dataset && img.dataset.src) {
-                            img.src = img.dataset.src;
-                            img.removeAttribute('data-src');
-                            observer.unobserve(img);
+            // Vytvořit globální observer pouze jednou
+            if (!globalImageObserver) {
+                globalImageObserver = new IntersectionObserver((entries, observer) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const img = entry.target;
+                            // Zkontrolovat, zda obrázek už není načtený nebo už byl zpracován
+                            if (img && img.complete && img.naturalWidth > 0) {
+                                // Obrázek je už načtený, přestat pozorovat
+                                observer.unobserve(img);
+                                return;
+                            }
+                            
+                            // Načíst obrázek pouze pokud má data-src
+                            if (img && img.dataset && img.dataset.src) {
+                                // Zkontrolovat, zda už není načítán
+                                if (img.dataset.loading === 'true') {
+                                    return; // Už se načítá, přeskočit
+                                }
+                                
+                                img.dataset.loading = 'true';
+                                const srcToLoad = img.dataset.src;
+                                
+                                // Načíst obrázek
+                                const tempImg = new Image();
+                                tempImg.onload = () => {
+                                    img.src = srcToLoad;
+                                    img.removeAttribute('data-src');
+                                    img.removeAttribute('data-loading');
+                                    img.classList.add('loaded');
+                                    if (img.style) {
+                                        img.style.background = 'transparent';
+                                    }
+                                    observer.unobserve(img);
+                                };
+                                tempImg.onerror = () => {
+                                    img.removeAttribute('data-loading');
+                                    observer.unobserve(img);
+                                };
+                                tempImg.src = srcToLoad;
+                            } else {
+                                // Nemá data-src, přestat pozorovat
+                                observer.unobserve(img);
+                            }
                         }
-                    }
+                    });
+                }, {
+                    rootMargin: '100px', // Zvětšeno pro plynulejší načítání
+                    threshold: 0.01 // Spustit i při minimální viditelnosti
                 });
-            }, {
-                rootMargin: '50px' // Začít načítat 50px před tím, než je obrázek viditelný
-            });
+            }
             
-            // Najít všechny lazy obrázky a pozorovat je
+            // Najít všechny lazy obrázky a pozorovat je (pouze ty, které ještě nejsou pozorovány)
             const lazyImages = grid.querySelectorAll('img[loading="lazy"]');
             lazyImages.forEach(img => {
-                if (img && img.src && !img.complete) {
-                    try {
-                        imageObserver.observe(img);
-                    } catch (observeError) {
-                        console.warn('⚠️ Chyba při pozorování obrázku:', observeError);
+                // Zkontrolovat, zda obrázek už není pozorován
+                if (observedImages.has(img)) {
+                    return; // Už je pozorován, přeskočit
+                }
+                
+                // Zkontrolovat, zda obrázek už není načtený
+                if (img.complete && img.naturalWidth > 0) {
+                    // Obrázek je už načtený, přidat třídu a přeskočit pozorování
+                    img.classList.add('loaded');
+                    if (img.style) {
+                        img.style.background = 'transparent';
                     }
+                    return;
+                }
+                
+                // Přidat do WeakSet a začít pozorovat
+                try {
+                    observedImages.add(img);
+                    globalImageObserver.observe(img);
+                } catch (observeError) {
+                    console.warn('⚠️ Chyba při pozorování obrázku:', observeError);
                 }
             });
         } catch (observerError) {
@@ -1100,6 +1163,10 @@ function displayServices(list) {
                     if (img && img.dataset && img.dataset.src) {
                         img.src = img.dataset.src;
                         img.removeAttribute('data-src');
+                        img.classList.add('loaded');
+                        if (img.style) {
+                            img.style.background = 'transparent';
+                        }
                     }
                 });
             }
