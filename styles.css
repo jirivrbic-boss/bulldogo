@@ -1162,6 +1162,8 @@
     margin: 0 !important;
 }
 
+/* Duplicitní třídy bez "ad" v názvu pro obcházení AdBlocku */
+.service-card:hover,
 .ad-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 15px 40px rgba(247, 124, 0, 0.2);
@@ -1169,16 +1171,21 @@
 }
 
 /* Selectable ad cards (Topování – výběr inzerátu) */
+.service-card.selectable,
 .ad-card.selectable { cursor: pointer; }
+.service-card.selectable.selected,
 .ad-card.selectable.selected {
     border: 2px solid #ffd700 !important;
     box-shadow: 0 15px 40px rgba(255, 215, 0, 0.25);
 }
+.service-card.is-top:hover,
 .ad-card.is-top:hover { 
     transform: none !important;
     box-shadow: 0 8px 28px rgba(255, 138, 0, 0.6), 0 0 0 2px rgba(255, 138, 0, 0.4), inset 0 0 0 1px rgba(255, 138, 0, 0.1) !important;
 }
 
+/* Duplicitní třída bez "ad" v názvu pro obcházení AdBlocku */
+.service-thumb,
 .ad-thumb { 
     width: 100% !important; 
     aspect-ratio: 4 / 3 !important; /* FIXNÍ poměr stran - stejný všude */
@@ -1202,11 +1209,13 @@
 
 /* Zajistit, aby aspect-ratio mělo přednost, ale padding-bottom zajistí velikost během načítání */
 @supports (aspect-ratio: 4 / 3) {
+    .service-thumb,
     .ad-thumb {
         padding-bottom: 0 !important;
         height: auto !important;
     }
 }
+.service-thumb img,
 .ad-thumb img { 
     width: 100% !important; 
     height: 100% !important; 
@@ -1229,12 +1238,14 @@
 }
 
 /* Zajistit, že načtené obrázky jsou viditelné bez problikávání */
+.service-thumb img.loaded,
 .ad-thumb img.loaded {
     opacity: 1 !important;
     visibility: visible !important;
 }
 
 /* Oranžový loading spinner pro načítající se obrázky */
+.service-thumb:has(img:not(.loaded))::before,
 .ad-thumb:has(img:not(.loaded))::before {
     content: '\f110'; /* FontAwesome spinner ikona */
     font-family: 'Font Awesome 6 Free' !important;
@@ -1251,10 +1262,13 @@
 }
 
 /* Skrýt spinner po načtení obrázku */
+.service-thumb:has(img.loaded)::before,
 .ad-thumb:has(img.loaded)::before {
     display: none !important;
 }
 
+/* Duplicitní třída bez "ad" v názvu pro obcházení AdBlocku */
+.service-body,
 .ad-body {
     display: flex !important; /* Flexbox pro rozložení obsahu */
     flex-direction: column !important; /* Vertikální uspořádání */
