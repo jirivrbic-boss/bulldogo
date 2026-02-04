@@ -316,9 +316,20 @@ async function setupRealtimeListener() {
             }
             
             // Filtrovat služby podle předplatného
+            let servicesWithPlan = 0;
+            let servicesWithoutPlan = 0;
+            let servicesFilteredByStatus = 0;
+            
             servicesToCheck.forEach((service) => {
                 const hasActivePlan = userProfilesCache.get(service.userId) || false;
                 const status = service.data.status || 'active';
+                
+                // Debug: počítat služby
+                if (hasActivePlan) {
+                    servicesWithPlan++;
+                } else {
+                    servicesWithoutPlan++;
+                }
                 
                 // Zobrazit pouze služby uživatelů s aktivním předplatným a aktivním statusem
                 if (hasActivePlan && status === 'active') {
@@ -327,8 +338,44 @@ async function setupRealtimeListener() {
                         ...service.data,
                         createdAt: service.data.createdAt?.toDate() || new Date()
                     });
+                } else if (status !== 'active') {
+                    servicesFilteredByStatus++;
                 }
             });
+            
+            // Debug logy pro diagnostiku
+            console.log('📊 Filtrování služeb:', {
+                celkem: servicesToCheck.length,
+                sPlanem: servicesWithPlan,
+                bezPlanu: servicesWithoutPlan,
+                neaktivniStatus: servicesFilteredByStatus,
+                zobrazeno: allServices.length
+            });
+            
+            // Pokud se nezobrazily žádné služby, zkontrolovat proč
+            if (allServices.length === 0 && servicesToCheck.length > 0) {
+                console.warn('⚠️ Žádné služby se nezobrazily! Možné důvody:');
+                console.warn('   - Žádný uživatel nemá aktivní předplatné:', servicesWithPlan === 0);
+                console.warn('   - Všechny služby mají neaktivní status:', servicesFilteredByStatus === servicesToCheck.length);
+                console.warn('   - Kontrola předplatného selhala:', servicesWithoutPlan === servicesToCheck.length && servicesWithPlan === 0);
+                
+                // Fallback: zobrazit služby i bez kontroly předplatného (pro debug)
+                // POZNÁMKA: Toto je dočasné řešení - mělo by se zobrazit pouze pro adminy nebo při chybě
+                if (servicesToCheck.length > 0 && servicesWithPlan === 0) {
+                    console.warn('⚠️ FALLBACK: Zobrazuji služby i bez kontroly předplatného (možná chyba v kontrole)');
+                    servicesToCheck.forEach((service) => {
+                        const status = service.data.status || 'active';
+                        if (status === 'active') {
+                            allServices.push({ 
+                                id: service.id, 
+                                ...service.data,
+                                createdAt: service.data.createdAt?.toDate() || new Date()
+                            });
+                        }
+                    });
+                    console.log('📊 Po fallbacku:', { zobrazeno: allServices.length });
+                }
+            }
             
             // Kontrola expirace topování před řazením
             const now = new Date();
@@ -378,7 +425,9 @@ async function setupRealtimeListener() {
             }
             
             // Respektovat aktuálně zadané filtry (včetně města)
+            console.log('🔄 Volám filterServices() - před:', { allServices: allServices.length, filteredServices: filteredServices?.length || 0 });
             filterServices();
+            console.log('🔄 Po filterServices() - po:', { allServices: allServices.length, filteredServices: filteredServices?.length || 0 });
             
             // Pokud jsou v URL parametry, znovu aplikovat filtry (pro případ, že se volaly dřív než data)
             const urlParams = new URLSearchParams(window.location.search);
@@ -386,6 +435,15 @@ async function setupRealtimeListener() {
                 console.log('🔄 Aplikuji filtry z URL po načtení dat...');
                 applyFiltersFromUrl();
             }
+            
+            console.log('📊 Před voláním displayServices():', { 
+                allServices: allServices.length, 
+                filteredServices: filteredServices?.length || 0,
+                gridExists: !!document.getElementById('servicesGrid')
+            });
+            
+            // VŽDY zavolat displayServices() i když jsou služby prázdné (aby se zobrazil prázdný stav)
+            displayServices();
             
             updateStats();
             
@@ -875,7 +933,19 @@ function saveServicesToLocalStorage() {
 // Zobrazení služeb v gridu (volitelné předání seznamu)
 function displayServices(list) {
     const grid = document.getElementById('servicesGrid');
-    if (!grid) return;
+    if (!grid) {
+        console.error('❌ servicesGrid element nenalezen!');
+        return;
+    }
+    
+    console.log('🎨 displayServices() volána:', {
+        allServices: allServices?.length || 0,
+        filteredServices: filteredServices?.length || 0,
+        gridExists: !!grid,
+        gridVisible: grid.offsetParent !== null,
+        gridDisplay: window.getComputedStyle(grid).display,
+        gridVisibility: window.getComputedStyle(grid).visibility
+    });
     
     // Získání limitu z data-limit atributu (pokud existuje)
     const limitAttr = grid.getAttribute('data-limit');
@@ -1038,8 +1108,14 @@ function displayServices(list) {
             }
             
             // Vykreslit karty - univerzální šablona zajistí konzistentní vzhled
+            console.log('🎨 Renderuji karty:', { pocet: finalServices.length, gridExists: !!grid });
             let htmlContent = finalServices.map(service => createAdCard(service, showActions)).join('');
             grid.innerHTML = htmlContent;
+            console.log('✅ Karty vykresleny:', { 
+                htmlLength: htmlContent.length, 
+                gridInnerHTML: grid.innerHTML.length,
+                gridChildren: grid.children.length
+            });
             
             // Po renderování odstranit min-height s fallbackem
             if (typeof requestAnimationFrame !== 'undefined') {
@@ -1682,6 +1758,13 @@ function filterServices() {
         }
     });
 
+    console.log('🔍 filterServices() volána:', {
+        allServices: allServices.length,
+        searchTerm: searchTerm,
+        categoryFilter: categoryFilter,
+        regionFilter: regionFilter
+    });
+    
     let filteredAds = allServices.filter((service) => {
         const title = normalize(service?.title || '');
         const desc = normalize(service?.description || '');
@@ -1755,6 +1838,12 @@ function filterServices() {
     });
 
     filteredServices = filteredAds;
+    
+    console.log('✅ filterServices() dokončena:', {
+        vstup: allServices.length,
+        vystup: filteredServices.length,
+        rozdil: allServices.length - filteredServices.length
+    });
     
             // Filtrování dokončeno - logy odstraněny
     
