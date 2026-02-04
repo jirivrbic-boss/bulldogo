@@ -1,5 +1,5 @@
 // Service Worker pro Bulldogo.cz - Optimalizovaná caching strategie
-const CACHE_VERSION = 'v1.2.3';
+const CACHE_VERSION = 'v1.2.4';
 const CACHE_NAME = `bulldogo-cache-${CACHE_VERSION}`;
 const MAX_CACHE_SIZE = 50 * 1024 * 1024; // 50MB limit
 
@@ -14,6 +14,11 @@ const STATIC_ASSETS = [
     '/site.webmanifest'
 ];
 
+// Cache API podporuje pouze GET a HEAD - nekacheovat POST/PUT/DELETE
+function canCacheRequest(request) {
+    return request.method === 'GET' || request.method === 'HEAD';
+}
+
 // Strategie: Cache First (pro statické zdroje)
 async function cacheFirst(request) {
     const cachedResponse = await caches.match(request);
@@ -22,7 +27,7 @@ async function cacheFirst(request) {
     }
     try {
         const networkResponse = await fetch(request);
-        if (networkResponse.ok) {
+        if (networkResponse.ok && canCacheRequest(request)) {
             const cache = await caches.open(CACHE_NAME);
             cache.put(request, networkResponse.clone());
         }
@@ -37,7 +42,7 @@ async function cacheFirst(request) {
 async function networkFirst(request) {
     try {
         const networkResponse = await fetch(request);
-        if (networkResponse.ok) {
+        if (networkResponse.ok && canCacheRequest(request)) {
             const cache = await caches.open(CACHE_NAME);
             cache.put(request, networkResponse.clone());
         }
@@ -81,6 +86,11 @@ self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
     const request = event.request;
     
+    // Cache API podporuje pouze GET a HEAD - ignorovat POST/PUT/DELETE
+    if (request.method !== 'GET' && request.method !== 'HEAD') {
+        return; // Nechat projít bez cache
+    }
+    
     // Ignorovat Firebase a externí API (necacheovat)
     if (url.hostname.includes('firebase') || 
         url.hostname.includes('googleapis.com') ||
@@ -123,7 +133,7 @@ async function staleWhileRevalidate(request) {
     const cachedResponse = await cache.match(request);
     
     const fetchPromise = fetch(request).then((networkResponse) => {
-        if (networkResponse.ok) {
+        if (networkResponse.ok && canCacheRequest(request)) {
             cache.put(request, networkResponse.clone());
         }
         return networkResponse;
