@@ -3,6 +3,34 @@
 // Debug: Zkontrolovat, jestli se auth.js načítá
 // Auth.js se načítá - logy odstraněny
 
+// DŮLEŽITÉ: Exportovat showAuthModal okamžitě pro použití v onclick atributech
+// Toto zajistí, že funkce je dostupná i před plným načtením skriptu
+window.showAuthModal = function(type = 'login') {
+    // Pokud je skutečná funkce už definována, použít ji
+    if (typeof window._showAuthModalImpl === 'function') {
+        return window._showAuthModalImpl(type);
+    }
+    // Jinak počkat na načtení
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof window._showAuthModalImpl === 'function') {
+                window._showAuthModalImpl(type);
+            } else {
+                console.error('showAuthModal není dostupná po načtení DOM');
+            }
+        });
+    } else {
+        // DOM už je načtený, ale funkce ještě není definována
+        setTimeout(() => {
+            if (typeof window._showAuthModalImpl === 'function') {
+                window._showAuthModalImpl(type);
+            } else {
+                console.error('showAuthModal není dostupná');
+            }
+        }, 100);
+    }
+};
+
 // Globální proměnné
 let authCurrentUser = null;
 let firebaseAuth = null;
@@ -520,8 +548,6 @@ function initAuth() {
                 }
             }, 2000);
         });
-        console.error('❌ Chyba při načítání Firebase Auth:', error);
-    });
     
     // Inicializace výběru typu registrace
     setupRegistrationTypeSelection();
@@ -1707,8 +1733,29 @@ function setupAuthModalEvents() {
     authModalEventsSetup = true;
 }
 
-// Zobrazení auth modalu
-function showAuthModal(type = 'login') {
+// Zobrazení auth modalu - exportovat okamžitě pro použití v onclick
+// DŮLEŽITÉ: Exportovat před definicí pro okamžitou dostupnost v onclick
+window.showAuthModal = function(type = 'login') {
+    // Zavolat skutečnou funkci, pokud už existuje
+    if (typeof showAuthModalImpl === 'function') {
+        return showAuthModalImpl(type);
+    }
+    // Fallback - pokud funkce ještě není definována, počkat
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof showAuthModalImpl === 'function') {
+                showAuthModalImpl(type);
+            } else {
+                console.error('showAuthModal není dostupná');
+            }
+        });
+    } else {
+        console.error('showAuthModal není dostupná');
+    }
+};
+
+// Skutečná implementace funkce
+function showAuthModalImpl(type = 'login') {
     // Diagnostika: vypiš pathname pro debug
     console.log(`[AUTH MODAL] 🔓 Otevírám modal "${type}" z: ${window.location.pathname}`, {
         hash: window.location.hash,
@@ -1988,7 +2035,8 @@ function closeAuthModal() {
 }
 
 // Export funkcí pro globální použití - ihned po definici
-window.showAuthModal = showAuthModal;
+window._showAuthModalImpl = showAuthModal; // Interní implementace
+// window.showAuthModal už je definováno na začátku souboru jako wrapper
 window.closeAuthModal = closeAuthModal;
 window.createAuthModal = createAuthModal;
 window.setupAuthModalEvents = setupAuthModalEvents;
@@ -4460,7 +4508,8 @@ function openImageViewer(images, startIndex = 0) {
 }
 
 // Export funkcí pro globální použití - ihned po definici
-window.showAuthModal = showAuthModal;
+window._showAuthModalImpl = showAuthModal; // Interní implementace
+// window.showAuthModal už je definováno na začátku souboru jako wrapper
 window.closeAuthModal = closeAuthModal;
 window.createAuthModal = createAuthModal;
 window.setupAuthModalEvents = setupAuthModalEvents;
