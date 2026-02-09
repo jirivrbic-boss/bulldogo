@@ -999,14 +999,43 @@
 
     </div> <!-- End main-content wrapper -->
 
+    <!-- Wrapper pro onclick handlery - zajistí dostupnost funkcí před načtením auth.js -->
+    <script>
+        // Placeholder funkce pro showAuthModal
+        window.showAuthModal = window.showAuthModal || function(mode) {
+            console.log('⏳ Čekám na načtení auth.js...');
+            // Počkat na načtení auth.js
+            const waitForAuth = setInterval(() => {
+                if (window._authJsLoaded && typeof window._showAuthModalImpl === 'function') {
+                    clearInterval(waitForAuth);
+                    window._showAuthModalImpl(mode);
+                }
+            }, 100);
+        };
+        
+        // Placeholder pro logout
+        window.logout = window.logout || function() {
+            console.log('⏳ Čekám na načtení auth.js...');
+            const waitForAuth = setInterval(() => {
+                if (window._authJsLoaded && typeof window._logoutImpl === 'function') {
+                    clearInterval(waitForAuth);
+                    window._logoutImpl();
+                } else if (window.firebaseAuth) {
+                    clearInterval(waitForAuth);
+                    window.firebaseAuth.signOut().then(() => window.location.reload());
+                }
+            }, 100);
+        };
+    </script>
+    
     <script src="/script.js" defer></script>
     <script src="/services.js" defer></script>
     <!-- Jednotný auth service a hash modal hook (načítat před auth.js) -->
     <script src="/lib/hashModal.js" defer></script>
     <script src="/lib/authService.js" defer></script>
     <script src="/lib/userProfileService.js" defer></script>
-    <!-- Auth.js bez defer aby showAuthModal byl okamžitě dostupný pro onclick -->
-    <script src="/auth.js"></script>
+    <!-- Auth.js s defer pro správné načtení DOM -->
+    <script src="/auth.js" defer></script>
     <script src="/cities.js" defer></script>
     <script src="/aurora.js" defer></script>
     <script src="/click-spark.js" defer></script>

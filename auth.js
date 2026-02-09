@@ -4604,14 +4604,15 @@ function openImageViewer(images, startIndex = 0) {
 }
 
 // Export funkcí pro globální použití - ihned po definici
-window._showAuthModalImpl = showAuthModal; // Interní implementace
-// window.showAuthModal už je definováno na začátku souboru jako wrapper
+window._showAuthModalImpl = showAuthModalImpl; // Interní implementace
+window.showAuthModal = showAuthModal; // Wrapper (přepíše placeholder z index.html)
 window.closeAuthModal = closeAuthModal;
 window.createAuthModal = createAuthModal;
 window.setupAuthModalEvents = setupAuthModalEvents;
 window.showAddServiceModal = showAddServiceModal;
 window.closeAddServiceModal = closeAddServiceModal;
-window.logout = logout;
+window._logoutImpl = logout; // Interní implementace
+window.logout = logout; // Veřejná funkce (přepíše placeholder)
 window.addService = addService;
 window.loadServices = loadServices;
 window.toggleUserDropdown = toggleUserDropdown;
