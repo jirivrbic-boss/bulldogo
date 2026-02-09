@@ -325,6 +325,5 @@
   }, true);
 
   console.log('✅ Sentry konfigurace načtena');
-  console.log('🌍 Environment:', environment);
 
 })();
