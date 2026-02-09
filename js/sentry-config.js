@@ -134,10 +134,29 @@
       replaysSessionSampleRate: 0.1,  // 10% běžných sessions
       replaysOnErrorSampleRate: 1.0,  // 100% sessions s chybou
     });
+    
+    // ============================================
+    // 5. ENVIRONMENT TAG
+    // ============================================
+    
+    // Detekovat environment (development vs production)
+    var environment = 'production';
+    if (window.location.hostname === 'localhost' || 
+        window.location.hostname === '127.0.0.1' ||
+        window.location.hostname.includes('127.0.0.1') ||
+        window.location.port === '5000' || // Firebase local
+        window.location.port === '8080') {
+      environment = 'development';
+    }
+    
+    Sentry.setTag('environment', environment);
+    Sentry.setTag('site', 'bulldogo.cz');
+    
+    console.log('🛡️ Sentry: Environment nastaven na', environment);
   });
 
   // ============================================
-  // 5. NASTAVENÍ UŽIVATELSKÉHO KONTEXTU
+  // 6. NASTAVENÍ UŽIVATELSKÉHO KONTEXTU
   // ============================================
   
   // Počkat na Firebase auth
@@ -160,23 +179,6 @@
   }
 
   // ============================================
-  // 6. ENVIRONMENT TAG
-  // ============================================
-  
-  // Detekovat environment (development vs production)
-  var environment = 'production';
-  if (window.location.hostname === 'localhost' || 
-      window.location.hostname === '127.0.0.1' ||
-      window.location.hostname.includes('127.0.0.1') ||
-      window.location.port === '5000' || // Firebase local
-      window.location.port === '8080') {
-    environment = 'development';
-  }
-  
-  Sentry.setTag('environment', environment);
-  Sentry.setTag('site', 'bulldogo.cz');
-
-  // ============================================
   // 7. BREADCRUMBS - Sledování uživatelských akcí
   // ============================================
   
@@ -184,20 +186,24 @@
   if (window.firebaseAuth) {
     // Auth success
     window.addEventListener('firebaseAuthSuccess', function(e) {
-      Sentry.addBreadcrumb({
-        category: 'auth',
-        message: 'Uživatel přihlášen',
-        level: 'info'
-      });
+      if (window.Sentry && Sentry.addBreadcrumb) {
+        Sentry.addBreadcrumb({
+          category: 'auth',
+          message: 'Uživatel přihlášen',
+          level: 'info'
+        });
+      }
     });
     
     // Auth failed
     window.addEventListener('firebaseAuthFailed', function(e) {
-      Sentry.addBreadcrumb({
-        category: 'auth',
-        message: 'Přihlášení selhalo: ' + (e.detail?.error || 'unknown'),
-        level: 'warning'
-      });
+      if (window.Sentry && Sentry.addBreadcrumb) {
+        Sentry.addBreadcrumb({
+          category: 'auth',
+          message: 'Přihlášení selhalo: ' + (e.detail?.error || 'unknown'),
+          level: 'warning'
+        });
+      }
     });
   }
 
@@ -209,14 +215,16 @@
   window.handleFirebaseError = function(error, context) {
     console.error('Firebase Error:', error);
     
-    Sentry.withScope(function(scope) {
-      scope.setContext('firebase', {
-        code: error.code,
-        message: error.message,
-        context: context
+    if (window.Sentry && Sentry.withScope && Sentry.captureException) {
+      Sentry.withScope(function(scope) {
+        scope.setContext('firebase', {
+          code: error.code,
+          message: error.message,
+          context: context
+        });
+        Sentry.captureException(error);
       });
-      Sentry.captureException(error);
-    });
+    }
   };
 
   // ============================================
@@ -231,7 +239,7 @@
       performance.measure(serviceName, startMark, endMark);
       
       var measure = performance.getEntriesByName(serviceName)[0];
-      if (measure) {
+      if (measure && window.Sentry && Sentry.captureMessage) {
         Sentry.captureMessage('Performance: ' + serviceName, {
           level: 'info',
           extra: {
