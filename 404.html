@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <!-- Sentry Error Tracking -->
+    <script
+      src="https://js-de.sentry-cdn.com/71a7ef47a161ed9be852276795dcbc22.min.js"
+      crossorigin="anonymous"
+    ></script>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Z4P6YSMEZH"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-Z4P6YSMEZH');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>404 - Stránka nenalezena | BULLDOGO</title>
+    <meta name="description" content="Platforma pro hobby, řemeslníky, freelancery, OSVČ i firmy. Nabídněte služby nebo objevte nové zákazníky po celé České republice – ihned začněte získávat klienty. Vložit inzerát ZDARMA.">
+    <meta name="robots" content="noindex, follow">
+    <link rel="canonical" href="https://bulldogo.cz/404.html">
+    <meta name="theme-color" content="#ff6a00">
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/electric-border.css">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"></noscript>
+    <style>
+        /* 404 Page Specific Styles */
+        .error-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #ffffff;
+            position: relative;
+            overflow: hidden;
+            padding: 2rem;
+        }
+
+        .error-page::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(40% 30% at 20% 0%, rgba(252, 188, 5, .07), transparent 70%),
+                radial-gradient(30% 25% at 80% 5%, rgba(247, 124, 0, .05), transparent 60%),
+                linear-gradient(to bottom, rgba(0,0,0,.02), transparent 25%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .error-container {
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .error-code {
+            font-size: clamp(8rem, 20vw, 12rem);
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #f77c00 0%, #fdf002 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            background-size: 200% 200%;
+            animation: heroShine 4s ease-in-out infinite;
+            filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.25)) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.18));
+            display: block;
+        }
+
+        .error-title {
+            font-size: clamp(1.8rem, 5vw, 2.5rem);
+            font-weight: 800;
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+        }
+
+        .error-description {
+            font-size: clamp(1rem, 2.5vw, 1.2rem);
+            color: #6c757d;
+            margin-bottom: 2.5rem;
+            line-height: 1.6;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .error-illustration {
+            margin: 3rem 0;
+            position: relative;
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .error-illustration-icon {
+            font-size: clamp(8rem, 20vw, 12rem);
+            color: #f77c00;
+            opacity: 0.15;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-20px);
+            }
+        }
+
+        .error-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 2rem;
+        }
+
+        .btn-404 {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 14px 28px;
+            font-size: 1rem;
+            font-weight: 700;
+            border-radius: 12px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-404-primary {
+            background: linear-gradient(135deg, #f77c00 0%, #fdf002 100%);
+            color: #ffffff;
+            box-shadow: 0 10px 22px rgba(247, 124, 0, 0.25);
+        }
+
+        .btn-404-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 28px rgba(247, 124, 0, 0.35);
+        }
+
+        .btn-404-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-404-secondary {
+            background: #ffffff;
+            color: #f77c00;
+            border: 2px solid #f77c00;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .btn-404-secondary:hover {
+            background: #fff8eb;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+        }
+
+        .btn-404 i {
+            font-size: 1.1rem;
+        }
+
+        .error-suggestions {
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        .error-suggestions-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 1rem;
+        }
+
+        .error-suggestions-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        .error-suggestions-list li {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .error-suggestions-list a {
+            color: #f77c00;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.2s ease;
+        }
+
+        .error-suggestions-list a:hover {
+            color: #fdf002;
+        }
+
+        .error-suggestions-list i {
+            font-size: 0.9rem;
+            color: #f77c00;
+        }
+
+        @media (max-width: 768px) {
+            .error-page {
+                padding: 1rem;
+            }
+
+            .error-illustration {
+                height: 200px;
+                margin: 2rem 0;
+            }
+
+            .error-actions {
+                flex-direction: column;
+            }
+
+            .btn-404 {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .error-suggestions-list {
+                align-items: flex-start;
+            }
+        }
+
+        @keyframes heroShine {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="error-page">
+        <div class="error-container">
+            <div class="error-code">404</div>
+            <h1 class="error-title">Stránka nenalezena</h1>
+            <p class="error-description">
+                Omlouváme se, ale stránka, kterou hledáte, neexistuje nebo byla přesunuta. 
+                Vraťte se na hlavní stránku nebo vyhledejte služby v našem katalogu.
+            </p>
+            
+            <div class="error-illustration">
+                <i class="fas fa-search error-illustration-icon"></i>
+            </div>
+
+            <div class="error-actions">
+                <a href="/" class="btn-404 btn-404-primary">
+                    <i class="fas fa-home"></i>
+                    <span>Domů</span>
+                </a>
+                <a href="/services.html" class="btn-404 btn-404-secondary">
+                    <i class="fas fa-list"></i>
+                    <span>Katalog služeb</span>
+                </a>
+            </div>
+
+            <div class="error-suggestions">
+                <h2 class="error-suggestions-title">Možná jste hledali:</h2>
+                <ul class="error-suggestions-list">
+                    <li>
+                        <i class="fas fa-chevron-right"></i>
+                        <a href="/services.html">Všechny služby</a>
+                    </li>
+                    <li>
+                        <i class="fas fa-chevron-right"></i>
+                        <a href="/create-ad.html">Vytvořit inzerát</a>
+                    </li>
+                    <li>
+                        <i class="fas fa-chevron-right"></i>
+                        <a href="/packages.html">Balíčky a předplatné</a>
+                    </li>
+                    <li>
+                        <i class="fas fa-chevron-right"></i>
+                        <a href="/terms.html">Obchodní podmínky</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

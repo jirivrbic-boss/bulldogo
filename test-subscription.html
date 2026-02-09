@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Subscription System</title>
+    
+    <!-- Firebase SDK - DŮLEŽITÉ: Načíst PŘED auth.js -->
+    <script type="module" src="/firebase-init.js"></script>
+    
+    <!-- Auth.js - načte se až po Firebase -->
+    <script type="module" src="auth.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 8px;
+            font-size: 32px;
+        }
+
+        h2 {
+            color: #333;
+            margin-bottom: 16px;
+            font-size: 20px;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 32px;
+            font-size: 14px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+            margin: 8px 0;
+        }
+
+        .status-badge.loading {
+            background: #e0e0e0;
+            color: #666;
+        }
+
+        .status-badge.active {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+        }
+
+        .status-badge.inactive {
+            background: linear-gradient(135deg, #FF9800 0%, #f57c00 100%);
+            color: white;
+        }
+
+        .status-badge.error {
+            background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+            color: white;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .info-item {
+            background: #f8f9fa;
+            padding: 16px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-item label {
+            display: block;
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .info-item value {
+            display: block;
+            font-size: 18px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 4px;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn.secondary {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .btn.secondary:hover {
+            background: #f8f9ff;
+        }
+
+        .btn.danger {
+            background: #f44336;
+        }
+
+        .btn.danger:hover {
+            background: #d32f2f;
+        }
+
+        .console-output {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 16px;
+        }
+
+        .console-output .log {
+            margin: 4px 0;
+            padding: 4px 8px;
+            border-left: 3px solid transparent;
+        }
+
+        .console-output .log.info {
+            border-left-color: #2196F3;
+        }
+
+        .console-output .log.success {
+            border-left-color: #4CAF50;
+        }
+
+        .console-output .log.error {
+            border-left-color: #f44336;
+        }
+
+        .console-output .log.warning {
+            border-left-color: #FF9800;
+        }
+
+        .alert {
+            padding: 16px;
+            border-radius: 8px;
+            margin: 16px 0;
+        }
+
+        .alert.info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            color: #1976D2;
+        }
+
+        .alert.success {
+            background: #e8f5e9;
+            border-left: 4px solid #4CAF50;
+            color: #388E3C;
+        }
+
+        .alert.warning {
+            background: #fff3e0;
+            border-left: 4px solid #FF9800;
+            color: #F57C00;
+        }
+
+        .alert.error {
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+            color: #C62828;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0,0,0,.1);
+            border-radius: 50%;
+            border-top-color: #667eea;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="card">
+            <h1>🔐 Subscription System Test</h1>
+            <p class="subtitle">Testovací rozhraní pro real-time sledování Stripe předplatného</p>
+            
+            <div id="auth-status">
+                <span class="status-badge loading">
+                    <span class="loading-spinner"></span> Načítání...
+                </span>
+            </div>
+        </div>
+
+        <!-- User Info -->
+        <div class="card hidden" id="user-info-card">
+            <h2>👤 Přihlášený uživatel</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <label>Email</label>
+                    <value id="user-email">-</value>
+                </div>
+                <div class="info-item">
+                    <label>User ID</label>
+                    <value id="user-id">-</value>
+                </div>
+            </div>
+        </div>
+
+        <!-- Subscription Status -->
+        <div class="card hidden" id="subscription-card">
+            <h2>💳 Stav předplatného</h2>
+            
+            <div id="subscription-status">
+                <span class="status-badge loading">Načítání předplatného...</span>
+            </div>
+
+            <div id="subscription-details" class="hidden">
+                <div class="info-grid">
+                    <div class="info-item">
+                        <label>Status</label>
+                        <value id="sub-status">-</value>
+                    </div>
+                    <div class="info-item">
+                        <label>Platné do</label>
+                        <value id="sub-end-date">-</value>
+                    </div>
+                    <div class="info-item">
+                        <label>Auto-obnovení</label>
+                        <value id="sub-renewal">-</value>
+                    </div>
+                    <div class="info-item">
+                        <label>ID Předplatného</label>
+                        <value id="sub-id">-</value>
+                    </div>
+                </div>
+
+                <div id="subscription-alerts"></div>
+            </div>
+        </div>
+
+        <!-- Test Actions -->
+        <div class="card hidden" id="actions-card">
+            <h2>🧪 Testovací akce</h2>
+            
+            <div>
+                <button class="btn" onclick="testQuickCheck()">
+                    ⚡ Rychlá kontrola (bez real-time)
+                </button>
+                
+                <button class="btn secondary" onclick="testRequireSubscription()">
+                    🔒 Test ochraný stránky
+                </button>
+                
+                <button class="btn secondary" onclick="openPackages()">
+                    📦 Přejít na balíčky
+                </button>
+                
+                <button class="btn danger" onclick="clearConsole()">
+                    🗑️ Vymazat console
+                </button>
+            </div>
+        </div>
+
+        <!-- Console Output -->
+        <div class="card">
+            <h2>📊 Console Output</h2>
+            <div class="console-output" id="console"></div>
+        </div>
+
+        <!-- Login Card (if not logged in) -->
+        <div class="card hidden" id="login-card">
+            <h2>🔑 Nejste přihlášeni</h2>
+            <div class="alert info">
+                Pro testování subscription systému musíte být přihlášeni.
+            </div>
+            <button class="btn" onclick="window.location.href='index.html'">
+                Přejít na přihlášení
+            </button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+
+        let currentUser = null;
+        let subscriptionUnsubscribe = null;
+
+        // Console logging
+        function log(message, type = 'info') {
+            const consoleOutput = document.getElementById('console');
+            const timestamp = new Date().toLocaleTimeString('cs-CZ');
+            const logEntry = document.createElement('div');
+            logEntry.className = `log ${type}`;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            consoleOutput.appendChild(logEntry);
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+            
+            // Also log to browser console
+            if (type === 'error') {
+                window.console.error(message);
+            } else {
+                window.console.log(message);
+            }
+        }
+
+        window.clearConsole = function() {
+            document.getElementById('console').innerHTML = '';
+            log('Console vymazána', 'info');
+        };
+
+        // Wait for Firebase to load
+        async function waitForFirebase() {
+            if (window.firebaseAuth && window.firebaseDb) {
+                log('✅ Firebase již načten', 'success');
+                return;
+            }
+            
+            log('⏳ Čekání na Firebase inicializaci...', 'info');
+            
+            return new Promise((resolve, reject) => {
+                let attempts = 0;
+                const maxAttempts = 100; // 10 sekund max
+                
+                const interval = setInterval(() => {
+                    attempts++;
+                    
+                    if (window.firebaseAuth && window.firebaseDb) {
+                        clearInterval(interval);
+                        log('✅ Firebase načten a připraven', 'success');
+                        resolve();
+                    } else if (attempts >= maxAttempts) {
+                        clearInterval(interval);
+                        log('❌ Timeout: Firebase se nepodařilo načíst', 'error');
+                        reject(new Error('Firebase initialization timeout'));
+                    }
+                }, 100);
+            });
+        }
+
+        // Update UI based on subscription data
+        function updateSubscriptionUI(subData) {
+            const statusEl = document.getElementById('subscription-status');
+            const detailsEl = document.getElementById('subscription-details');
+            const alertsEl = document.getElementById('subscription-alerts');
+
+            if (subData.isLoading) {
+                statusEl.innerHTML = '<span class="status-badge loading">Načítání předplatného...</span>';
+                detailsEl.classList.add('hidden');
+                return;
+            }
+
+            // Update status badge
+            if (subData.isSubscribed) {
+                statusEl.innerHTML = '<span class="status-badge active">✓ Aktivní předplatné</span>';
+            } else {
+                statusEl.innerHTML = '<span class="status-badge inactive">⚠️ Bez předplatného</span>';
+            }
+
+            // Show details
+            detailsEl.classList.remove('hidden');
+
+            // Update detail fields
+            document.getElementById('sub-status').textContent = 
+                subData.status ? (subData.status === 'trialing' ? 'Zkušební období' : 'Aktivní') : 'Neaktivní';
+            
+            document.getElementById('sub-end-date').textContent = 
+                subData.subscriptionEnd ? subData.subscriptionEnd.toLocaleDateString('cs-CZ', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                }) : '-';
+            
+            document.getElementById('sub-renewal').textContent = 
+                subData.isSubscribed ? (subData.isCanceled ? '❌ Ne' : '✓ Ano') : '-';
+            
+            document.getElementById('sub-id').textContent = 
+                subData.subscriptionId || '-';
+
+            // Show alerts
+            alertsEl.innerHTML = '';
+            
+            if (subData.isSubscribed && subData.isCanceled) {
+                alertsEl.innerHTML = `
+                    <div class="alert warning">
+                        ⚠️ Vaše předplatné se po ${subData.subscriptionEnd.toLocaleDateString('cs-CZ')} neobnoví.
+                    </div>
+                `;
+            }
+
+            if (!subData.isSubscribed && subData.status === 'expired') {
+                alertsEl.innerHTML = `
+                    <div class="alert error">
+                        ❌ Vaše předplatné expirovala. <a href="packages.html">Obnovit</a>
+                    </div>
+                `;
+            }
+
+            if (subData.status === 'error') {
+                alertsEl.innerHTML = `
+                    <div class="alert error">
+                        ❌ Chyba při načítání předplatného. Zkuste obnovit stránku.
+                    </div>
+                `;
+            }
+
+            // Log to console
+            log(`Subscription update: ${JSON.stringify(subData)}`, 
+                subData.isSubscribed ? 'success' : 'warning');
+        }
+
+        // Initialize
+        async function init() {
+            log('🚀 Inicializace testu...', 'info');
+            
+            try {
+                await waitForFirebase();
+                
+                log('📡 Nastavuji auth state listener...', 'info');
+
+                const { onAuthStateChanged } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+
+                onAuthStateChanged(window.firebaseAuth, async (user) => {
+                    currentUser = user;
+
+                    const authStatus = document.getElementById('auth-status');
+                    const userInfoCard = document.getElementById('user-info-card');
+                    const subscriptionCard = document.getElementById('subscription-card');
+                    const actionsCard = document.getElementById('actions-card');
+                    const loginCard = document.getElementById('login-card');
+
+                    if (user) {
+                        log(`✅ Uživatel přihlášen: ${user.email}`, 'success');
+
+                        // Update UI
+                        authStatus.innerHTML = '<span class="status-badge active">✓ Přihlášen</span>';
+                        userInfoCard.classList.remove('hidden');
+                        subscriptionCard.classList.remove('hidden');
+                        actionsCard.classList.remove('hidden');
+                        loginCard.classList.add('hidden');
+
+                        // Update user info
+                        document.getElementById('user-email').textContent = user.email;
+                        document.getElementById('user-id').textContent = user.uid;
+
+                        // Check if subscription function exists
+                        if (typeof window.subscribeToUserSubscription !== 'function') {
+                            log('⚠️ Subscription funkce nenalezena! Zkontrolujte auth.js', 'error');
+                            return;
+                        }
+
+                        log('📡 Spouštím real-time listener...', 'info');
+
+                        // Start subscription listener
+                        try {
+                            subscriptionUnsubscribe = await window.subscribeToUserSubscription(
+                                user.uid,
+                                (subData) => {
+                                    updateSubscriptionUI(subData);
+                                }
+                            );
+                            
+                            log('✅ Real-time listener aktivní', 'success');
+                        } catch (error) {
+                            log(`❌ Chyba při spuštění listeneru: ${error.message}`, 'error');
+                        }
+
+                    } else {
+                        log('⚠️ Uživatel není přihlášen', 'warning');
+                        
+                        authStatus.innerHTML = '<span class="status-badge inactive">⚠️ Nepřihlášen</span>';
+                        userInfoCard.classList.add('hidden');
+                        subscriptionCard.classList.add('hidden');
+                        actionsCard.classList.add('hidden');
+                        loginCard.classList.remove('hidden');
+                    }
+                });
+            } catch (error) {
+                log(`❌ Chyba při inicializaci: ${error.message}`, 'error');
+                document.getElementById('auth-status').innerHTML = 
+                    '<span class="status-badge error">❌ Chyba inicializace</span>';
+            }
+        }
+
+        // Test functions
+        window.testQuickCheck = async function() {
+            if (!currentUser) {
+                log('❌ Nejste přihlášeni', 'error');
+                return;
+            }
+
+            log('⚡ Spouštím rychlou kontrolu...', 'info');
+            
+            try {
+                const hasSubscription = await window.checkUserSubscription(currentUser.uid);
+                log(`Výsledek: ${hasSubscription ? '✓ Má předplatné' : '❌ Nemá předplatné'}`, 
+                    hasSubscription ? 'success' : 'warning');
+            } catch (error) {
+                log(`❌ Chyba: ${error.message}`, 'error');
+            }
+        };
+
+        window.testRequireSubscription = async function() {
+            log('🔒 Testování ochranné funkce...', 'info');
+            
+            try {
+                const result = await window.requireSubscription({
+                    redirectUrl: '/packages.html',
+                    showAlert: false,  // Vypnout alert pro test
+                    onSubscribed: (subData) => {
+                        log('✅ Ochrana passed: Uživatel má předplatné', 'success');
+                        log(`   Platné do: ${subData.subscriptionEnd.toLocaleDateString('cs-CZ')}`, 'info');
+                    },
+                    onNoSubscription: () => {
+                        log('⚠️ Ochrana failed: Uživatel nemá předplatné', 'warning');
+                        log('   V produkci by byl přesměrován na /packages.html', 'info');
+                    }
+                });
+
+                if (!result) {
+                    // Prevent actual redirect for testing
+                    log('ℹ️ Přesměrování zrušeno pro účely testu', 'info');
+                }
+            } catch (error) {
+                log(`❌ Chyba: ${error.message}`, 'error');
+            }
+        };
+
+        window.openPackages = function() {
+            window.location.href = 'packages.html';
+        };
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (subscriptionUnsubscribe) {
+                subscriptionUnsubscribe();
+                log('🔌 Subscription listener odpojen', 'info');
+            }
+        });
+
+        // Start
+        init();
+    </script>
+</body>
+</html>

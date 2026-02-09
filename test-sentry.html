@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <!-- Sentry Error Tracking -->
+    <script
+      src="https://js-de.sentry-cdn.com/71a7ef47a161ed9be852276795dcbc22.min.js"
+      crossorigin="anonymous"
+    ></script>
+    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentry Test - Bulldogo.cz</title>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+        
+        .status {
+            background: #f0f9ff;
+            border-left: 4px solid #3b82f6;
+            padding: 15px;
+            margin-bottom: 30px;
+            border-radius: 4px;
+        }
+        
+        .status.success {
+            background: #f0fdf4;
+            border-left-color: #22c55e;
+        }
+        
+        .status.warning {
+            background: #fffbeb;
+            border-left-color: #f59e0b;
+        }
+        
+        .status.error {
+            background: #fef2f2;
+            border-left-color: #ef4444;
+        }
+        
+        .test-buttons {
+            display: grid;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button.danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+        
+        button.warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+        
+        button.success {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+        }
+        
+        .info-box {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        
+        .info-box h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        
+        .info-box p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+        
+        .info-box code {
+            background: #e5e7eb;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        
+        .log {
+            background: #1f2937;
+            color: #10b981;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin-top: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .log-entry {
+            margin-bottom: 5px;
+        }
+        
+        .emoji {
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛡️ Sentry Test</h1>
+        <p class="subtitle">Testovací stránka pro ověření Sentry.io error trackingu</p>
+        
+        <div class="status" id="sentryStatus">
+            <strong>⏳ Kontrolujem Sentry...</strong>
+            <p>Čekám na načtení Sentry SDK...</p>
+        </div>
+        
+        <div class="test-buttons">
+            <button onclick="testUndefinedFunction()" class="danger">
+                <span class="emoji">💥</span>
+                Test 1: Undefined Function
+            </button>
+            
+            <button onclick="testTypeError()" class="danger">
+                <span class="emoji">🔴</span>
+                Test 2: Type Error
+            </button>
+            
+            <button onclick="testCustomError()" class="warning">
+                <span class="emoji">⚠️</span>
+                Test 3: Custom Error
+            </button>
+            
+            <button onclick="testCustomMessage()" class="success">
+                <span class="emoji">💬</span>
+                Test 4: Custom Message
+            </button>
+            
+            <button onclick="testPromiseRejection()" class="danger">
+                <span class="emoji">🚫</span>
+                Test 5: Promise Rejection
+            </button>
+        </div>
+        
+        <div class="info-box">
+            <h3>📋 Jak to funguje:</h3>
+            <p>1. Klikněte na některé tlačítko výše</p>
+            <p>2. V konzoli prohlížeče (F12) uvidíte chybu</p>
+            <p>3. Za 1-2 minuty se chyba objeví v <strong>Sentry dashboardu</strong></p>
+            <p>4. Dashboard: <code>https://sentry.io</code> → Issues</p>
+        </div>
+        
+        <div class="log" id="log"></div>
+    </div>
+
+    <script>
+        // Logger
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const icon = type === 'error' ? '❌' : type === 'success' ? '✅' : 'ℹ️';
+            logDiv.innerHTML += `<div class="log-entry">[${timestamp}] ${icon} ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        // Check if Sentry is loaded
+        function checkSentry() {
+            const statusDiv = document.getElementById('sentryStatus');
+            
+            if (window.Sentry) {
+                statusDiv.className = 'status success';
+                statusDiv.innerHTML = '<strong>✅ Sentry je načten a připraven!</strong><p>Můžete začít testovat.</p>';
+                log('Sentry SDK načten úspěšně', 'success');
+                
+                // Set test user
+                if (window.Sentry.setUser) {
+                    window.Sentry.setUser({
+                        id: 'test-user-' + Date.now(),
+                        email: 'test@bulldogo.cz'
+                    });
+                    log('Test uživatel nastaven', 'success');
+                }
+            } else {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = '<strong>❌ Sentry se nepodařilo načíst!</strong><p>Zkontrolujte internet připojení.</p>';
+                log('Sentry SDK se nepodařilo načíst', 'error');
+            }
+        }
+
+        // Wait for Sentry to load
+        setTimeout(checkSentry, 1000);
+
+        // Test 1: Undefined Function Error
+        function testUndefinedFunction() {
+            log('Spouštím Test 1: Undefined Function...');
+            try {
+                // This will throw a ReferenceError
+                myUndefinedFunction();
+            } catch (e) {
+                log('Chyba zachycena: ' + e.message, 'error');
+                if (window.Sentry) {
+                    window.Sentry.captureException(e);
+                    log('Chyba odeslána do Sentry ✓', 'success');
+                }
+            }
+        }
+
+        // Test 2: Type Error
+        function testTypeError() {
+            log('Spouštím Test 2: Type Error...');
+            try {
+                // This will throw a TypeError
+                const obj = null;
+                obj.property.access();
+            } catch (e) {
+                log('Chyba zachycena: ' + e.message, 'error');
+                if (window.Sentry) {
+                    window.Sentry.captureException(e);
+                    log('Chyba odeslána do Sentry ✓', 'success');
+                }
+            }
+        }
+
+        // Test 3: Custom Error
+        function testCustomError() {
+            log('Spouštím Test 3: Custom Error...');
+            try {
+                throw new Error('Toto je testovací custom error z Bulldogo.cz');
+            } catch (e) {
+                log('Custom error vytvořen: ' + e.message, 'error');
+                if (window.Sentry) {
+                    window.Sentry.captureException(e, {
+                        tags: {
+                            test: 'custom-error',
+                            page: 'test-sentry.html'
+                        },
+                        extra: {
+                            testNumber: 3,
+                            timestamp: new Date().toISOString()
+                        }
+                    });
+                    log('Custom error odeslán do Sentry ✓', 'success');
+                }
+            }
+        }
+
+        // Test 4: Custom Message
+        function testCustomMessage() {
+            log('Spouštím Test 4: Custom Message...');
+            if (window.Sentry) {
+                window.Sentry.captureMessage('Test zpráva z Bulldogo.cz - Sentry funguje!', {
+                    level: 'info',
+                    tags: {
+                        test: 'custom-message',
+                        page: 'test-sentry.html'
+                    },
+                    extra: {
+                        browser: navigator.userAgent,
+                        timestamp: new Date().toISOString()
+                    }
+                });
+                log('Custom zpráva odeslána do Sentry ✓', 'success');
+            }
+        }
+
+        // Test 5: Promise Rejection
+        function testPromiseRejection() {
+            log('Spouštím Test 5: Promise Rejection...');
+            Promise.reject(new Error('Test Promise Rejection Error'))
+                .catch(e => {
+                    log('Promise rejection zachycen: ' + e.message, 'error');
+                    if (window.Sentry) {
+                        window.Sentry.captureException(e);
+                        log('Promise rejection odeslán do Sentry ✓', 'success');
+                    }
+                });
+        }
+
+        // Log initial message
+        log('Test stránka načtena');
+        log('Čekám na Sentry SDK...');
+    </script>
+</body>
+</html>
