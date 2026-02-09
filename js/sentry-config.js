@@ -71,6 +71,7 @@
         // Network errors (timeout apod.)
         'NetworkError',
         'Network request failed',
+        'Load failed',
         
         // Facebook related
         'fb_xd_fragment',
@@ -81,7 +82,16 @@
         
         // ResizeObserver (běžné, neškodit)
         'ResizeObserver loop',
-        'ResizeObserver loop completed'
+        'ResizeObserver loop completed',
+        
+        // Mailchimp errors (external service)
+        /mailchimp/i,
+        /9kvu81ddh3\.execute-api\.us-east-2\.amazonaws\.com/i,
+        
+        // Firebase offline errors (normální behavior)
+        /Failed to get document because the client is offline/i,
+        /The client is offline/i,
+        /code=unavailable/i
       ],
 
       // ============================================
@@ -103,7 +113,13 @@
         
         // Ads
         /doubleclick\.net/i,
-        /googlesyndication\.com/i
+        /googlesyndication\.com/i,
+        
+        // Mailchimp
+        /mailchimp\.com/i,
+        /mcf-prod\.a\.intuit\.com/i,
+        /chimpstatic\.com/i,
+        /execute-api\.us-east-2\.amazonaws\.com/i
       ],
 
       // ============================================
