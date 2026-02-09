@@ -331,6 +331,56 @@ document.addEventListener('click', (e) => {
     } catch (_) {}
 });
 
+// MOBILNÍ FIX: Přidání touchstart handleru pro mobilní zařízení
+// Tento handler zajistí, že modal se otevře i na zařízeních s pouze touch eventy
+if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+    document.addEventListener('touchstart', (e) => {
+        const target = e.target.closest(
+            '.btn-login, .btn-register, ' +
+            '[data-open-auth], [data-auth], ' +
+            '[onclick*="showAuthModal"], ' +
+            'a[href="#login"], a[href="#register"]'
+        );
+        if (!target) return;
+        
+        // Nastavit flag, že jsme zpracovali touch, aby click handler nespouštěl dvakrát
+        if (target.dataset.touchHandled) return;
+        target.dataset.touchHandled = 'true';
+        setTimeout(() => delete target.dataset.touchHandled, 1000);
+        
+        try {
+            const isLogin =
+                target.classList?.contains?.('btn-login') ||
+                target.getAttribute?.('data-open-auth') === 'login' ||
+                target.getAttribute?.('data-auth') === 'login' ||
+                (target.getAttribute?.('onclick') || '').includes("showAuthModal('login'") ||
+                (target.getAttribute?.('href') || '') === '#login';
+            const isRegister =
+                target.classList?.contains?.('btn-register') ||
+                target.getAttribute?.('data-open-auth') === 'register' ||
+                target.getAttribute?.('data-auth') === 'register' ||
+                (target.getAttribute?.('onclick') || '').includes("showAuthModal('register'") ||
+                (target.getAttribute?.('href') || '') === '#register';
+            if (isLogin || isRegister) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('[MOBILE] Touch event detected, opening modal:', isLogin ? 'login' : 'register');
+                try {
+                    showAuthModal(isLogin ? 'login' : 'register');
+                } catch (err) {
+                    console.error('[MOBILE] showAuthModal selhalo, zkouším fallback:', err);
+                    try {
+                        if (!document.getElementById('authModal')) createAuthModal();
+                        setTimeout(() => {
+                            try { showAuthModal(isLogin ? 'login' : 'register'); } catch (_) {}
+                        }, 100);
+                    } catch (_) {}
+                }
+            }
+        } catch (_) {}
+    }, { passive: false });
+}
+
 // Redundantní přímé navázání – kdyby delegace nestačila (některé podstránky)
 function bindAuthOpeners(root = document) {
     const sel = '.btn-login, .btn-register, [data-open-auth], [data-auth], a[href="#login"], a[href="#register"]';
@@ -1641,6 +1691,18 @@ function setupAuthModalEvents() {
                 window.closeAuthModal();
             }
         }, { once: false });
+        
+        // MOBILNÍ FIX: Přidat touchstart handler pro mobilní zařízení
+        if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+            newCloseBtn.addEventListener('touchstart', function closeBtnTouchHandler(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('[MOBILE] Close button touch detected');
+                if (typeof window.closeAuthModal === 'function') {
+                    window.closeAuthModal();
+                }
+            }, { once: false, passive: false });
+        }
     }
     
     // Event listener pro kliknutí na pozadí (overlay) - zavřít modal
@@ -1658,6 +1720,20 @@ function setupAuthModalEvents() {
         }
     };
     modal.addEventListener('click', authModalClickHandler);
+    
+    // MOBILNÍ FIX: Přidat touchstart handler pro overlay na mobilních zařízeních
+    if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+        modal.addEventListener('touchstart', function(e) {
+            if (e.target === modal) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('[MOBILE] Overlay touch detected, closing modal');
+                if (typeof window.closeAuthModal === 'function') {
+                    window.closeAuthModal();
+                }
+            }
+        }, { passive: false });
+    }
     
     // Event listener pro přepínání mezi přihlášením a registrací
     const authSwitchBtn = modal.querySelector('.auth-switch-btn');
@@ -1943,6 +2019,16 @@ function showAuthModalImpl(type = 'login') {
     document.body.style.overflow = 'hidden';
     document.body.classList.add('modal-open'); // Přidat třídu pro CSS kontrolu
     
+    // MOBILNÍ FIX: Zajistit, že modal je viditelný na mobilních zařízeních
+    // Přidáme explicitní CSS vlastnosti pro zajištění viditelnosti
+    if (window.innerWidth <= 768) {
+        modal.style.visibility = 'visible';
+        modal.style.opacity = '1';
+        modal.style.pointerEvents = 'all';
+        modal.style.zIndex = '10000';
+        console.log('[MOBILE FIX] Applied mobile-specific styles to modal');
+    }
+    
     // POZOR: Nastavit event listenery VŽDY po otevření modalu (i když se otevře přes hash)
     // To zajistí, že formulář bude fungovat správně
     setTimeout(() => {
@@ -2011,6 +2097,16 @@ function closeAuthModal() {
         modal.style.display = 'none';
         document.body.style.overflow = 'auto';
         document.body.classList.remove('modal-open'); // Odstranit třídu pro CSS kontrolu
+        
+        // MOBILNÍ FIX: Resetovat mobilní styly při zavření
+        if (window.innerWidth <= 768) {
+            modal.style.visibility = '';
+            modal.style.opacity = '';
+            modal.style.pointerEvents = '';
+            document.body.style.position = '';
+            document.body.style.width = '';
+            document.body.style.height = '';
+        }
         
         // Vyčištění formuláře
         const form = document.getElementById('authForm');

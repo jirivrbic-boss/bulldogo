@@ -1,0 +1,96 @@
+Last login: Sun Feb  1 21:53:28 on ttys000
+You have mail.
+adam@Adams-MacBook-Air-3 ~ % cd /Users/adam/Desktop/public_html-2 && firebase projects:list
+✔ Preparing the list of your Firebase projects
+┌─────────────────────────┬───────────────────────────┬────────────────┬──────────────────────┐
+│ Project Display Name    │ Project ID                │ Project Number │ Resource Location ID │
+├─────────────────────────┼───────────────────────────┼────────────────┼──────────────────────┤
+│ bulldogo emails         │ bulldogo-emails           │ 1048784197690  │ [Not specified]      │
+├─────────────────────────┼───────────────────────────┼────────────────┼──────────────────────┤
+│ Bulldogo                │ inzerio-inzerce (current) │ 262039290071   │ [Not specified]      │
+├─────────────────────────┼───────────────────────────┼────────────────┼──────────────────────┤
+│ Kreativni Studio Wloom  │ kreativni-studio-wloom    │ 363515568724   │ [Not specified]      │
+├─────────────────────────┼───────────────────────────┼────────────────┼──────────────────────┤
+│ Kris Barbershop         │ kris-barbershop           │ 695397117979   │ [Not specified]      │
+├─────────────────────────┼───────────────────────────┼────────────────┼──────────────────────┤
+│ Prodejni system Uctarna │ prodejni-system-uctarna   │ 789375134911   │ [Not specified]      │
+├─────────────────────────┼───────────────────────────┼────────────────┼──────────────────────┤
+│ Raj mazlicku            │ raj-mazlicku              │ 578253400256   │ [Not specified]      │
+└─────────────────────────┴───────────────────────────┴────────────────┴──────────────────────┘
+
+6 project(s) total.
+
+   ╭────────────────────────────────────────────────────────────────────╮
+   │                                                                    │
+   │                  Update available 15.0.0 → 15.5.1                  │
+   │           To update to the latest version using npm, run           │
+   │                   npm install -g firebase-tools                    │
+   │   For other CLI management options, visit the CLI documentation    │
+   │         (https://firebase.google.com/docs/cli#update-cli)          │
+   │                                                                    │
+   │                                                                    │
+   │                                                                    │
+   ╰────────────────────────────────────────────────────────────────────╯
+
+adam@Adams-MacBook-Air-3 public_html-2 % ls -la functions/src/index.ts && echo "✅ Cloud Functions kód nalezen"
+-rw-r--r--@ 1 adam  staff  10487 Feb  1 21:41 functions/src/index.ts
+✅ Cloud Functions kód nalezen
+adam@Adams-MacBook-Air-3 public_html-2 % firebase projects:list | grep "inzerio-inzerce"
+✔ Preparing the list of your Firebase projects
+│ Bulldogo                │ inzerio-inzerce (current) │ 262039290071   │ [Not specified]      │
+adam@Adams-MacBook-Air-3 public_html-2 % cd functions && npm run build && cd ..
+
+> build
+> tsc
+
+adam@Adams-MacBook-Air-3 public_html-2 % 
+Last login: Sun Feb  1 21:53:28 on ttys000
+You have mail.
+adam@Adams-MacBook-Air-3 ~ % cd /Users/adam/Desktop/public_html-2 && firebase projects:list
+✔ Preparing the list of your Firebase projects
+┌─────────────────────────┬───────────────────────────┬────────────────┬──────────────────────┐
+│ Project Display Name    │ Project ID                │ Project Number │ Resource Location ID │
+├─────────────────────────┼───────────────────────────┼────────────────┼──────────────────────┤
+│ bulldogo emails         │ bulldogo-emails           │ 1048784197690  │ [Not specified]      │
+├─────────────────────────┼───────────────────────────┼────────────────┼──────────────────────┤
+│ Bulldogo                │ inzerio-inzerce (current) │ 262039290071   │ [Not specified]      │
+├─────────────────────────┼───────────────────────────┼────────────────┼──────────────────────┤
+│ Kreativni Studio Wloom  │ kreativni-studio-wloom    │ 363515568724   │ [Not specified]      │
+├─────────────────────────┼───────────────────────────┼────────────────┼──────────────────────┤
+│ Kris Barbershop         │ kris-barbershop           │ 695397117979   │ [Not specified]      │
+├─────────────────────────┼───────────────────────────┼────────────────┼──────────────────────┤
+│ Prodejni system Uctarna │ prodejni-system-uctarna   │ 789375134911   │ [Not specified]      │
+├─────────────────────────┼───────────────────────────┼────────────────┼──────────────────────┤
+│ Raj mazlicku            │ raj-mazlicku              │ 578253400256   │ [Not specified]      │
+└─────────────────────────┴───────────────────────────┴────────────────┴──────────────────────┘
+
+6 project(s) total.
+
+   ╭────────────────────────────────────────────────────────────────────╮
+   │                                                                    │
+   │                  Update available 15.0.0 → 15.5.1                  │
+   │           To update to the latest version using npm, run           │
+   │                   npm install -g firebase-tools                    │
+   │   For other CLI management options, visit the CLI documentation    │
+   │         (https://firebase.google.com/docs/cli#update-cli)          │
+   │                                                                    │
+   │                                                                    │
+   │                                                                    │
+   ╰────────────────────────────────────────────────────────────────────╯
+
+adam@Adams-MacBook-Air-3 public_html-2 % ls -la functions/src/index.ts && echo "✅ Cloud Functions kód nalezen"
+-rw-r--r--@ 1 adam  staff  10487 Feb  1 21:41 functions/src/index.ts
+✅ Cloud Functions kód nalezen
+adam@Adams-MacBook-Air-3 public_html-2 % firebase projects:list | grep "inzerio-inzerce"
+✔ Preparing the list of your Firebase projects
+│ Bulldogo                │ inzerio-inzerce (current) │ 262039290071   │ [Not specified]      │
+adam@Adams-MacBook-Air-3 public_html-2 % cd functions && npm run build && cd ..
+
+> build
+> tsc
+
+adam@Adams-MacBook-Air-3 public_html-2 % 
+firebase deploy --only functions
+
+
+firebase deploy --only functions

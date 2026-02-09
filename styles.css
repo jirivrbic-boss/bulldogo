@@ -18256,16 +18256,28 @@ body.chat-page .message.other .message-content { margin-right: auto !important; 
         padding: 10px !important; /* Menší padding pro více místa */
         /* Zajistit, aby modal zabral celou výšku viewportu - pouze když je zobrazený */
         overflow: hidden !important; /* Zakázat scroll celé stránky */
+        z-index: 10000 !important; /* Zajistit, že je modal nad všemi ostatními prvky */
+    }
+    
+    /* Speciální pravidlo pro authModal na mobilech */
+    #authModal {
+        z-index: 10000 !important;
     }
     
     /* Když je modal zobrazený na mobilu, použít flexbox pro vycentrování */
     .modal[style*="display: flex"],
-    .modal[style*="display:flex"] {
+    .modal[style*="display:flex"],
+    .modal[style*="display: flex"],
+    #authModal[style*="display: flex"],
+    #authModal[style*="display:flex"] {
         height: 100vh !important;
         height: 100dvh !important;
         display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
         justify-content: center !important;
         align-items: center !important;
+        pointer-events: all !important;
     }
     
     .modal-content {
