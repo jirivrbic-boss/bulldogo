@@ -1156,19 +1156,25 @@ async function loadLatestAds(targetUserId = null) {
                 
                 snapshot.forEach((docSnap) => {
                     const data = docSnap.data() || {};
-                    ads.push({
-                        id: docSnap.id,
-                        userId: targetUserId,
-                        title: data.title || 'Bez názvu',
-                        location: data.location || 'Neuvedeno',
-                        category: data.category || '',
-                        price: data.price || '',
-                        isTop: data.isTop || false,
-                        createdAt: data.createdAt,
-                        images: data.images || [],
-                        image: data.image,
-                        photo: data.photo
-                    });
+                    const status = data.status || 'active';
+                    
+                    // Zobrazit pouze aktivní inzeráty (stejně jako v services.js)
+                    if (status === 'active') {
+                        ads.push({
+                            id: docSnap.id,
+                            userId: targetUserId,
+                            title: data.title || 'Bez názvu',
+                            location: data.location || 'Neuvedeno',
+                            category: data.category || '',
+                            price: data.price || '',
+                            isTop: data.isTop || false,
+                            createdAt: data.createdAt,
+                            images: data.images || [],
+                            image: data.image,
+                            photo: data.photo,
+                            status: status
+                        });
+                    }
                 });
                 
                 // Seřadit podle data vytvoření (nejnovější první)
@@ -1197,19 +1203,25 @@ async function loadLatestAds(targetUserId = null) {
                     const data = docSnap.data() || {};
                     const userIdFromPath = docSnap.ref.parent && docSnap.ref.parent.parent ? docSnap.ref.parent.parent.id : undefined;
                     if (!data.userId && userIdFromPath) data.userId = userIdFromPath;
-                    ads.push({
-                        id: docSnap.id,
-                        userId: data.userId || userIdFromPath,
-                        title: data.title || 'Bez názvu',
-                        location: data.location || 'Neuvedeno',
-                        category: data.category || '',
-                        price: data.price || '',
-                        isTop: data.isTop || false,
-                        createdAt: data.createdAt,
-                        images: data.images || [],
-                        image: data.image,
-                        photo: data.photo
-                    });
+                    const status = data.status || 'active';
+                    
+                    // Zobrazit pouze aktivní inzeráty (stejně jako v services.js)
+                    if (status === 'active') {
+                        ads.push({
+                            id: docSnap.id,
+                            userId: data.userId || userIdFromPath,
+                            title: data.title || 'Bez názvu',
+                            location: data.location || 'Neuvedeno',
+                            category: data.category || '',
+                            price: data.price || '',
+                            isTop: data.isTop || false,
+                            createdAt: data.createdAt,
+                            images: data.images || [],
+                            image: data.image,
+                            photo: data.photo,
+                            status: status
+                        });
+                    }
                 });
                 
                 // Seřadit podle data vytvoření (nejnovější první) a omezit na 10
@@ -1235,19 +1247,25 @@ async function loadLatestAds(targetUserId = null) {
                     
                     snapshot.forEach((docSnap) => {
                         const data = docSnap.data() || {};
-                        ads.push({
-                            id: docSnap.id,
-                            userId: data.userId || '',
-                            title: data.title || 'Bez názvu',
-                            location: data.location || 'Neuvedeno',
-                            category: data.category || '',
-                            price: data.price || '',
-                            isTop: data.isTop || false,
-                            createdAt: data.createdAt,
-                            images: data.images || [],
-                            image: data.image,
-                            photo: data.photo
-                        });
+                        const status = data.status || 'active';
+                        
+                        // Zobrazit pouze aktivní inzeráty (stejně jako v services.js)
+                        if (status === 'active') {
+                            ads.push({
+                                id: docSnap.id,
+                                userId: data.userId || '',
+                                title: data.title || 'Bez názvu',
+                                location: data.location || 'Neuvedeno',
+                                category: data.category || '',
+                                price: data.price || '',
+                                isTop: data.isTop || false,
+                                createdAt: data.createdAt,
+                                images: data.images || [],
+                                image: data.image,
+                                photo: data.photo,
+                                status: status
+                            });
+                        }
                     });
                     
                     // Seřadit podle data vytvoření (nejnovější první) a omezit na 10
