@@ -23,6 +23,48 @@
   Sentry.onLoad(function() {
     Sentry.init({
       beforeSend(event, hint) {
+        // ============================================
+        // FILTROVAT GENERIC NETWORK ERRORS
+        // ============================================
+        
+        // Ignorovat "Load failed" a podobné generic errors bez stack trace
+        var errorMessage = '';
+        if (event.exception && event.exception.values && event.exception.values[0]) {
+          errorMessage = event.exception.values[0].value || '';
+          var errorType = event.exception.values[0].type || '';
+          
+          // Filtrovat generic network errors
+          if (errorType === 'TypeError' && (
+              errorMessage === 'Load failed' ||
+              errorMessage.includes('Load failed') ||
+              errorMessage.includes('Failed to fetch') ||
+              errorMessage.includes('NetworkError') ||
+              errorMessage.includes('Network request failed')
+          )) {
+            console.log('🛡️ Sentry: Ignoruji generic network error:', errorMessage);
+            return null; // Neposílat tuto chybu
+          }
+          
+          // Filtrovat Mailchimp errors
+          if (errorMessage.includes('mailchimp') || 
+              errorMessage.includes('execute-api.us-east-2.amazonaws.com') ||
+              errorMessage.includes('mcf-prod.a.intuit.com')) {
+            console.log('🛡️ Sentry: Ignoruji Mailchimp error');
+            return null;
+          }
+          
+          // Filtrovat Firebase offline errors
+          if (errorMessage.includes('client is offline') ||
+              errorMessage.includes('Failed to get document because')) {
+            console.log('🛡️ Sentry: Ignoruji Firebase offline error');
+            return null;
+          }
+        }
+        
+        // ============================================
+        // ODSTRANIT CITLIVÁ DATA
+        // ============================================
+        
         // Odstranit citlivá data z HTTP hlaviček
         if (event.request?.headers) {
           delete event.request.headers.Authorization;
