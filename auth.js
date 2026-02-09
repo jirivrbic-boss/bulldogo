@@ -4686,3 +4686,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }, 1000);
 });
+
+// Flag pro indikaci, že se auth.js úspěšně načetl
+window._authJsLoaded = true;
+console.log('✅ Auth.js načten');
