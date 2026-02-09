@@ -1879,3 +1879,7 @@ function initServicesCarousel() {
     startAutoplay();
     markSlides();
 }
+
+// Export functions for global use (onclick handlers)
+window.toggleMobileMenu = toggleMobileMenu;
+window.toggleSidebar = toggleSidebar;
