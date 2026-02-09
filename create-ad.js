@@ -6,6 +6,26 @@
     let currentCropInput = null;
     let isSettingCroppedFile = false; // Flag pro detekci programatického nastavení souboru
     
+    // Pomocná funkce pro čekání na načtení auth.js
+    function waitForAuthJS(callback, maxWait = 5000) {
+        if (typeof window.showAuthModal === 'function') {
+            callback();
+            return;
+        }
+        
+        let waited = 0;
+        const checkInterval = setInterval(() => {
+            waited += 100;
+            if (typeof window.showAuthModal === 'function') {
+                clearInterval(checkInterval);
+                callback();
+            } else if (waited >= maxWait) {
+                clearInterval(checkInterval);
+                console.error('[CREATE-AD] ❌ Timeout čekání na auth.js');
+            }
+        }, 100);
+    }
+    
     // Globální pomocné funkce pro publikovat tlačítko a validaci (dostupné i před init)
     function disablePublish(disabled){
         const btn = document.getElementById('publishSideBtn');
@@ -288,27 +308,7 @@
     }
 
     function initCreateAdPage() {
-        // Pomocná funkce pro čekání na načtení auth.js
-    function waitForAuthJS(callback, maxWait = 5000) {
-        if (typeof window.showAuthModal === 'function') {
-            callback();
-            return;
-        }
-        
-        let waited = 0;
-        const checkInterval = setInterval(() => {
-            waited += 100;
-            if (typeof window.showAuthModal === 'function') {
-                clearInterval(checkInterval);
-                callback();
-            } else if (waited >= maxWait) {
-                clearInterval(checkInterval);
-                console.error('[CREATE-AD] ❌ Timeout čekání na auth.js');
-            }
-        }, 100);
-    }
-
-    // Počítadlo znaků popisu
+        // Počítadlo znaků popisu
         const desc = document.getElementById('serviceDescription');
         const counter = document.getElementById('serviceDescriptionCounter');
         if (desc && counter) {
