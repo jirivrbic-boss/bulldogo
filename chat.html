@@ -40,8 +40,9 @@
     <link rel="manifest" href="/site.webmanifest">
     <script>
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/service-worker.js').then(() => console.log('✅ Service Worker registrován')).catch((err) => console.log('⚠️ Service Worker registrace selhala:', err));
-            });
+            navigator.serviceWorker.register('/service-worker.js')
+                .then(() => console.log('✅ Service Worker registrován'))
+                .catch((err) => console.log('⚠️ Service Worker registrace selhala:', err));
         }
     </script>
     <meta property="og:type" content="website">
