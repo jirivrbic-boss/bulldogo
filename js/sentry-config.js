@@ -24,6 +24,31 @@
     Sentry.init({
       beforeSend(event, hint) {
         // ============================================
+        // FILTROVAT IN-APP BROWSER ERRORS
+        // ============================================
+        
+        // Instagram, Facebook, Twitter in-app browsery jsou unreliable
+        var userAgent = event.request?.headers?.['User-Agent'] || 
+                        event.contexts?.browser?.name || '';
+        
+        if (userAgent.toLowerCase().includes('instagram') ||
+            userAgent.toLowerCase().includes('fban') ||
+            userAgent.toLowerCase().includes('fbav') ||
+            userAgent.toLowerCase().includes('twitter')) {
+          console.log('🛡️ Sentry: Ignoruji chybu z in-app browseru:', userAgent);
+          return null; // Neposílat chyby z in-app browserů
+        }
+        
+        // Ignorovat chyby bez stack trace (unreliable)
+        if (event.exception && event.exception.values && event.exception.values[0]) {
+          var stacktrace = event.exception.values[0].stacktrace;
+          if (!stacktrace || !stacktrace.frames || stacktrace.frames.length === 0) {
+            console.log('🛡️ Sentry: Ignoruji chybu bez stack trace');
+            return null;
+          }
+        }
+        
+        // ============================================
         // FILTROVAT GENERIC NETWORK ERRORS
         // ============================================
         
